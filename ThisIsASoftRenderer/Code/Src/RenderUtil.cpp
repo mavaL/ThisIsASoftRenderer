@@ -4,7 +4,7 @@
 
 namespace SR
 {
-	void RenderUtil::DrawClipLine_Bresenahams(int x0, int y0, int x1,int y1, int color)
+	void RenderUtil::DrawLine_Bresenahams(int x0, int y0, int x1,int y1, int color, bool bClip)
 	{
 		int cxs, cys,
 			cxe, cye;
@@ -15,7 +15,7 @@ namespace SR
 		cxe = x1;
 		cye = y1;
 
-		if(!ClipLine(cxs, cxe, cys, cye))
+		if(bClip && !ClipLine(cxs, cys, cxe, cye))
 			return;
 
 		UCHAR* vb_start = (UCHAR*)g_renderer.m_backBuffer->GetDataPointer();
@@ -132,7 +132,7 @@ namespace SR
 		} // end else |slope| > 1
 	}
 
-	void RenderUtil::DrawClipLine_DDA( int x0, int y0, int x1,int y1, int color )
+	void RenderUtil::DrawLine_DDA( int x0, int y0, int x1,int y1, int color, bool bClip )
 	{
 		int cxs, cys,
 			cxe, cye;
@@ -143,7 +143,7 @@ namespace SR
 		cxe = x1;
 		cye = y1;
 
-		if(!ClipLine(cxs, cxe, cys, cye))
+		if(bClip && !ClipLine(cxs, cxe, cys, cye))
 			return;
 
 		UCHAR* vb_start = (UCHAR*)g_renderer.m_backBuffer->GetDataPointer();
@@ -458,5 +458,10 @@ namespace SR
 		y2 = yc2;
 
 		return(1);
+	}
+
+	void RenderUtil::DrawText( int x, int y, const STRING& text )
+	{
+		//TODO..
 	}
 }

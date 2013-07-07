@@ -12,17 +12,32 @@
 
 namespace SR
 {
+#ifdef USE_32BIT_INDEX
+	typedef DWORD	Index;
+#else
+	typedef WORD	Index;
+#endif
+
 	struct SVertex 
 	{
-		Common::SVector3	pos;
+		Common::SVector4	pos;
 	};
-	typedef std::vector<SVertex>	VertexList;
+	typedef std::vector<SVertex>	VertexBuffer;
+	typedef std::vector<Index>		IndexBuffer;
 
-	struct STriangle
+	struct SFace
 	{
-		SVertex	vert[3];
+		SFace():index1(-1),index2(-1),index3(-1) {}
+		SFace(Index idx1, Index idx2, Index idx3):index1(idx1),index2(idx2),index3(idx3) {}
+
+		Index	index1, index2, index3;
 	};
-	typedef std::vector<STriangle>	TriangleList;
+
+	struct SRenderList 
+	{
+		VertexBuffer	verts;
+		IndexBuffer		indexes;
+	};
 }
 
 

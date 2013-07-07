@@ -8,11 +8,7 @@ namespace SR
 		:m_hwnd(nullptr)
 		,m_curRas(nullptr)
 	{
-		//这是世界坐标
-		m_testTri.vert[0].pos = Common::SVector3(0, 0, -50);
-		m_testTri.vert[1].pos = Common::SVector3(40, 0, -50);
-		m_testTri.vert[2].pos = Common::SVector3(20, 30, -50);
-
+		//初始化所有光栅器
 		m_rasLib.insert(std::make_pair(eRasterizeType_FlatWire, new RasWireFrame));
 
 		//创建后备缓冲
@@ -45,64 +41,53 @@ namespace SR
 		//TODO:世界空间进行背面剔除
 		//		g_camera.GetViewPt();
 
-		Common::SVector4 transPt[3];
-		/////////////////////////////////////////////////
-		///////// 相机变换
-		g_camera.Update();
-		auto matView = g_camera.GetViewMatrix();
+		//填充RenderList
+		m_renderList.verts.clear();
+		m_renderList.verts.assign(m_VB.begin(), m_VB.end());
 
-		for (int i=0; i<3; ++i)
-		{
-			transPt[i] = Common::Transform_Vec3_By_Mat44(m_testTri.vert[i].pos, matView, true);
-		}
+		m_renderList.indexes.clear();
+		m_renderList.indexes.assign(m_IB.begin(), m_IB.end());
+		
 
-		/////////////////////////////////////////////////
-		///////// 透视投影变换
-		float d = g_camera.GetNearClip();
-		float ratio = SCREEN_WIDTH / (float)SCREEN_HEIGHT;
-		for (int i=0; i<3; ++i)
-		{
-			transPt[i].x = transPt[i].x * d / transPt[i].z;
-			transPt[i].y = transPt[i].y * d * ratio / transPt[i].z;
-		}
+		m_camera.Update();
 
-		/////////////////////////////////////////////////
-		///////// 齐次除法
-		for (int i=0; i<3; ++i)
+		//transform each vertex
+		for (size_t i=0; i<m_renderList.verts.size(); ++i)
 		{
-			transPt[i].x /= transPt[i].w;
-			transPt[i].y /= transPt[i].w;
-			transPt[i].w = 1;
-		}
+			VEC4& vertPos = m_renderList.verts[i].pos;
 
-		/////////////////////////////////////////////////
-		///////// 视口映射
-		float a = 0.5f * SCREEN_WIDTH - 0.5f;
-		float b = 0.5f *SCREEN_HEIGHT - 0.5f;
-		for (int i=0; i<3; ++i)
-		{
-			transPt[i].x = a + a * transPt[i].x;
-			transPt[i].y = b - b * transPt[i].y;
+			/////////////////////////////////////////////////
+			///////// 相机变换
+			auto matView = m_camera.GetViewMatrix();
+			vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matView);
+
+			/////////////////////////////////////////////////
+			///////// 透视投影变换
+			auto matProj = m_camera.GetProjMatrix();
+			vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matProj);
+
+			/////////////////////////////////////////////////
+			///////// 齐次除法
+			float inv_w = 1 / vertPos.w;
+			vertPos.x *= inv_w;
+			vertPos.y *= inv_w;
+
+			/////////////////////////////////////////////////
+			///////// 视口映射 [-1,1] -> [0, Viewport W/H]
+			float a = 0.5f * SCREEN_WIDTH;
+			float b = 0.5f *SCREEN_HEIGHT;
+
+			vertPos.x = a + a * vertPos.x;
+			vertPos.y = b - b * vertPos.y;
 		}
 
 		/////////////////////////////////////////////////
 		///////// 光栅化
-		TriangleList tris;
-		STriangle tri;
-		tri.vert[0].pos = transPt[0].GetVec3(); 
-		tri.vert[1].pos = transPt[1].GetVec3(); 
-		tri.vert[2].pos = transPt[2].GetVec3();
-		tris.push_back(tri);
-		m_curRas->RasterizeTriangleList(tris);
+		m_curRas->RasterizeTriangleList(m_renderList);
 
 		/////////////////////////////////////////////////
 		///////// 最后进行swap
 		_Present();
-	}
-
-	void Renderer::DrawText( int x, int y, const STRING& text )
-	{
-		//TODO..
 	}
 
 	void Renderer::_Present()
@@ -140,4 +125,11 @@ namespace SR
 		int bufBytes = m_backBuffer->GetWidth() * m_backBuffer->GetHeight() * m_backBuffer->GetBytesPerPixel();
 		memset(m_backBuffer->GetDataPointer(), color, bufBytes);
 	}
+
+	void Renderer::AddRenderable(const VertexBuffer& vb, const IndexBuffer& ib)
+	{
+		m_VB = vb;
+		m_IB = ib;
+	}
+
 }

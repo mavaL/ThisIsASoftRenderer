@@ -25,7 +25,7 @@ namespace SR
 		virtual ~Rasterizer() {}
 
 	public:
-		virtual void	RasterizeTriangleList(const TriangleList& triList) = 0;
+		virtual void	RasterizeTriangleList(const SRenderList& renderList) = 0;
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@ namespace SR
 	class RasWireFrame : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const TriangleList& triList);
+		virtual void	RasterizeTriangleList(const SRenderList& renderList);
 	};
 }
 

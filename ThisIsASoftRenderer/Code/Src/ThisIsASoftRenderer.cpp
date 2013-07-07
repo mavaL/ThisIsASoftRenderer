@@ -4,18 +4,26 @@
 #include "stdafx.h"
 #include "../../Resource.h"
 #include "Renderer.h"
+#include "OgreMeshLoader.h"
 
 #define MAX_LOADSTRING 100
-const int SCREEN_WIDTH	=	800;
-const int SCREEN_HEIGHT	=	600;
+const int		SCREEN_WIDTH	=	800;
+const int		SCREEN_HEIGHT	=	600;
+
+inline STRING	GetResPath(const STRING filename)
+{
+	STRING filepath("../../../Res/");
+	filepath += filename;
+	return std::move(filepath);
+}
 
 // 全局变量:
 HINSTANCE hInst;								// 当前实例
 TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
 
-SR::Renderer	g_renderer;						// 软渲染器
-SR::Camera		g_camera;						// 相机
+SR::Renderer		g_renderer;					// 软渲染器
+Ext::OgreMeshLoader	g_meshLoader;				// mesh加载器
 
 // 此代码模块中包含的函数的前向声明:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -124,8 +132,24 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+   /////////////////////////////////////////////////////////
+   /////////////// Init here
    g_renderer.m_hwnd = hWnd;
    g_renderer.SetRasterizeType(SR::eRasterizeType_FlatWire);
+
+   try
+   {
+	   g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"));
+   }
+   catch (std::exception& e)
+   {
+   		MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
+   }
+
+   //解析好的图元放入renderer
+   g_renderer.AddRenderable(g_meshLoader.m_VB, g_meshLoader.m_IB);
+
+   g_renderer.m_camera.SetPosition(VEC3(0,0,5));
 
    ShowWindow(hWnd, SW_SHOWNORMAL);
    UpdateWindow(hWnd);

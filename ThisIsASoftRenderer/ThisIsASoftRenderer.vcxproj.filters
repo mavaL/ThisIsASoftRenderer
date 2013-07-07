@@ -12,6 +12,9 @@
     <Filter Include="Src">
       <UniqueIdentifier>{1c316bf6-57f0-49cb-9c2b-6a3652880049}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\tinyxml">
+      <UniqueIdentifier>{ecc28c9c-8bd9-495b-9ac5-3c50fd5a119a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="small.ico">
@@ -54,6 +57,15 @@
     <ClInclude Include="Code\Include\GeometryDef.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Include\OgreMeshLoader.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\tinyxml\tinystr.h">
+      <Filter>Src\tinyxml</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\tinyxml\tinyxml.h">
+      <Filter>Src\tinyxml</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Renderer.cpp">
@@ -79,6 +91,21 @@
     </ClCompile>
     <ClCompile Include="Code\Src\RenderUtil.cpp">
       <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\OgreMeshLoader.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinystr.cpp">
+      <Filter>Src\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinyxml.cpp">
+      <Filter>Src\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinyxmlerror.cpp">
+      <Filter>Src\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinyxmlparser.cpp">
+      <Filter>Src\tinyxml</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
