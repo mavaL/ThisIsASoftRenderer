@@ -65,6 +65,30 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg);
 
 			g_renderer.RenderOneFrame();
+
+			//显示一些辅助信息
+			{
+				const VEC4& pos = g_renderer.m_camera.GetPos();
+				char szText[256];
+				sprintf_s(szText, ARRAYSIZE(szText), "CamPos : (%f, %f, %f)", pos.x, pos.y, pos.z);
+
+				auto& renderList = g_renderer.GetRenderList();
+				size_t nCulled = std::count_if(renderList.begin(), renderList.end(), [&](const SR::SRenderObj& obj){ return obj.m_bCull; });
+				char szText2[128];
+				sprintf_s(szText2, ARRAYSIZE(szText2), "      Culled Object : %d.", nCulled);
+				strcat_s(szText, sizeof(szText), szText2);
+
+				SR::RenderUtil::DrawText(10, 5, szText, RGB(0,255,0));
+			}
+
+			{
+				const float speed = g_renderer.m_camera.GetMoveSpeed();
+				char szText[256];
+				sprintf_s(szText, ARRAYSIZE(szText), 
+					"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed.", speed);
+
+				SR::RenderUtil::DrawText(10, 25, szText, RGB(0,255,0));
+			}
 		}
 	}
 
@@ -147,10 +171,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
 
    //解析好的图元放入renderer
-   g_renderer.AddRenderable(g_meshLoader.m_VB, g_meshLoader.m_IB);
+   g_renderer.AddRenderable(g_meshLoader.m_obj);
 
-   g_renderer.m_camera.SetPosition(VEC3(0,0,5));
+   g_renderer.m_camera.SetPosition(VEC3(0,0,10));
 
+   RECT rcClient;
+   GetClientRect(hWnd, &rcClient);
+   int w = rcClient.right - rcClient.left;
+   int h = rcClient.bottom - rcClient.top;
+   SetCursorPos(rcClient.left+w/2, rcClient.top+h/2);
    ShowWindow(hWnd, SW_SHOWNORMAL);
    UpdateWindow(hWnd);
 
@@ -167,6 +196,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY	- 发送退出消息并返回
 //
 //
+#include <WinUser.h>
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -198,6 +228,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_ERASEBKGND:
 		return 0;
+
+	case WM_KEYDOWN:
+		{
+			if(wParam == VK_ADD)
+			{
+				g_renderer.m_camera.AddMoveSpeed(1.0f);
+				return 0;
+			}
+			else if(wParam == VK_SUBTRACT)
+			{
+				g_renderer.m_camera.AddMoveSpeed(-0.2f);
+				return 0;
+			}
+		}
+		break;
 
 	case WM_DESTROY:
 		PostQuitMessage(0);

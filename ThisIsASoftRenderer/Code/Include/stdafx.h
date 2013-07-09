@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 
 //tinyxml
 #include <tinyxml/tinystr.h>

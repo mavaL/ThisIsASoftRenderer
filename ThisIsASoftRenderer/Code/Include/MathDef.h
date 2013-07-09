@@ -38,10 +38,14 @@ namespace Common
 		{
 			float mod = std::sqrt(x * x + y * y + z * z);
 			float invMode = 1 / mod;
-			x *= mod;
-			y *= mod;
-			z *= mod;
+			x *= invMode;
+			y *= invMode;
+			z *= invMode;
 		}
+		//求负
+		inline void	Neg() { x = -x; y = -y; z = -z; }
+
+		float x, y, z;
 
 		static SVector3		ZERO;
 		static SVector3		UNIT_X;
@@ -50,8 +54,6 @@ namespace Common
 		static SVector3		NEG_UNIT_X;
 		static SVector3		NEG_UNIT_Y;
 		static SVector3		NEG_UNIT_Z;
-
-		float x, y, z;
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -67,6 +69,8 @@ namespace Common
 		inline void	Neg() { x = -x; y = -y; z = -z; w = -w; }
 
 		float x, y, z, w;
+
+		static SVector4		ZERO;
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -86,6 +90,8 @@ namespace Common
 		void		SetRow(int row, const SVector4 vec);
 		//单位矩阵化
 		void		MakeIdentity();
+		//零矩阵化
+		void		MakeZero();
 		//求逆
 		void		Inverse()	{ /*TODO..*/ assert(0); }
 		//转置
@@ -94,6 +100,8 @@ namespace Common
 		void		ClearTranslation();
 		//设置平移部分
 		void		SetTranslation(const SVector4& t);
+		//获取平移部分
+		SVector4	GetTranslation() const;
 		//通过轴角对构建旋转矩阵,平移部分设为0
 		void		FromAxisAngle(const SVector3& axis, float angle);
 		//通过轴构建矩阵
@@ -128,6 +136,10 @@ namespace Common
 	/////////////////////////////////////////////////////////////
 	//////// 4d向量相加
 	SVector4	Add_Vec4_By_Vec4(const SVector4& v1, const SVector4& v2);
+
+	/////////////////////////////////////////////////////////////
+	//////// 4d向量乘以常数
+	SVector4	Multiply_Vec4_By_K(const SVector4& v, float k);
 
 	/////////////////////////////////////////////////////////////
 	//////// 4d向量相减

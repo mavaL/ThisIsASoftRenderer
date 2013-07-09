@@ -13,6 +13,8 @@
 
 namespace SR
 {
+	struct SRenderObj;
+
 	class Camera
 	{
 	public:
@@ -23,12 +25,23 @@ namespace SR
 
 		void	SetPosition(const VEC3& pos);
 		void	SetDirection(const VEC3& dir);
-		const VEC4 GetDirection() const;
-		const VEC4 GetRight() const;
+		void	Yaw(float angle);
+		void	AddMoveSpeed(float delta);
+		float	GetMoveSpeed()	{ return m_moveSpeed; }
+
+		const VEC4&		GetPos() const		{ return m_viewPt;	}
+		VEC4			GetDirection() const;
+		VEC4			GetRight() const;
+		float			GetNearClip() const	{ return m_nearClip; }
+		float			GetFarClip() const	{ return m_farClip; }
+		float			GetFov() const		{ return m_fov; }
+		float			GetAspectRatio() const	{ return m_aspectRatio; }
 
 		const MAT44&	GetViewMatrix() const	{ return m_matView; }
 		const MAT44&	GetProjMatrix() const	{ return m_matProj; }
-		const VEC4&		GetViewPt() const		{ return m_viewPt;	}
+
+		//对物体进行视锥裁减测试.被剪裁返回true.
+		bool	ObjectFrustumCulling(const SRenderObj& obj);
 
 	private:
 		void	_BuildViewMatrix();
@@ -39,9 +52,11 @@ namespace SR
 
 		float	m_nearClip;
 		float	m_farClip;
-		float	m_fov;			//视野角(弧度值)
+		float	m_fov;			//xz面视野角(弧度值)
 		float	m_aspectRatio;
+
 		bool	m_fixYawAxis;	//固定yaw轴为y轴,一般漫游相机这样就够了.飞行模拟类型的不fix,因为需要roll.
+		float	m_moveSpeed;
 
 		MAT44	m_matView;
 		MAT44	m_matProj;

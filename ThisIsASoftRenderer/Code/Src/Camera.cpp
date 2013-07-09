@@ -7,8 +7,9 @@ namespace SR
 	Camera::Camera()
 	:m_viewPt(0, 0, 0, 1)
 	,m_nearClip(1)
-	,m_farClip(100)
+	,m_farClip(1000)
 	,m_fixYawAxis(true)
+	,m_moveSpeed(1.0f)
 	{
 		m_fov = Common::Angle_To_Radian(45);
 		m_aspectRatio = SCREEN_WIDTH / (float)SCREEN_HEIGHT;
@@ -25,36 +26,37 @@ namespace SR
 		long dy = curCursorPos.y - lastCursorPos.y;
 
 		float yawDelta = 0, pitchDelta = 0;
-		if(dx) yawDelta = (float)dx/5;
-		if(dy) pitchDelta = (float)dy/5;
+		if(dx) yawDelta = -dx/5.0f;
+		if(dy) pitchDelta = -dy/5.0f;
 
 		lastCursorPos = curCursorPos;
 
 		//相机旋转
-		if(dx || dy)
+		if(dx)
 		{
-			MAT44 rotY, rotX;
-			rotY.FromAxisAngle(VEC3::UNIT_Y, yawDelta);
+			Yaw(yawDelta);
+		}
+		if(dy)
+		{
+			MAT44 rotX;
 			rotX.FromAxisAngle(VEC3::UNIT_X, pitchDelta);
-			//yaw
-			if(m_fixYawAxis) m_matRot = Common::Multiply_Mat44_By_Mat44(rotY, m_matRot);
-			else			m_matRot = Common::Multiply_Mat44_By_Mat44(m_matRot, rotY);
 			//pitch
 			m_matRot = Common::Multiply_Mat44_By_Mat44(m_matRot, rotX);
 		}
 
 		//相机移动
-		VEC4 offset(0, 0, 0, 1);
-		const VEC4 forward = GetDirection();
-		const VEC4 right = GetRight();
-		
-		if(GetAsyncKeyState('W') < 0)		offset = Add_Vec4_By_Vec4(offset, forward);
-		else if(GetAsyncKeyState('S') < 0)	offset = Sub_Vec4_By_Vec4(offset, forward);
-		if(GetAsyncKeyState('A') < 0)		offset = Sub_Vec4_By_Vec4(offset, right);
-		else if(GetAsyncKeyState('D') < 0)	offset = Add_Vec4_By_Vec4(offset, right);
+		VEC4 forward = GetDirection();
+		VEC4 right = GetRight();
 
-		m_viewPt = Common::Add_Vec4_By_Vec4(m_viewPt, offset);
-		m_viewPt.w = 1.0f;
+		forward = Common::Multiply_Vec4_By_K(forward, m_moveSpeed);
+		right = Common::Multiply_Vec4_By_K(right, m_moveSpeed);
+		
+		if(GetAsyncKeyState('W') < 0)		m_viewPt = Add_Vec4_By_Vec4(m_viewPt, forward);
+		else if(GetAsyncKeyState('S') < 0)	m_viewPt = Sub_Vec4_By_Vec4(m_viewPt, forward);
+		if(GetAsyncKeyState('A') < 0)		m_viewPt = Sub_Vec4_By_Vec4(m_viewPt, right);
+		else if(GetAsyncKeyState('D') < 0)	m_viewPt = Add_Vec4_By_Vec4(m_viewPt, right);
+
+		m_viewPt.w = 1;
 
 		_BuildViewMatrix();
 		_BuildProjMatrix();
@@ -69,14 +71,16 @@ namespace SR
 	{
 		assert(m_fixYawAxis && "Error! Currently only support fix yaw axis mode..");
 		
-		VEC3 zAxis = dir;
+		VEC3 zAxis(dir);
+		//NB: 相机z轴默认是反的
+		zAxis.Neg();
 		zAxis.Normalize();
 
 		VEC3 xAxis, yAxis;
-		xAxis = Common::CrossProduct_Vec3_By_Vec3(zAxis, VEC3::UNIT_Y);
+		xAxis = Common::CrossProduct_Vec3_By_Vec3(VEC3::UNIT_Y, zAxis);
 		xAxis.Normalize();
 
-		yAxis = Common::CrossProduct_Vec3_By_Vec3(xAxis, zAxis);
+		yAxis = Common::CrossProduct_Vec3_By_Vec3(zAxis, xAxis);
 		yAxis.Normalize();
 
 		m_matRot.FromAxises(xAxis, yAxis, zAxis);
@@ -85,7 +89,10 @@ namespace SR
 	void Camera::_BuildViewMatrix()
 	{
 		m_matView = m_matRot.Transpose();
-		m_matView.SetTranslation(VEC4(-m_viewPt.x, -m_viewPt.y, -m_viewPt.z, m_viewPt.w));
+		
+		VEC4 trans;
+		trans = Common::Transform_Vec4_By_Mat44(m_viewPt, m_matView);
+ 		m_matView.SetTranslation(VEC4(-trans.x, -trans.y, -trans.z, 1));
 	}
 
 	void Camera::_BuildProjMatrix()
@@ -134,15 +141,60 @@ namespace SR
 		m_matProj.m33 = 0;
 	}
 
-	const VEC4 Camera::GetDirection() const
+	VEC4 Camera::GetDirection() const
 	{
 		//NB: 相机初始z轴是反的
 		return Common::Transform_Vec3_By_Mat44(VEC3::NEG_UNIT_Z, m_matRot, false);
 	}
 
-	const VEC4 Camera::GetRight() const	
+	VEC4 Camera::GetRight() const	
 	{
 		return Common::Transform_Vec3_By_Mat44(VEC3::UNIT_X, m_matRot, false);
+	}
+
+	bool Camera::ObjectFrustumCulling( const SRenderObj& obj )
+	{
+		//物体坐标转换到相机空间进行裁减
+		VEC4 pos = obj.matWorld.GetTranslation();
+		pos = Common::Transform_Vec4_By_Mat44(pos, GetViewMatrix());
+
+		float n = GetNearClip();
+		float f = GetFarClip();
+		float fov = GetFov();
+		float half_w = n * std::tan(fov/2);
+		float half_h = half_w / GetAspectRatio();
+
+		//检测前后面
+		if(pos.z >= -n || pos.z <= -f)
+			return true;
+
+		//检测左右面
+		float planeX = half_w * pos.z / -n;
+		if(pos.x - planeX >= obj.boundingRadius ||
+			pos.x + obj.boundingRadius <= -planeX)
+			return true;
+
+		//检测上下面
+		float planeY = half_h * pos.z / -n;
+		if(pos.y - planeY >= obj.boundingRadius ||
+			pos.y + obj.boundingRadius <= -planeY)
+			return true;
+
+		return false;
+	}
+
+	void Camera::Yaw( float angle )
+	{
+		MAT44 rot;
+		rot.FromAxisAngle(VEC3::UNIT_Y, angle);
+		if(m_fixYawAxis)	m_matRot = Common::Multiply_Mat44_By_Mat44(rot, m_matRot);
+		else				m_matRot = Common::Multiply_Mat44_By_Mat44(m_matRot, rot);
+	}
+
+	void Camera::AddMoveSpeed( float delta )
+	{
+		m_moveSpeed += delta;
+		m_moveSpeed = max(min(m_moveSpeed, 10), 0.1f);
 	}
 
 }

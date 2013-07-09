@@ -13,6 +13,26 @@ namespace SR
 
 		//创建后备缓冲
 		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, 2));
+
+		///test single triangle
+// 		SRenderObj obj;
+// 
+// 		SR::SVertex v1, v2, v3;
+// 		v1.pos = VEC4(-20, -15, 0, 1);
+// 		v2.pos = VEC4(20, -15, 0, 1);
+// 		v3.pos = VEC4(0, 15, 0, 1);
+// 
+// 		obj.VB.push_back(v1);
+// 		obj.VB.push_back(v2);
+// 		obj.VB.push_back(v3);
+// 
+// 		obj.IB.push_back(0);
+// 		obj.IB.push_back(1);
+// 		obj.IB.push_back(2);
+// 
+// 		obj.boundingRadius = RenderUtil::ComputeBoundingRadius(obj.VB);
+// 
+// 		AddRenderable(obj);
 	}
 
 	Renderer::~Renderer()
@@ -32,58 +52,70 @@ namespace SR
 
 	void Renderer::RenderOneFrame()
 	{
+		m_camera.Update();
+
 		/////////////////////////////////////////////////
 		///////// 刷新后备缓冲
 		_Clear();
 
-		//TODO:根据物体包围球在相机空间进行culling
-
 		//TODO:世界空间进行背面剔除
 		//		g_camera.GetViewPt();
 
-		//填充RenderList
-		m_renderList.verts.clear();
-		m_renderList.verts.assign(m_VB.begin(), m_VB.end());
-
-		m_renderList.indexes.clear();
-		m_renderList.indexes.assign(m_IB.begin(), m_IB.end());
-		
-
-		m_camera.Update();
-
-		//transform each vertex
-		for (size_t i=0; i<m_renderList.verts.size(); ++i)
+		//for each object
+		for (size_t iObj=0; iObj<m_renderList.size(); ++iObj)
 		{
-			VEC4& vertPos = m_renderList.verts[i].pos;
+			SRenderObj& obj = m_renderList[iObj];
+			obj.ResetState();
 
 			/////////////////////////////////////////////////
-			///////// 相机变换
-			auto matView = m_camera.GetViewMatrix();
-			vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matView);
+			///////// 视锥裁减
+			if(m_camera.ObjectFrustumCulling(obj))
+			{
+				obj.m_bCull = true;
+				continue;
+			}
+
+			//不能修改物体的本体数据
+			VertexBuffer workingVB;
+			IndexBuffer workingIB;
+
+			workingVB.assign(obj.VB.begin(), obj.VB.end());
+			workingIB.assign(obj.IB.begin(), obj.IB.end());
+
+			//transform each vertex
+			for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
+			{
+				VEC4& vertPos = workingVB[iVert].pos;
+
+				/////////////////////////////////////////////////
+				///////// 相机变换
+				auto matView = m_camera.GetViewMatrix();
+				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matView);
+
+				/////////////////////////////////////////////////
+				///////// 透视投影变换
+				auto matProj = m_camera.GetProjMatrix();
+				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matProj);
+
+				/////////////////////////////////////////////////
+				///////// 齐次除法
+				float inv_w = 1 / vertPos.w;
+				vertPos.x *= inv_w;
+				vertPos.y *= inv_w;
+
+				/////////////////////////////////////////////////
+				///////// 视口映射 [-1,1] -> [0, Viewport W/H]
+				float a = 0.5f * SCREEN_WIDTH;
+				float b = 0.5f *SCREEN_HEIGHT;
+
+				vertPos.x = a + a * vertPos.x;
+				vertPos.y = b - b * vertPos.y;
+			}
 
 			/////////////////////////////////////////////////
-			///////// 透视投影变换
-			auto matProj = m_camera.GetProjMatrix();
-			vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matProj);
-
-			/////////////////////////////////////////////////
-			///////// 齐次除法
-			float inv_w = 1 / vertPos.w;
-			vertPos.x *= inv_w;
-			vertPos.y *= inv_w;
-
-			/////////////////////////////////////////////////
-			///////// 视口映射 [-1,1] -> [0, Viewport W/H]
-			float a = 0.5f * SCREEN_WIDTH;
-			float b = 0.5f *SCREEN_HEIGHT;
-
-			vertPos.x = a + a * vertPos.x;
-			vertPos.y = b - b * vertPos.y;
+			///////// 光栅化物体
+			m_curRas->RasterizeTriangleList(workingVB, workingIB);
 		}
-
-		/////////////////////////////////////////////////
-		///////// 光栅化
-		m_curRas->RasterizeTriangleList(m_renderList);
 
 		/////////////////////////////////////////////////
 		///////// 最后进行swap
@@ -126,10 +158,9 @@ namespace SR
 		memset(m_backBuffer->GetDataPointer(), color, bufBytes);
 	}
 
-	void Renderer::AddRenderable(const VertexBuffer& vb, const IndexBuffer& ib)
+	void Renderer::AddRenderable(const SRenderObj& obj)
 	{
-		m_VB = vb;
-		m_IB = ib;
+		m_renderList.push_back(obj);
 	}
 
 }

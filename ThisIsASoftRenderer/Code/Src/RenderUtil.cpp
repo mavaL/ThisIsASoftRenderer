@@ -460,8 +460,28 @@ namespace SR
 		return(1);
 	}
 
-	void RenderUtil::DrawText( int x, int y, const STRING& text )
+	void RenderUtil::DrawText( int x, int y, const STRING& text, const COLORREF color )
 	{
-		//TODO..
+		//TODO.. Êä³öÉãÏñ»ú×ø±ê
+		HDC dc = GetDC(g_renderer.m_hwnd);
+		SetBkMode(dc, TRANSPARENT);
+		SetTextColor(dc, color);
+		TextOut(dc, x, y, text.c_str(), text.length());
+		ReleaseDC(g_renderer.m_hwnd, dc);
+	}
+
+	float RenderUtil::ComputeBoundingRadius( const VertexBuffer& verts )
+	{
+		float maxSqRadius = 0;
+
+		for (size_t i=0; i<verts.size(); ++i)
+		{
+			const VEC4& pos = verts[i].pos;
+			float SqRadius = pos.x * pos.x + pos.y * pos.y + pos.z * pos.z;
+			if(SqRadius > maxSqRadius)
+				maxSqRadius = SqRadius;
+		}
+
+		return std::sqrt(maxSqRadius);
 	}
 }

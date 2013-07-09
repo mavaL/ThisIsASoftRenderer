@@ -10,6 +10,7 @@ namespace Common
 	Common::SVector3 SVector3::NEG_UNIT_X	=	SVector3(-1, 0, 0);
 	Common::SVector3 SVector3::NEG_UNIT_Y	=	SVector3(0, -1, 0);
 	Common::SVector3 SVector3::NEG_UNIT_Z	=	SVector3(0, 0, -1);
+	Common::SVector4 SVector4::ZERO			=	SVector4(0, 0, 0, 0);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	SVector4 Transform_Vec3_By_Mat44( const SVector3& pt, const SMatrix44& mat, bool bPosOrDir )
@@ -54,6 +55,8 @@ namespace Common
 
 	void SMatrix44::FromAxisAngle( const SVector3& axis, float angle )
 	{
+		MakeZero();
+
 		//from ogre
 		float radian = Angle_To_Radian(angle);
 		float fCos = std::cos(radian);
@@ -78,9 +81,6 @@ namespace Common
 		m_arr[2][0] = fXZM-fYSin;
 		m_arr[2][1] = fYZM+fXSin;
 		m_arr[2][2] = fZ2*fOneMinusCos+fCos;
-		m_arr[0][3] = 0;
-		m_arr[1][3] = 0;
-		m_arr[2][3] = 0;
 
 		ClearTranslation();
 	}
@@ -108,30 +108,40 @@ namespace Common
 		m_arr[row][3] = vec.w;		
 	}
 
+	Common::SVector4 SMatrix44::GetTranslation() const
+	{
+		return std::move(VEC4(m03, m13, m23, m33));
+	}
+
+	void SMatrix44::MakeZero()
+	{
+		memset(m_arr, 0, sizeof(m_arr));
+	}
+
 	Common::SMatrix44 Multiply_Mat44_By_Mat44( const SMatrix44& mat1, const SMatrix44& mat2 )
 	{
 		SMatrix44 ret;
 
 		//TODO: SSE
 		ret.m00 = mat1.m00 * mat2.m00 + mat1.m01 * mat2.m10 + mat1.m02 * mat2.m20 + mat1.m03 * mat2.m30;
-		ret.m01 = mat1.m00 * mat2.m10 + mat1.m01 * mat2.m11 + mat1.m02 * mat2.m21 + mat1.m03 * mat2.m31;
-		ret.m02 = mat1.m00 * mat2.m20 + mat1.m01 * mat2.m12 + mat1.m02 * mat2.m22 + mat1.m03 * mat2.m32;
-		ret.m03 = mat1.m00 * mat2.m30 + mat1.m01 * mat2.m13 + mat1.m02 * mat2.m23 + mat1.m03 * mat2.m33;
+		ret.m01 = mat1.m00 * mat2.m01 + mat1.m01 * mat2.m11 + mat1.m02 * mat2.m21 + mat1.m03 * mat2.m31;
+		ret.m02 = mat1.m00 * mat2.m02 + mat1.m01 * mat2.m12 + mat1.m02 * mat2.m22 + mat1.m03 * mat2.m32;
+		ret.m03 = mat1.m00 * mat2.m03 + mat1.m01 * mat2.m13 + mat1.m02 * mat2.m23 + mat1.m03 * mat2.m33;
 
 		ret.m10 = mat1.m10 * mat2.m00 + mat1.m11 * mat2.m10 + mat1.m12 * mat2.m20 + mat1.m13 * mat2.m30;
-		ret.m11 = mat1.m10 * mat2.m10 + mat1.m11 * mat2.m11 + mat1.m12 * mat2.m21 + mat1.m13 * mat2.m31;
-		ret.m12 = mat1.m10 * mat2.m20 + mat1.m11 * mat2.m12 + mat1.m12 * mat2.m22 + mat1.m13 * mat2.m32;
-		ret.m13 = mat1.m10 * mat2.m30 + mat1.m11 * mat2.m13 + mat1.m12 * mat2.m23 + mat1.m13 * mat2.m33;
+		ret.m11 = mat1.m10 * mat2.m01 + mat1.m11 * mat2.m11 + mat1.m12 * mat2.m21 + mat1.m13 * mat2.m31;
+		ret.m12 = mat1.m10 * mat2.m02 + mat1.m11 * mat2.m12 + mat1.m12 * mat2.m22 + mat1.m13 * mat2.m32;
+		ret.m13 = mat1.m10 * mat2.m03 + mat1.m11 * mat2.m13 + mat1.m12 * mat2.m23 + mat1.m13 * mat2.m33;
 
 		ret.m20 = mat1.m20 * mat2.m00 + mat1.m21 * mat2.m10 + mat1.m22 * mat2.m20 + mat1.m23 * mat2.m30;
-		ret.m21 = mat1.m20 * mat2.m10 + mat1.m21 * mat2.m11 + mat1.m22 * mat2.m21 + mat1.m23 * mat2.m31;
-		ret.m22 = mat1.m20 * mat2.m20 + mat1.m21 * mat2.m12 + mat1.m22 * mat2.m22 + mat1.m23 * mat2.m32;
-		ret.m23 = mat1.m20 * mat2.m30 + mat1.m21 * mat2.m13 + mat1.m22 * mat2.m23 + mat1.m23 * mat2.m33;
+		ret.m21 = mat1.m20 * mat2.m01 + mat1.m21 * mat2.m11 + mat1.m22 * mat2.m21 + mat1.m23 * mat2.m31;
+		ret.m22 = mat1.m20 * mat2.m02 + mat1.m21 * mat2.m12 + mat1.m22 * mat2.m22 + mat1.m23 * mat2.m32;
+		ret.m23 = mat1.m20 * mat2.m03 + mat1.m21 * mat2.m13 + mat1.m22 * mat2.m23 + mat1.m23 * mat2.m33;
 
 		ret.m30 = mat1.m30 * mat2.m00 + mat1.m31 * mat2.m10 + mat1.m32 * mat2.m20 + mat1.m33 * mat2.m30;
-		ret.m31 = mat1.m30 * mat2.m10 + mat1.m31 * mat2.m11 + mat1.m32 * mat2.m21 + mat1.m33 * mat2.m31;
-		ret.m32 = mat1.m30 * mat2.m20 + mat1.m31 * mat2.m12 + mat1.m32 * mat2.m22 + mat1.m33 * mat2.m32;
-		ret.m33 = mat1.m30 * mat2.m30 + mat1.m31 * mat2.m13 + mat1.m32 * mat2.m23 + mat1.m33 * mat2.m33;
+		ret.m31 = mat1.m30 * mat2.m01 + mat1.m31 * mat2.m11 + mat1.m32 * mat2.m21 + mat1.m33 * mat2.m31;
+		ret.m32 = mat1.m30 * mat2.m02 + mat1.m31 * mat2.m12 + mat1.m32 * mat2.m22 + mat1.m33 * mat2.m32;
+		ret.m33 = mat1.m30 * mat2.m03 + mat1.m31 * mat2.m13 + mat1.m32 * mat2.m23 + mat1.m33 * mat2.m33;
 
 		return std::move(ret);
 	}
@@ -156,6 +166,11 @@ namespace Common
 		ret.z = v1.x * v2.y - v1.y * v2.x;
 
 		return std::move(ret);
+	}
+
+	Common::SVector4 Multiply_Vec4_By_K( const SVector4& v, float k )
+	{
+		return std::move(SVector4(v.x * k, v.y * k, v.z * k, v.w * k));
 	}
 
 }

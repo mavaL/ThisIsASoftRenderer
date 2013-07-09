@@ -18,6 +18,7 @@ namespace SR
 	typedef WORD	Index;
 #endif
 
+	///////////////////////////////////////////////////
 	struct SVertex 
 	{
 		Common::SVector4	pos;
@@ -25,6 +26,7 @@ namespace SR
 	typedef std::vector<SVertex>	VertexBuffer;
 	typedef std::vector<Index>		IndexBuffer;
 
+	///////////////////////////////////////////////////
 	struct SFace
 	{
 		SFace():index1(-1),index2(-1),index3(-1) {}
@@ -33,11 +35,20 @@ namespace SR
 		Index	index1, index2, index3;
 	};
 
-	struct SRenderList 
+	///////////////////////////////////////////////////
+	struct SRenderObj 
 	{
-		VertexBuffer	verts;
-		IndexBuffer		indexes;
+		SRenderObj():boundingRadius(0),m_bCull(false) {}
+
+		void ResetState()	{ m_bCull = false; }
+
+		VertexBuffer	VB;
+		IndexBuffer		IB;
+		MAT44			matWorld;
+		float			boundingRadius;
+		bool			m_bCull;
 	};
+	typedef std::vector<SRenderObj>		RenderList;
 }
 
 

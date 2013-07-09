@@ -17,8 +17,7 @@ namespace Ext
 	public:
 		bool	LoadMeshFile(const STRING& filename);
 
-		SR::VertexBuffer	m_VB;
-		SR::IndexBuffer		m_IB;
+		SR::SRenderObj	m_obj;
 	};
 }
 

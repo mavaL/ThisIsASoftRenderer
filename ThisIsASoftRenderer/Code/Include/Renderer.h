@@ -39,7 +39,8 @@ namespace SR
 		//渲染管线
 		void	RenderOneFrame();
 		//插入渲染图元
-		void	AddRenderable(const VertexBuffer& vb, const IndexBuffer& ib);
+		void	AddRenderable(const SRenderObj& obj);
+		const RenderList&	GetRenderList() const { return m_renderList; }
 
 	private:
 		void	_Clear();
@@ -50,9 +51,7 @@ namespace SR
 		std::unique_ptr<Common::PixelBox>	m_backBuffer;
 		std::unordered_map<eRasterizeType, Rasterizer*>	m_rasLib;		//所有可用光栅化器
 		Rasterizer*							m_curRas;					//当前使用光栅化器
-		SRenderList							m_renderList;				//渲染列表
-		VertexBuffer						m_VB;
-		IndexBuffer							m_IB;
+		RenderList							m_renderList;				//渲染列表
 	};
 
 	class RenderUtil
@@ -65,7 +64,9 @@ namespace SR
 		///////	最简单的DDA画线算法
 		static void	DrawLine_DDA(int x0, int y0, int x1, int y1, int color, bool bClip);
 		/////// GDI绘制字体
-		void	DrawText(int x, int y, const STRING& text);
+		static void	DrawText(int x, int y, const STRING& text, const COLORREF color);
+		/////// 根据物体顶点计算包围球球径. NB:注意尽量保持物体中心与原点接近,否则误差较大.
+		static float	ComputeBoundingRadius(const VertexBuffer& verts);
 	};
 }
 

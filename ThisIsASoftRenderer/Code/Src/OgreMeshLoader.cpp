@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "OgreMeshLoader.h"
+#include "Renderer.h"
 
 namespace Ext
 {
@@ -12,8 +13,8 @@ namespace Ext
 			return false;
 		}
 
-		m_VB.clear();
-		m_IB.clear();
+		m_obj.VB.clear();
+		m_obj.IB.clear();
 
 		TiXmlElement* submeshNode = doc.FirstChildElement("mesh")->FirstChildElement("submeshes")->FirstChildElement("submesh");
 
@@ -23,7 +24,7 @@ namespace Ext
 			int nFace = 0;
 			facesNode->Attribute("count", &nFace);
 
-			m_IB.resize(nFace * 3);
+			m_obj.IB.resize(nFace * 3);
 
 			int curPos = 0;
 			TiXmlElement* faceNode = facesNode->FirstChildElement("face");
@@ -34,9 +35,9 @@ namespace Ext
 				faceNode->Attribute("v2", &v2);
 				faceNode->Attribute("v3", &v3);
 
-				m_IB[curPos++] = v1;
-				m_IB[curPos++] = v2;
-				m_IB[curPos++] = v3;
+				m_obj.IB[curPos++] = v1;
+				m_obj.IB[curPos++] = v2;
+				m_obj.IB[curPos++] = v3;
 
 				faceNode = faceNode->NextSiblingElement("face");
 			}
@@ -48,7 +49,7 @@ namespace Ext
 			int nVert = 0;
 			geometryNode->Attribute("vertexcount", &nVert);
 
-			m_VB.resize(nVert);
+			m_obj.VB.resize(nVert);
 
 			TiXmlElement* vbNode = geometryNode->FirstChildElement("vertexbuffer");
 			if(vbNode->Attribute("positions") != STRING("true"))
@@ -70,11 +71,14 @@ namespace Ext
 
 				SR::SVertex vert;
 				vert.pos = VEC4(x, y, z, 1);
-				m_VB[curPos++] = std::move(vert);
+				m_obj.VB[curPos++] = std::move(vert);
 
 				vertNode = vertNode->NextSiblingElement("vertex");
 			}
 		}
+
+		//¼ÆËã°üÎ§Çò
+		m_obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(m_obj.VB);
 
 		return true;
 	}
