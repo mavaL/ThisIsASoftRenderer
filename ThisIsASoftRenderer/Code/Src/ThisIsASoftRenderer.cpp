@@ -5,6 +5,7 @@
 #include "../../Resource.h"
 #include "Renderer.h"
 #include "OgreMeshLoader.h"
+#include "Utility.h"
 
 #define MAX_LOADSTRING 100
 const int		SCREEN_WIDTH	=	800;
@@ -74,8 +75,19 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 				auto& renderList = g_renderer.GetRenderList();
 				size_t nCulled = std::count_if(renderList.begin(), renderList.end(), [&](const SR::SRenderObj& obj){ return obj.m_bCull; });
+
+				size_t nBackface = 0;
+				for (size_t iObj=0; iObj<renderList.size(); ++iObj)
+				{
+					const SR::FaceList& faces = renderList[iObj].faces;
+					for (size_t iFace=0; iFace<faces.size(); ++iFace)
+					{
+						if(faces[iFace].IsBackface) ++nBackface;
+					}
+				}
+
 				char szText2[128];
-				sprintf_s(szText2, ARRAYSIZE(szText2), "      Culled Object : %d.", nCulled);
+				sprintf_s(szText2, ARRAYSIZE(szText2), "      Culled Object : %d, Culled Backface : %d", nCulled, nBackface);
 				strcat_s(szText, sizeof(szText), szText2);
 
 				SR::RenderUtil::DrawText(10, 5, szText, RGB(0,255,0));
@@ -159,7 +171,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    /////////////////////////////////////////////////////////
    /////////////// Init here
    g_renderer.m_hwnd = hWnd;
-   g_renderer.SetRasterizeType(SR::eRasterizeType_FlatWire);
+   g_renderer.SetRasterizeType(SR::eRasterizeType_Flat);
 
    try
    {
@@ -173,8 +185,35 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //解析好的图元放入renderer
    g_renderer.AddRenderable(g_meshLoader.m_obj);
 
+   {
+	   ///test single triangle
+	   SR::SRenderObj obj;
+
+	   SR::SVertex v1, v2, v3;
+	   v1.pos = VEC4(-20, -15, 0, 1);
+	   v2.pos = VEC4(20, -15, 0, 1);
+	   v3.pos = VEC4(0, 15, 0, 1);
+
+	   v1.normal = VEC3::UNIT_Z;
+	   v2.normal = VEC3::UNIT_Z;
+	   v3.normal = VEC3::UNIT_Z;
+
+	   obj.VB.push_back(v1);
+	   obj.VB.push_back(v2);
+	   obj.VB.push_back(v3);
+
+	   SR::SFace face(0,1,2);
+	   face.faceNormal = VEC3::UNIT_Z;
+	   obj.faces.push_back(face);
+
+	   obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(obj.VB);
+
+	   //g_renderer.AddRenderable(obj);
+   }
+
    g_renderer.m_camera.SetPosition(VEC3(0,0,10));
 
+   //居中鼠标
    RECT rcClient;
    GetClientRect(hWnd, &rcClient);
    int w = rcClient.right - rcClient.left;

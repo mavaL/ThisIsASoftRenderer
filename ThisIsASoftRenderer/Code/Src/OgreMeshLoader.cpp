@@ -14,7 +14,7 @@ namespace Ext
 		}
 
 		m_obj.VB.clear();
-		m_obj.IB.clear();
+		m_obj.faces.clear();
 
 		TiXmlElement* submeshNode = doc.FirstChildElement("mesh")->FirstChildElement("submeshes")->FirstChildElement("submesh");
 
@@ -24,9 +24,9 @@ namespace Ext
 			int nFace = 0;
 			facesNode->Attribute("count", &nFace);
 
-			m_obj.IB.resize(nFace * 3);
+			m_obj.faces.resize(nFace);
 
-			int curPos = 0;
+			int idx = 0;
 			TiXmlElement* faceNode = facesNode->FirstChildElement("face");
 			while (faceNode)
 			{
@@ -35,9 +35,8 @@ namespace Ext
 				faceNode->Attribute("v2", &v2);
 				faceNode->Attribute("v3", &v3);
 
-				m_obj.IB[curPos++] = v1;
-				m_obj.IB[curPos++] = v2;
-				m_obj.IB[curPos++] = v3;
+				SR::SFace face(v1, v2, v3);
+				m_obj.faces[idx++] = std::move(face);
 
 				faceNode = faceNode->NextSiblingElement("face");
 			}
@@ -52,26 +51,41 @@ namespace Ext
 			m_obj.VB.resize(nVert);
 
 			TiXmlElement* vbNode = geometryNode->FirstChildElement("vertexbuffer");
+			//check what we have..
 			if(vbNode->Attribute("positions") != STRING("true"))
 			{
 				throw std::logic_error("Error, the .mesh file doesn't even have vertex position info!");
 				return false;
 			}
+			if(vbNode->Attribute("normals") != STRING("true"))
+			{
+				throw std::logic_error("Error, the .mesh file doesn't even have vertex normal info!");
+				return false;
+			}
 
-			int curPos = 0;
+			int idx = 0;
 			TiXmlElement* vertNode = vbNode->FirstChildElement("vertex");
 			while (vertNode)
 			{
+				//position
 				TiXmlElement* posNode = vertNode->FirstChildElement("position");
-
 				double x, y, z;
 				posNode->Attribute("x", &x);
 				posNode->Attribute("y", &y);
 				posNode->Attribute("z", &z);
 
+				//normal
+				TiXmlElement* normalNode = vertNode->FirstChildElement("normal");
+				double nx, ny, nz;
+				normalNode->Attribute("x", &nx);
+				normalNode->Attribute("y", &ny);
+				normalNode->Attribute("z", &nz);
+
 				SR::SVertex vert;
-				vert.pos = VEC4(x, y, z, 1);
-				m_obj.VB[curPos++] = std::move(vert);
+				vert.pos = std::move(VEC4(x, y, z, 1));
+				vert.normal = std::move(VEC3(nx, ny, nz));
+				vert.normal.Normalize();
+				m_obj.VB[idx++] = std::move(vert);
 
 				vertNode = vertNode->NextSiblingElement("vertex");
 			}
@@ -79,6 +93,24 @@ namespace Ext
 
 		//计算包围球
 		m_obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(m_obj.VB);
+
+		//计算面法线
+		for (size_t i=0; i<m_obj.faces.size(); ++i)
+		{
+			//fetch vertexs
+			const SR::Index idx1 = m_obj.faces[i].index1;
+			const SR::Index idx2 = m_obj.faces[i].index2;
+			const SR::Index idx3 = m_obj.faces[i].index3;
+
+			const VEC3& n1 = m_obj.VB[idx1].normal;
+			const VEC3& n2 = m_obj.VB[idx2].normal;
+			const VEC3& n3 = m_obj.VB[idx3].normal;
+
+			//average
+			VEC3 sum = Common::Add_Vec3_By_Vec3(Common::Add_Vec3_By_Vec3(n1, n2), n3);
+			m_obj.faces[i].faceNormal = Common::Multiply_Vec3_By_K(sum, 0.33333f);
+			m_obj.faces[i].faceNormal.Normalize();
+		}
 
 		return true;
 	}

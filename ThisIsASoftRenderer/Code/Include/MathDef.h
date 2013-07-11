@@ -10,6 +10,8 @@
 #ifndef MathDef_h__
 #define MathDef_h__
 
+#include "Utility.h"
+
 const float		PI			=	3.14159f;
 const float		HALF_PI		=	1.57079f;
 const float		TWO_PI		=	6.28318f;
@@ -146,8 +148,20 @@ namespace Common
 	SVector4	Sub_Vec4_By_Vec4(const SVector4& v1, const SVector4& v2);
 
 	/////////////////////////////////////////////////////////////
+	//////// 3d向量相加
+	SVector3	Add_Vec3_By_Vec3(const SVector3& v1, const SVector3& v2);
+
+	/////////////////////////////////////////////////////////////
+	//////// 3d向量点乘
+	float		DotProduct_Vec3_By_Vec3(const SVector3& v1, const SVector3& v2);
+
+	/////////////////////////////////////////////////////////////
 	//////// 3d向量叉乘
 	SVector3	CrossProduct_Vec3_By_Vec3(const SVector3& v1, const SVector3& v2);
+
+	/////////////////////////////////////////////////////////////
+	//////// 3d向量乘以常数
+	SVector3	Multiply_Vec3_By_K(const SVector3& v, float k);
 
 	/////////////////////////////////////////////////////////////
 	//////// 角度转弧度

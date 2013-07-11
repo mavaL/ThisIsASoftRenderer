@@ -2,6 +2,9 @@
 #include "Renderer.h"
 #include "PixelBox.h"
 
+//像素模式(字节数). NB:只支持32位模式,不要更改
+const int PIXEL_MODE	=	4;
+
 namespace SR
 {
 	Renderer::Renderer()
@@ -9,30 +12,15 @@ namespace SR
 		,m_curRas(nullptr)
 	{
 		//初始化所有光栅器
-		m_rasLib.insert(std::make_pair(eRasterizeType_FlatWire, new RasWireFrame));
+		m_rasLib.insert(std::make_pair(eRasterizeType_Wireframe, new RasWireFrame));
+		m_rasLib.insert(std::make_pair(eRasterizeType_Flat, new RasFlat));
 
 		//创建后备缓冲
-		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, 2));
+		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
 
-		///test single triangle
-// 		SRenderObj obj;
-// 
-// 		SR::SVertex v1, v2, v3;
-// 		v1.pos = VEC4(-20, -15, 0, 1);
-// 		v2.pos = VEC4(20, -15, 0, 1);
-// 		v3.pos = VEC4(0, 15, 0, 1);
-// 
-// 		obj.VB.push_back(v1);
-// 		obj.VB.push_back(v2);
-// 		obj.VB.push_back(v3);
-// 
-// 		obj.IB.push_back(0);
-// 		obj.IB.push_back(1);
-// 		obj.IB.push_back(2);
-// 
-// 		obj.boundingRadius = RenderUtil::ComputeBoundingRadius(obj.VB);
-// 
-// 		AddRenderable(obj);
+		m_testLight.dir = VEC3(1,-1,-1);
+		m_testLight.dir.Normalize();
+		m_testLight.color = 0xffffffff;
 	}
 
 	Renderer::~Renderer()
@@ -58,9 +46,6 @@ namespace SR
 		///////// 刷新后备缓冲
 		_Clear();
 
-		//TODO:世界空间进行背面剔除
-		//		g_camera.GetViewPt();
-
 		//for each object
 		for (size_t iObj=0; iObj<m_renderList.size(); ++iObj)
 		{
@@ -75,16 +60,16 @@ namespace SR
 				continue;
 			}
 
-			//不能修改物体的本体数据
-			VertexBuffer workingVB;
-			IndexBuffer workingIB;
-
-			workingVB.assign(obj.VB.begin(), obj.VB.end());
-			workingIB.assign(obj.IB.begin(), obj.IB.end());
+			/////////////////////////////////////////////////
+			///////// 世界空间进行背面剔除
+			VertexBuffer workingVB = _DoBackfaceCulling(obj);
 
 			//transform each vertex
 			for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
 			{
+				if(!workingVB[iVert].bActive)
+					continue;
+
 				VEC4& vertPos = workingVB[iVert].pos;
 
 				/////////////////////////////////////////////////
@@ -102,6 +87,7 @@ namespace SR
 				float inv_w = 1 / vertPos.w;
 				vertPos.x *= inv_w;
 				vertPos.y *= inv_w;
+				vertPos.z *= inv_w;
 
 				/////////////////////////////////////////////////
 				///////// 视口映射 [-1,1] -> [0, Viewport W/H]
@@ -112,9 +98,28 @@ namespace SR
 				vertPos.y = b - b * vertPos.y;
 			}
 
+			//test方向光,Flat shade基于面法线
+			VEC3 lightDir = m_testLight.dir;
+			lightDir.Neg();
+			for (size_t iFace=0; iFace<obj.faces.size(); ++iFace)
+			{
+				SFace& face = obj.faces[iFace];
+				//在世界空间进行光照
+				VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.matWorld, false).GetVec3();
+				float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
+				nl = max(nl, 0);
+				BYTE a = ((m_testLight.color >>  24) & 0xff) * nl;
+				BYTE r = ((m_testLight.color >>  16) & 0xff) * nl;
+				BYTE g = ((m_testLight.color >>  8) & 0xff) * nl;
+				BYTE b = ((m_testLight.color >>  0) & 0xff) * nl;
+
+				face.color = (a << 24) + (r << 16) + (g << 8) + b;
+			}
+			
+
 			/////////////////////////////////////////////////
 			///////// 光栅化物体
-			m_curRas->RasterizeTriangleList(workingVB, workingIB);
+			m_curRas->RasterizeTriangleList(workingVB, obj.faces);
 		}
 
 		/////////////////////////////////////////////////
@@ -161,6 +166,49 @@ namespace SR
 	void Renderer::AddRenderable(const SRenderObj& obj)
 	{
 		m_renderList.push_back(obj);
+	}
+
+	VertexBuffer Renderer::_DoBackfaceCulling( SRenderObj& obj )
+	{
+		VertexBuffer vb;
+		vb.assign(obj.VB.begin(), obj.VB.end());
+
+		const VEC4& camPos = m_camera.GetPos();
+
+		for (size_t i=0; i<obj.faces.size(); ++i)
+		{
+			SFace& face = obj.faces[i];
+			
+			//fetch vertexs
+			const SR::Index idx1 = face.index1;
+			const SR::Index idx2 = face.index2;
+			const SR::Index idx3 = face.index3;
+
+			const VEC4& pos1 = obj.VB[idx1].pos;
+			const VEC4& pos2 = obj.VB[idx2].pos;
+			const VEC4& pos3 = obj.VB[idx3].pos;
+
+			VEC4 faceToCam = Common::Add_Vec4_By_Vec4(Common::Add_Vec4_By_Vec4(pos1, pos2), pos3);
+			faceToCam = Common::Multiply_Vec4_By_K(faceToCam, 0.33333f);
+			faceToCam.w = 1;
+			faceToCam = Common::Transform_Vec4_By_Mat44(faceToCam, obj.matWorld);
+			faceToCam = Common::Sub_Vec4_By_Vec4(camPos, faceToCam);
+
+			VEC4 faceWorldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.matWorld, false);
+
+			if(Common::DotProduct_Vec3_By_Vec3(faceToCam.GetVec3(), faceWorldNormal.GetVec3()) <= 0.0f)
+			{
+				face.IsBackface = true;
+			}
+			else
+			{
+				vb[idx1].bActive = true;
+				vb[idx2].bActive = true;
+				vb[idx3].bActive = true;
+			}
+		}
+
+		return std::move(vb);
 	}
 
 }

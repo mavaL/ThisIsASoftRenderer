@@ -20,7 +20,6 @@ namespace SR
 
 		UCHAR* vb_start = (UCHAR*)g_renderer.m_backBuffer->GetDataPointer();
 		int bytesPerPixel = g_renderer.m_backBuffer->GetBytesPerPixel();
-		assert(bytesPerPixel == 2 && "Draw line only support 16 bit mode currently!");
 		int lpitch = g_renderer.m_backBuffer->GetWidth() * bytesPerPixel;
 
 		int dx,             // difference in x's
@@ -79,7 +78,7 @@ namespace SR
 			for (index=0; index <= dx; index++)
 			{
 				// set the pixel
-				*(WORD*)vb_start = color;
+				*(DWORD*)vb_start = color;
 
 				// test if error has overflowed
 				if (error >= 0) 
@@ -109,7 +108,7 @@ namespace SR
 			for (index=0; index <= dy; index++)
 			{
 				// set the pixel
-				*(WORD*)vb_start = color;
+				*(DWORD*)vb_start = color;
 
 				// test if error overflowed
 				if (error >= 0)
@@ -148,7 +147,6 @@ namespace SR
 
 		UCHAR* vb_start = (UCHAR*)g_renderer.m_backBuffer->GetDataPointer();
 		int bytesPerPixel = g_renderer.m_backBuffer->GetBytesPerPixel();
-		assert(bytesPerPixel == 2 && "Draw line only support 16 bit mode currently!");
 		int lpitch = g_renderer.m_backBuffer->GetWidth() * bytesPerPixel;
 
 		vb_start = vb_start + cxs*bytesPerPixel + cys*lpitch;
@@ -179,12 +177,12 @@ namespace SR
 		y_inc *= k;
 		float y=0;
 		int x=0;
-		*(WORD*)vb_start = color;
+		*(DWORD*)vb_start = color;
 		for (int index=1; index<dx; ++index)
 		{
 			y += y_inc;
 			x += (int)x_inc;
-			*(WORD*)(vb_start+(int)y*lpitch+x) = color;
+			*(DWORD*)(vb_start+(int)y*lpitch+x) = color;
 		}
 	}
 
@@ -483,5 +481,115 @@ namespace SR
 		}
 
 		return std::sqrt(maxSqRadius);
+	}
+
+	void RenderUtil::DrawTriangle_Scanline( int x0, int y0, int x1, int y1, int x2, int y2, int color )
+	{
+		/* 1.使3个顶点成为下面的布局:
+				p0		
+				|\		
+				| \		
+				|  \ p2 
+				|  /	
+				| /		
+				|/		
+				p1				*/
+		if(y0 > y1)
+		{
+			Ext::Swap(x0, x1);
+			Ext::Swap(y0, y1);
+		}
+		if(y0 > y2)
+		{
+			Ext::Swap(x0, x2);
+			Ext::Swap(y0, y2);
+		}
+		if(y2 > y1)
+		{
+			Ext::Swap(x2, x1);
+			Ext::Swap(y2, y1);
+		}
+
+		/* 2.若三角面是平底三角形
+					p0
+					/\
+				   /  \
+				  /____\
+				 p1		p2
+		*/
+		if(y1 == y2)
+		{
+			DrawBottomTri_Scanline(x0, y0, x1, y1, x2, y2, color);
+		}
+
+		/* 3.若三角面是平顶三角形
+				 p0______p2
+				   \    /
+					\  /
+					 \/
+					 p1
+		*/
+		else if(y0 == y2)
+		{
+			DrawTopTri_Scanline(x0, y0, x1, y1, x2, y2, color);
+		}
+
+		/* 4.否则是平凡三角形.需要切割成平底三角形和平顶三角形.
+					p0
+				    |\
+				    | \				x1 - x0	  x3 - x0
+				 p3 |__\ p2			------- = -------
+					|  /			y1 - y0	  y2 - y0
+					| /	
+					|/
+					p1			*/
+		else
+		{
+			int x3 = x0 + (y2-y0) * (x1-x0) / (y1-y0) + 0.5f; //四舍五入
+			DrawBottomTri_Scanline(x0, y0, x3, y2, x2, y2, color);
+			DrawTopTri_Scanline(x3, y2, x1, y1, x2, y2, color);
+		}
+	}
+
+	void RenderUtil::DrawBottomTri_Scanline( int x0, int y0, int x1, int y1, int x2, int y2, int color )
+	{
+		assert(y1 == y2);
+
+		float curLX = x0, curRX = x0, curY = y0;
+		float left_incX = ((float)x1-x0)/(y1-y0);
+		float right_incX = ((float)x2-x0)/(y2-y0);
+
+		while (curY <= y1)
+		{
+			int lineX0 = floor(curLX + 0.5f);
+			int lineX1 = floor(curRX + 0.5f);
+
+			RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+
+			++curY;
+			curLX += left_incX;
+			curRX += right_incX;
+		}
+	}
+
+	void RenderUtil::DrawTopTri_Scanline( int x0, int y0, int x1, int y1, int x2, int y2, int color )
+	{
+		assert(y0 == y2);
+
+		float curLX = x0, curRX = x2, curY = y0;
+		float left_incX = ((float)x1-x0)/(y1-y0);
+		float right_incX = ((float)x1-x2)/(y1-y2);
+
+		while (curY <= y1)
+		{
+			int lineX0 = floor(curLX + 0.5f);
+			int lineX1 = floor(curRX + 0.5f);
+
+			RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+
+			++curY;
+			curLX += left_incX;
+			curRX += right_incX;
+		}
 	}
 }

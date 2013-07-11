@@ -14,7 +14,8 @@ namespace SR
 {
 	enum eRasterizeType
 	{
-		eRasterizeType_FlatWire
+		eRasterizeType_Wireframe,
+		eRasterizeType_Flat
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -25,15 +26,26 @@ namespace SR
 		virtual ~Rasterizer() {}
 
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& vb, const IndexBuffer& ib) = 0;
+		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces) = 0;
 	};
 
 	/////////////////////////////////////////////////////////////
-	//////// Flat+Ïß¿ò
+	//////// Ïß¿ò
 	class RasWireFrame : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& vb, const IndexBuffer& ib);
+		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+	};
+
+	/////////////////////////////////////////////////////////////
+	//////// Flat 
+	class RasFlat : public Rasterizer
+	{
+	public:
+		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+
+	public:
+		
 	};
 }
 

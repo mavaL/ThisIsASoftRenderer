@@ -90,6 +90,7 @@
     <ClInclude Include="Code\Include\Rasterizer.h" />
     <ClInclude Include="Code\Include\Renderer.h" />
     <ClInclude Include="Code\Include\stdafx.h" />
+    <ClInclude Include="Code\Include\Utility.h" />
     <ClInclude Include="Code\tinyxml\tinystr.h" />
     <ClInclude Include="Code\tinyxml\tinyxml.h" />
     <ClInclude Include="Resource.h" />

@@ -66,6 +66,9 @@
     <ClInclude Include="Code\tinyxml\tinyxml.h">
       <Filter>Src\tinyxml</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Include\Utility.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Renderer.cpp">

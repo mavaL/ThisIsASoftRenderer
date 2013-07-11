@@ -173,6 +173,21 @@ namespace Common
 		return std::move(SVector4(v.x * k, v.y * k, v.z * k, v.w * k));
 	}
 
+	Common::SVector3 Add_Vec3_By_Vec3( const SVector3& v1, const SVector3& v2 )
+	{
+		return std::move(SVector3(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z));
+	}
+
+	Common::SVector3 Multiply_Vec3_By_K( const SVector3& v, float k )
+	{
+		return std::move(SVector3(v.x * k, v.y * k, v.z * k));
+	}
+
+	float DotProduct_Vec3_By_Vec3( const SVector3& v1, const SVector3& v2 )
+	{
+		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+	}
+
 }
 
 
