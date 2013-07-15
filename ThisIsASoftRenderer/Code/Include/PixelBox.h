@@ -14,6 +14,7 @@ namespace Common
 	{
 	public:
 		PixelBox(int width, int height, int bytesPerPixel);
+		PixelBox(BITMAP* bm);
 
 		typedef std::vector<char>	DataBuffer;	
 
@@ -21,6 +22,7 @@ namespace Common
 		void*		GetDataPointer();
 		int			GetWidth() const	{ return m_width; }
 		int			GetHeight() const	{ return m_height; }
+		int			GetPitch() const	{ return m_pitch; }
 		int			GetBitsPerPixel() const	{ return m_bytesPerPixel * 8; }
 		int			GetBytesPerPixel() const	{ return m_bytesPerPixel; }
 
@@ -28,6 +30,7 @@ namespace Common
 		DataBuffer	m_data;
 		int			m_width;
 		int			m_height;
+		int			m_pitch;
 		int			m_bytesPerPixel;
 	};
 }

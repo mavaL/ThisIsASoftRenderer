@@ -81,10 +81,21 @@ namespace Ext
 				normalNode->Attribute("y", &ny);
 				normalNode->Attribute("z", &nz);
 
+				//uv
+				TiXmlElement* uvNode = vertNode->FirstChildElement("texcoord");
+				double texu, texv;
+				if(uvNode)
+				{
+					uvNode->Attribute("u", &texu);
+					uvNode->Attribute("v", &texv);
+				}
+
 				SR::SVertex vert;
-				vert.pos = std::move(VEC4(x, y, z, 1));
-				vert.normal = std::move(VEC3(nx, ny, nz));
+				vert.pos = VEC4(x, y, z, 1);
+				vert.normal = VEC3(nx, ny, nz);
 				vert.normal.Normalize();
+				if(uvNode)
+					vert.uv = VEC2(texu, texv);
 				m_obj.VB[idx++] = std::move(vert);
 
 				vertNode = vertNode->NextSiblingElement("vertex");
@@ -102,15 +113,19 @@ namespace Ext
 			const SR::Index idx2 = m_obj.faces[i].index2;
 			const SR::Index idx3 = m_obj.faces[i].index3;
 
-			const VEC3& n1 = m_obj.VB[idx1].normal;
-			const VEC3& n2 = m_obj.VB[idx2].normal;
-			const VEC3& n3 = m_obj.VB[idx3].normal;
+			const VEC4& p0 = m_obj.VB[idx1].pos;
+			const VEC4& p1 = m_obj.VB[idx2].pos;
+			const VEC4& p2 = m_obj.VB[idx3].pos;
 
-			//average
-			VEC3 sum = Common::Add_Vec3_By_Vec3(Common::Add_Vec3_By_Vec3(n1, n2), n3);
-			m_obj.faces[i].faceNormal = Common::Multiply_Vec3_By_K(sum, 0.33333f);
+			//NB: 顶点必须是逆时针顺序
+			const VEC3 u = Common::Sub_Vec4_By_Vec4(p1, p0).GetVec3();
+			const VEC3 v = Common::Sub_Vec4_By_Vec4(p2, p0).GetVec3();
+			m_obj.faces[i].faceNormal = Common::CrossProduct_Vec3_By_Vec3(u, v);
 			m_obj.faces[i].faceNormal.Normalize();
 		}
+
+		m_obj.matWorldIT = m_obj.matWorld.Inverse();
+		m_obj.matWorldIT = m_obj.matWorldIT.Transpose();
 
 		return true;
 	}

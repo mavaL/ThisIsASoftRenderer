@@ -20,6 +20,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -98,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Camera.cpp" />
+    <ClCompile Include="Code\Src\GeometryDef.cpp" />
     <ClCompile Include="Code\Src\MathDef.cpp" />
     <ClCompile Include="Code\Src\OgreMeshLoader.cpp" />
     <ClCompile Include="Code\Src\PixelBox.cpp" />
@@ -108,6 +110,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Code\Src\ThisIsASoftRenderer.cpp" />
+    <ClCompile Include="Code\Src\Utility.cpp" />
     <ClCompile Include="Code\tinyxml\tinystr.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>

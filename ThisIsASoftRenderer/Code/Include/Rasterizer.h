@@ -15,7 +15,8 @@ namespace SR
 	enum eRasterizeType
 	{
 		eRasterizeType_Wireframe,
-		eRasterizeType_Flat
+		eRasterizeType_Flat,
+		eRasterizeType_Gouraud
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -27,6 +28,8 @@ namespace SR
 
 	public:
 		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces) = 0;
+		virtual eRasterizeType	GetType() = 0;
+		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light) = 0;
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -35,6 +38,8 @@ namespace SR
 	{
 	public:
 		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_Wireframe; }
+		virtual void	DoLighting(VertexBuffer&, SRenderObj&, const SDirectionLight&) {}
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -43,9 +48,18 @@ namespace SR
 	{
 	public:
 		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_Flat; }
+		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light);
+	};
 
+	/////////////////////////////////////////////////////////////
+	//////// Gouraud
+	class RasGouraud : public Rasterizer
+	{
 	public:
-		
+		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_Gouraud; }
+		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light);
 	};
 }
 

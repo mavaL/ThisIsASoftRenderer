@@ -110,5 +110,11 @@
     <ClCompile Include="Code\tinyxml\tinyxmlparser.cpp">
       <Filter>Src\tinyxml</Filter>
     </ClCompile>
+    <ClCompile Include="Code\Src\Utility.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\GeometryDef.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

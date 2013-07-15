@@ -10,6 +10,14 @@
 
 typedef std::string STRING;
 
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) if(p) { delete p; p=nullptr; }
+#endif
+
+#ifndef SAFE_DELETE_ARRAY
+#define SAFE_DELETE_ARRAY(p) if(p) { delete []p; p=nullptr; }
+#endif
+
 namespace Ext
 {
 	template<class T>
@@ -19,6 +27,16 @@ namespace Ext
 		t1 = t2;
 		t2 = tmp;
 	}
+
+	template<class T>
+	inline T LinearLerp(const T& s, const T& e, float t)
+	{
+		assert(t >= 0.0f && t<= 1.0f);
+		return T(s + (e - s) * t);
+	}
+
+	std::wstring	AnsiToUnicode(const char* src);
+	STRING			UnicodeToEngine(const WCHAR* src);
 }
 
 #endif // Utility_h__

@@ -39,6 +39,7 @@ namespace SR
 	public:
 		//设置渲染模式(wireframe, flat, gouround, phong)
 		void	SetRasterizeType(eRasterizeType type);
+		eRasterizeType		GetRasterizeType() { return m_curRas->GetType(); }
 		//渲染管线
 		void	RenderOneFrame();
 		//插入渲染图元
@@ -69,15 +70,23 @@ namespace SR
 		/////// 根据物体顶点计算包围球球径. NB:注意尽量保持物体中心与原点接近,否则误差较大.
 		static float	ComputeBoundingRadius(const VertexBuffer& verts);
 		///////	Bresenahams画线算法,取自<<3D编程大师技巧>>
-		static void	DrawLine_Bresenahams(int x0, int y0, int x1, int y1, int color, bool bClip);
+		static void	DrawLine_Bresenahams(int x0, int y0, int x1, int y1, SColor color, bool bClip);
 		///////	最简单的DDA画线算法
-		static void	DrawLine_DDA(int x0, int y0, int x1, int y1, int color, bool bClip);
-		///////	扫描线算法绘制三角面. NB:顺序应该是逆时针.
-		static void	DrawTriangle_Scanline(int x0, int y0, int x1, int y1, int x2, int y2, int color);
+		static void	DrawLine_DDA(int x0, int y0, int x1, int y1, SColor color, bool bClip);
+		//////	三角面光栅化前预处理
+		static bool	PreDrawTriangle(const SVertex*& vert0, const SVertex*& vert1, const SVertex*& vert2, eTriangleShape& retType);
+		///////	扫描线算法绘制三角面
+		static void	DrawTriangle_Scanline(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, SColor color);
 		///////	扫描线算法绘制平底三角形
-		static void	DrawBottomTri_Scanline(int x0, int y0, int x1, int y1, int x2, int y2, int color);
+		static void	DrawBottomTri_Scanline(float x0, float y0, float x1, float y1, float x2, float y2, SColor color);
 		///////	扫描线算法绘制平顶三角形
-		static void	DrawTopTri_Scanline(int x0, int y0, int x1, int y1, int x2, int y2, int color);
+		static void	DrawTopTri_Scanline(float x0, float y0, float x1, float y1, float x2, float y2, SColor color);
+		///////	根据画家算法对三角面列表进行排序
+		static void	SortTris_PainterAlgorithm(const VertexBuffer& verts, FaceList& faces);
+		///////	绘制三角形的第二个版本.Gouraud插值顶点颜色和纹理坐标. TODO: 左上填充规则,三角面裁剪
+		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2);
+		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2);
+		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2);
 	};
 }
 

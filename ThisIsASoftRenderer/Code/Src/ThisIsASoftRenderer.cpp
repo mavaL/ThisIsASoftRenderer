@@ -23,6 +23,7 @@ HINSTANCE hInst;								// 当前实例
 TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
 
+ULONG_PTR			g_gdiplusToken;
 SR::Renderer		g_renderer;					// 软渲染器
 Ext::OgreMeshLoader	g_meshLoader;				// mesh加载器
 
@@ -104,6 +105,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
+	//GdiplusShutdown(g_gdiplusToken);
+
 	return (int) msg.wParam;
 }
 
@@ -170,8 +173,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    /////////////////////////////////////////////////////////
    /////////////// Init here
+   Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+ 
+   GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, NULL);
+
    g_renderer.m_hwnd = hWnd;
-   g_renderer.SetRasterizeType(SR::eRasterizeType_Flat);
+   g_renderer.SetRasterizeType(SR::eRasterizeType_Gouraud);
 
    try
    {
@@ -207,6 +214,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   obj.faces.push_back(face);
 
 	   obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(obj.VB);
+	   obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+	   
+	   obj.matWorldIT = obj.matWorld.Inverse();
+	   obj.matWorldIT = obj.matWorldIT.Transpose();
 
 	   //g_renderer.AddRenderable(obj);
    }
@@ -270,14 +281,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_KEYDOWN:
 		{
-			if(wParam == VK_ADD)
+			switch (wParam)
 			{
-				g_renderer.m_camera.AddMoveSpeed(1.0f);
-				return 0;
+			case VK_ADD:
+				{
+					g_renderer.m_camera.AddMoveSpeed(1.0f);
+					return 0;
+				}
+				break;
+			case VK_SUBTRACT:
+				{
+					g_renderer.m_camera.AddMoveSpeed(-0.2f);
+					return 0;
+				}
+				break;
+			default: return DefWindowProc(hWnd, message, wParam, lParam);
 			}
-			else if(wParam == VK_SUBTRACT)
+		}
+		break;
+
+	case WM_CHAR:
+		{
+			if(wParam == 'r')
 			{
-				g_renderer.m_camera.AddMoveSpeed(-0.2f);
+				if(g_renderer.GetRasterizeType() == SR::eRasterizeType_Wireframe)
+					g_renderer.SetRasterizeType(SR::eRasterizeType_Flat);
+				else
+					g_renderer.SetRasterizeType(SR::eRasterizeType_Wireframe);
 				return 0;
 			}
 		}

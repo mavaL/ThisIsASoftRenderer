@@ -66,7 +66,7 @@ namespace Common
 		SVector4(SVector3 pt, float _w):x(pt.x),y(pt.y),z(pt.z),w(_w) {}
 		SVector4(float _x, float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) {}
 
-		SVector3	GetVec3()	{ return std::move(SVector3(x,y,z)); }
+		inline SVector3	GetVec3()	{ return std::move(SVector3(x,y,z)); }
 		//求负
 		inline void	Neg() { x = -x; y = -y; z = -z; w = -w; }
 
@@ -95,7 +95,7 @@ namespace Common
 		//零矩阵化
 		void		MakeZero();
 		//求逆
-		void		Inverse()	{ /*TODO..*/ assert(0); }
+		SMatrix44	Inverse();
 		//转置
 		SMatrix44	Transpose();
 		//清除平移部分

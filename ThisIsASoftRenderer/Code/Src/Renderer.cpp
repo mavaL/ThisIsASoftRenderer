@@ -14,13 +14,14 @@ namespace SR
 		//初始化所有光栅器
 		m_rasLib.insert(std::make_pair(eRasterizeType_Wireframe, new RasWireFrame));
 		m_rasLib.insert(std::make_pair(eRasterizeType_Flat, new RasFlat));
+		m_rasLib.insert(std::make_pair(eRasterizeType_Gouraud, new RasGouraud));
 
 		//创建后备缓冲
 		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
 
-		m_testLight.dir = VEC3(1,-1,-1);
+		m_testLight.dir = VEC3(0.3f,-1,-1);
 		m_testLight.dir.Normalize();
-		m_testLight.color = 0xffffffff;
+		m_testLight.color = SColor::WHITE;
 	}
 
 	Renderer::~Renderer()
@@ -64,6 +65,10 @@ namespace SR
 			///////// 世界空间进行背面剔除
 			VertexBuffer workingVB = _DoBackfaceCulling(obj);
 
+			/////////////////////////////////////////////////
+			///////// 世界空间进行光照
+			m_curRas->DoLighting(workingVB, obj, m_testLight);
+
 			//transform each vertex
 			for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
 			{
@@ -97,25 +102,6 @@ namespace SR
 				vertPos.x = a + a * vertPos.x;
 				vertPos.y = b - b * vertPos.y;
 			}
-
-			//test方向光,Flat shade基于面法线
-			VEC3 lightDir = m_testLight.dir;
-			lightDir.Neg();
-			for (size_t iFace=0; iFace<obj.faces.size(); ++iFace)
-			{
-				SFace& face = obj.faces[iFace];
-				//在世界空间进行光照
-				VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.matWorld, false).GetVec3();
-				float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
-				nl = max(nl, 0);
-				BYTE a = ((m_testLight.color >>  24) & 0xff) * nl;
-				BYTE r = ((m_testLight.color >>  16) & 0xff) * nl;
-				BYTE g = ((m_testLight.color >>  8) & 0xff) * nl;
-				BYTE b = ((m_testLight.color >>  0) & 0xff) * nl;
-
-				face.color = (a << 24) + (r << 16) + (g << 8) + b;
-			}
-			
 
 			/////////////////////////////////////////////////
 			///////// 光栅化物体
@@ -158,9 +144,8 @@ namespace SR
 
 	void Renderer::_Clear()
 	{
-		int color = 0;
 		int bufBytes = m_backBuffer->GetWidth() * m_backBuffer->GetHeight() * m_backBuffer->GetBytesPerPixel();
-		memset(m_backBuffer->GetDataPointer(), color, bufBytes);
+		memset(m_backBuffer->GetDataPointer(), 0, bufBytes);
 	}
 
 	void Renderer::AddRenderable(const SRenderObj& obj)
@@ -210,5 +195,4 @@ namespace SR
 
 		return std::move(vb);
 	}
-
 }
