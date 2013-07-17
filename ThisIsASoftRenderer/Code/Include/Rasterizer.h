@@ -16,7 +16,8 @@ namespace SR
 	{
 		eRasterizeType_Wireframe,
 		eRasterizeType_Flat,
-		eRasterizeType_Gouraud
+		eRasterizeType_Gouraud,
+		eRasterizeType_Textured
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -27,7 +28,7 @@ namespace SR
 		virtual ~Rasterizer() {}
 
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces) = 0;
+		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj) = 0;
 		virtual eRasterizeType	GetType() = 0;
 		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light) = 0;
 	};
@@ -37,7 +38,7 @@ namespace SR
 	class RasWireFrame : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Wireframe; }
 		virtual void	DoLighting(VertexBuffer&, SRenderObj&, const SDirectionLight&) {}
 	};
@@ -47,7 +48,7 @@ namespace SR
 	class RasFlat : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Flat; }
 		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light);
 	};
@@ -57,9 +58,18 @@ namespace SR
 	class RasGouraud : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& vb, FaceList& faces);
+		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Gouraud; }
 		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light);
+	};
+
+	/////////////////////////////////////////////////////////////
+	//////// ÎÆÀí×ÅÉ«
+	class RasTextured : public RasGouraud
+	{
+	public:
+		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_Textured; }
 	};
 }
 

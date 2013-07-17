@@ -29,6 +29,17 @@ namespace Ext
 	}
 
 	template<class T>
+	inline T Clamp(const T& val, const T& left, const T& right)
+	{
+		if(val < left)
+			return left;
+		else if(val > right)
+			return right;
+		else
+			return val;
+	}
+
+	template<class T>
 	inline T LinearLerp(const T& s, const T& e, float t)
 	{
 		assert(t >= 0.0f && t<= 1.0f);

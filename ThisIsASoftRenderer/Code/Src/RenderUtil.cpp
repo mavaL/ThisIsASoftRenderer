@@ -459,14 +459,17 @@ namespace SR
 		return(1);
 	}
 
-	void RenderUtil::DrawText( int x, int y, const STRING& text, const COLORREF color )
+	void RenderUtil::DrawText( float x, float y, const STRING& text, const Gdiplus::Color& color )
 	{
-		//TODO.. 输出摄像机坐标
-		HDC dc = GetDC(g_renderer.m_hwnd);
-		SetBkMode(dc, TRANSPARENT);
-		SetTextColor(dc, color);
-		TextOut(dc, x, y, text.c_str(), text.length());
-		ReleaseDC(g_renderer.m_hwnd, dc);
+		Gdiplus::Graphics g(g_renderer.m_bmBackBuffer.get());
+		Gdiplus::Font font(L"Arial", 11);
+		Gdiplus::PointF origin(x, y);
+		Gdiplus::SolidBrush bru(Gdiplus::Color(255,0,255,0));
+		Gdiplus::StringFormat format;
+		format.SetAlignment(Gdiplus::StringAlignmentNear);
+
+		std::wstring wstr = Ext::AnsiToUnicode(text.c_str());
+		g.DrawString(wstr.c_str(), -1, &font, origin, &format, &bru);
 	}
 
 	float RenderUtil::ComputeBoundingRadius( const VertexBuffer& verts )
@@ -514,17 +517,20 @@ namespace SR
 				| /		
 				|/		
 				p1				*/
-		if(vert0->pos.y > vert1->pos.y)
+		if(y0 > y1)
 		{
 			Ext::Swap(vert0, vert1);
+			Ext::Swap(y0, y1);
 		}
-		if(vert0->pos.y > vert2->pos.y)
+		if(y0 > y2)
 		{
 			Ext::Swap(vert0, vert2);
+			Ext::Swap(y0, y2);
 		}
-		if(vert2->pos.y > vert1->pos.y)
+		if(y2 > y1)
 		{
 			Ext::Swap(vert2, vert1);
+			Ext::Swap(y2, y1);
 		}
 
 		/* 2.若三角面是平底三角形
@@ -534,7 +540,7 @@ namespace SR
 				  /____\
 				 p1		p2
 		*/
-		if(vert1->pos.y == vert2->pos.y)
+		if(y1 == y2)
 		{
 			retType = eTriangleShape_Bottom;
 		}
@@ -546,7 +552,7 @@ namespace SR
 					 \/
 					 p1
 		*/
-		else if(vert0->pos.y == vert2->pos.y)
+		else if(y0 == y2)
 		{
 			retType = eTriangleShape_Top;
 		}
@@ -599,7 +605,7 @@ namespace SR
 
 	void RenderUtil::DrawBottomTri_Scanline( float x0, float y0, float x1, float y1, float x2, float y2, SColor color )
 	{
-		assert(y1 == y2);
+		assert((int)y1 == (int)y2);
 
 		float curLX = x0, curRX = x0, curY = y0;
 		float left_incX = (x1-x0)/(y1-y0);
@@ -620,7 +626,7 @@ namespace SR
 
 	void RenderUtil::DrawTopTri_Scanline( float x0, float y0, float x1, float y1, float x2, float y2, SColor color )
 	{
-		assert(y0 == y2);
+		assert((int)y0 == (int)y2);
 
 		float curLX = x0, curRX = x2, curY = y0;
 		float left_incX = (x1-x0)/(y1-y0);
@@ -663,7 +669,7 @@ namespace SR
 		});
 	}
 
-	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2 )
+	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
 	{
 		eTriangleShape triType;
 		if(!PreDrawTriangle(vert0, vert1, vert2, triType))
@@ -671,8 +677,8 @@ namespace SR
 
 		switch (triType)
 		{
-		case eTriangleShape_Bottom: DrawBottomTri_Scanline_V2(vert0, vert1, vert2); break;
-		case eTriangleShape_Top: DrawTopTri_Scanline_V2(vert0, vert1, vert2); break;
+		case eTriangleShape_Bottom: DrawBottomTri_Scanline_V2(vert0, vert1, vert2, bTextured, tex); break;
+		case eTriangleShape_Top: DrawTopTri_Scanline_V2(vert0, vert1, vert2, bTextured, tex); break;
 		case eTriangleShape_General:	
 			{
 				//创建切割生成的新顶点
@@ -690,16 +696,18 @@ namespace SR
 				vert3.color.r = Ext::LinearLerp(vert0->color.r, vert1->color.r, t);
 				vert3.color.g = Ext::LinearLerp(vert0->color.g, vert1->color.g, t);
 				vert3.color.b = Ext::LinearLerp(vert0->color.b, vert1->color.b, t);
+				vert3.uv.x = Ext::LinearLerp(vert0->uv.x, vert1->uv.x, t);
+				vert3.uv.y = Ext::LinearLerp(vert0->uv.y, vert1->uv.y, t);
 
-				DrawBottomTri_Scanline_V2(vert0, &vert3, vert2);
-				DrawTopTri_Scanline_V2(&vert3, vert1, vert2);
+				DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, bTextured, tex);
+				DrawTopTri_Scanline_V2(&vert3, vert1, vert2, bTextured, tex);
 			}
 			break;
 		default: assert(0);
 		}
 	}
 
-	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2 )
+	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
 	{
 		//NB: 为了正确插值颜色和UV,要保持x坐标有序
 		if(vert1->pos.x > vert2->pos.x)
@@ -714,25 +722,47 @@ namespace SR
 		SColor c0 = vert0->color;
 		SColor c1 = vert1->color;
 		SColor c2 = vert2->color;
+		float u0 = vert0->uv.x, v0 = vert0->uv.y;
+		float u1 = vert1->uv.x, v1 = vert1->uv.y;
+		float u2 = vert2->uv.x, v2 = vert2->uv.y;
 
-		if(y0 < min_clip_y)
-		{
-			int i = 0;
-		}
-
-		assert(y1 == y2);
+		assert((int)y1 == (int)y2);
 
 		//位置坐标及增量
-		float curLX = x0, curRX = x0, curY = y0;
-		float left_incX = (x1-x0)/(y1-y0);
-		float right_incX = (x2-x0)/(y2-y0);
+		float curLX = x0, curRX = x0;
+		float curY = y0, endY = y1;
+		float inv_dy = 1.0f/(y1-y0);
+		float left_incX = (x1-x0)*inv_dy;
+		float right_incX = (x2-x0)*inv_dy;
 		//当前两端点颜色分量及增量
 		float rl = c0.r, rr = c0.r;
 		float gl = c0.g, gr = c0.g;
 		float bl = c0.b, br = c0.b;
-		float drl = (c1.r-c0.r)/(y1-y0), drr = (c2.r-c0.r)/(y2-y0);
-		float dgl = (c1.g-c0.g)/(y1-y0), dgr = (c2.g-c0.g)/(y2-y0);
-		float dbl = (c1.b-c0.b)/(y1-y0), dbr = (c2.b-c0.b)/(y2-y0);
+		float drl = (c1.r-c0.r)*inv_dy, drr = (c2.r-c0.r)*inv_dy;
+		float dgl = (c1.g-c0.g)*inv_dy, dgr = (c2.g-c0.g)*inv_dy;
+		float dbl = (c1.b-c0.b)*inv_dy, dbr = (c2.b-c0.b)*inv_dy;
+		//当前两端点uv分量及增量
+		float curUL = u0, curVL = v0;
+		float curUR = u0, curVR = v0;
+		float dul = (u1-u0)*inv_dy, dvl = (v1-v0)*inv_dy;
+		float dur = (u2-u0)*inv_dy, dvr = (v2-v0)*inv_dy;
+
+		//裁剪区域裁剪y
+		if(curY < min_clip_y)
+		{
+			float dy = min_clip_y-y0;
+			curY = min_clip_y;
+			curLX += left_incX*dy;
+			curRX += right_incX*dy;
+			rl += drl*dy; gl += dgl*dy; bl += dbl*dy;
+			rr += drr*dy; gr += dgr*dy; br += dbr*dy;
+			curUL += dul*dy; curVL += dvl*dy;
+			curUR += dur*dy; curVR += dvr*dy;
+		}
+		if(endY > max_clip_y)
+		{
+			endY = max_clip_y;
+		}
 
 		//定位输出位置
 		DWORD* vb_start = (DWORD*)g_renderer.m_backBuffer->GetDataPointer();
@@ -741,60 +771,85 @@ namespace SR
 
 		{
 			//单独处理第一行,不然下面除0错误
-			destBuffer[(int)(curLX + 0.5f)] = c0.color;
+			//TODO: how to clean this ugly code
+			//destBuffer[(int)(curLX + 0.5f)] = c0.color;
 
 			++curY;
 			curLX += left_incX;
 			curRX += right_incX;
 			destBuffer += lpitch;
-			rl += drl;
-			rr += drr;
-			gl += dgl;
-			gr += dgr;
-			bl += dbl;
-			br += dbr;
+			rl += drl; rr += drr;
+			gl += dgl; gr += dgr;
+			bl += dbl; br += dbr;
+			curUL += dul; curVL += dvl;
+			curUR += dur; curVR += dvr;
 		}
 
-		while (curY <= y1)
+		while (curY <= endY)
 		{
 			int lineX0 = (int)(curLX + 0.5f);
 			int lineX1 = (int)(curRX + 0.5f);
-			int lineY = (int)curY;
 
-			float invdx = 1/((float)lineX1-lineX0); // <-除0
+			float invdx = 1.0f/(lineX1-lineX0); // <-除0
 			float dr = (rr-rl)*invdx;
 			float dg = (gr-gl)*invdx;
 			float db = (br-bl)*invdx;
+			float du = (curUR-curUL)*invdx;
+			float dv = (curVR-curVL)*invdx;
 
 			float r = rl, g = gl, b = bl;
+			float u = curUL, v = curVL;
+
+			//裁剪区域裁剪x
+			if(lineX0 < min_clip_x)
+			{
+				r += (min_clip_x-lineX0)*dr;
+				g += (min_clip_x-lineX0)*dg;
+				b += (min_clip_x-lineX0)*db;
+				u += (min_clip_x-lineX0)*du;
+				v += (min_clip_x-lineX0)*dv;
+				lineX0 = min_clip_x;
+			}
+			if(lineX1 > max_clip_x)
+			{
+				lineX1 = max_clip_x;
+			}
 			
 			//画水平直线
 			for (int curX=lineX0; curX<=lineX1; ++curX)
 			{
 				SColor clr;
-				clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
-
+				if(bTextured)
+				{
+					clr = tex->Tex2D_Point(VEC2(u, v));
+				}
+				else
+				{
+					clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
+				}
+				
 				destBuffer[curX] = clr.color;
 
 				r += dr;
 				g += dg;
 				b += db;
+				u += du;
+				v += dv;
 			}
 
 			++curY;
 			curLX += left_incX;
 			curRX += right_incX;
 			destBuffer += lpitch;
-			rl += drl;
-			rr += drr;
-			gl += dgl;
-			gr += dgr;
-			bl += dbl;
-			br += dbr;
+			rl += drl; rr += drr;
+			gl += dgl; gr += dgr;
+			bl += dbl; br += dbr;
+			curUL += dul; curUR += dur;
+			curVL += dvl; curVR += dvr;
 		}
 	}
 
-	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2 )
+	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
 	{
 		//NB: 为了正确插值颜色和UV,要保持x坐标有序
 		if(vert0->pos.x > vert2->pos.x)
@@ -809,50 +864,103 @@ namespace SR
 		SColor c0 = vert0->color;
 		SColor c1 = vert1->color;
 		SColor c2 = vert2->color;
+		float u0 = vert0->uv.x, v0 = vert0->uv.y;
+		float u1 = vert1->uv.x, v1 = vert1->uv.y;
+		float u2 = vert2->uv.x, v2 = vert2->uv.y;
 
-		assert(y0 == y2);
+		assert((int)y0 == (int)y2);
 
 		//位置坐标及增量
-		float curLX = x0, curRX = x2, curY = y0;
-		float left_incX = (x1-x0)/(y1-y0);
-		float right_incX = (x1-x2)/(y1-y2);
+		float inv_dy = 1.0f/(y1-y0);
+		float curLX = x0, curRX = x2;
+		float curY = y0, endY = y1;
+		float left_incX = (x1-x0)*inv_dy;
+		float right_incX = (x1-x2)*inv_dy;
 		//当前两端点颜色分量及增量
 		float rl = c0.r, rr = c2.r;
 		float gl = c0.g, gr = c2.g;
 		float bl = c0.b, br = c2.b;
-		float drl = (c1.r-c0.r)/(y1-y0), drr = (c1.r-c2.r)/(y1-y2);
-		float dgl = (c1.g-c0.g)/(y1-y0), dgr = (c1.g-c2.g)/(y1-y2);
-		float dbl = (c1.b-c0.b)/(y1-y0), dbr = (c1.b-c2.b)/(y1-y2);
+		float drl = (c1.r-c0.r)*inv_dy, drr = (c1.r-c2.r)*inv_dy;
+		float dgl = (c1.g-c0.g)*inv_dy, dgr = (c1.g-c2.g)*inv_dy;
+		float dbl = (c1.b-c0.b)*inv_dy, dbr = (c1.b-c2.b)*inv_dy;
+		//当前两端点uv分量及增量
+		float curUL = u0, curVL = v0;
+		float curUR = u2, curVR = v2;
+		float dul = (u1-u0)*inv_dy, dvl = (v1-v0)*inv_dy;
+		float dur = (u1-u2)*inv_dy, dvr = (v1-v2)*inv_dy;
+
+		//裁剪区域裁剪y
+		if(curY < min_clip_y)
+		{
+			float dy = min_clip_y-y0;
+			curY = min_clip_y;
+			curLX += left_incX * dy;
+			curRX += right_incX * dy;
+			rl += drl*dy; gl += dgl*dy; bl += dbl*dy;
+			rr += drr*dy; gr += dgr*dy; br += dbr*dy;
+			curUL += dul*dy; curVL += dvl*dy;
+			curUR += dur*dy; curVR += dvr*dy;
+		}
+		if(endY > max_clip_y)
+		{
+			endY = max_clip_y;
+		}
 
 		//定位输出位置
 		DWORD* vb_start = (DWORD*)g_renderer.m_backBuffer->GetDataPointer();
 		int lpitch = g_renderer.m_backBuffer->GetWidth();
 		DWORD* destBuffer = vb_start + (int)curY*lpitch;
 
-		while (curY <= y1)
+		while (curY <= endY)
 		{
 			int lineX0 = (int)(curLX + 0.5f);
 			int lineX1 = (int)(curRX + 0.5f);
-			int lineY = (int)curY;
 
-			float invdx = 1/((float)lineX1-lineX0);
+			float invdx = 1.0f/(lineX1-lineX0);
 			float dr = (rr-rl)*invdx;
 			float dg = (gr-gl)*invdx;
 			float db = (br-bl)*invdx;
+			float du = (curUR-curUL)*invdx;
+			float dv = (curVR-curVL)*invdx;
 
 			float r = rl, g = gl, b = bl;
+			float u = curUL, v = curVL;
+
+			//裁剪区域裁剪x
+			if(lineX0 < min_clip_x)
+			{
+				r += (min_clip_x-lineX0)*dr;
+				g += (min_clip_x-lineX0)*dg;
+				b += (min_clip_x-lineX0)*db;
+				u += (min_clip_x-lineX0)*du;
+				v += (min_clip_x-lineX0)*dv;
+				lineX0 = min_clip_x;
+			}
+			if(lineX1 > max_clip_x)
+			{
+				lineX1 = max_clip_x;
+			}
 
 			//画水平直线
 			for (int curX=lineX0; curX<=lineX1; ++curX)
 			{
 				SColor clr;
-				clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
+				if(bTextured)
+				{
+					clr = tex->Tex2D_Point(VEC2(u, v));
+				}
+				else
+				{
+					clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
+				}
 
 				destBuffer[curX] = clr.color;
 
 				r += dr;
 				g += dg;
 				b += db;
+				u += du;
+				v += dv;
 			}
 
 			++curY;
@@ -865,6 +973,8 @@ namespace SR
 			gr += dgr;
 			bl += dbl;
 			br += dbr;
+			curUL += dul; curUR += dur;
+			curVL += dvl; curVR += dvr;
 		}
 	}
 }

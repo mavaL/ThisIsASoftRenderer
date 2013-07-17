@@ -37,27 +37,31 @@ namespace SR
 		SDirectionLight	m_testLight;	//测试方向光
 
 	public:
-		//设置渲染模式(wireframe, flat, gouround, phong)
+		void	Init();
 		void	SetRasterizeType(eRasterizeType type);
-		eRasterizeType		GetRasterizeType() { return m_curRas->GetType(); }
+		//切换渲染模式(wireframe, flat, gouraud, phong)
+		void	ToggleShadingMode();
 		//渲染管线
 		void	RenderOneFrame();
+		//交换前后缓冲
+		void	Present();
 		//插入渲染图元
 		void	AddRenderable(const SRenderObj& obj);
 		const RenderList&	GetRenderList() const { return m_renderList; }
+		DWORD	GetLastFPS() const	{ return m_lastFPS; }
 
 	private:
 		void	_Clear();
 		//背面拣选.同时对被剔除的顶点做上标记,它们是不需要参与接下来的T&L的.
 		VertexBuffer	_DoBackfaceCulling(SRenderObj& obj);
-		//交换前后缓冲
-		void	_Present();
 
 	private:
+		std::unique_ptr<Gdiplus::Bitmap>	m_bmBackBuffer;
 		std::unique_ptr<Common::PixelBox>	m_backBuffer;
 		std::unordered_map<eRasterizeType, Rasterizer*>	m_rasLib;		//所有可用光栅化器
 		Rasterizer*							m_curRas;					//当前使用光栅化器
 		RenderList							m_renderList;				//渲染列表
+		DWORD								m_lastFPS;
 	};
 
 	class RenderUtil
@@ -66,7 +70,7 @@ namespace SR
 		///////	根据屏幕区域对直线裁剪,取自<<3D编程大师技巧>>
 		static int	ClipLine(int& x1, int& y1, int& x2, int& y2);
 		/////// GDI绘制字体
-		static void	DrawText(int x, int y, const STRING& text, const COLORREF color);
+		static void	DrawText(float x, float y, const STRING& text, const Gdiplus::Color& color);
 		/////// 根据物体顶点计算包围球球径. NB:注意尽量保持物体中心与原点接近,否则误差较大.
 		static float	ComputeBoundingRadius(const VertexBuffer& verts);
 		///////	Bresenahams画线算法,取自<<3D编程大师技巧>>
@@ -83,10 +87,10 @@ namespace SR
 		static void	DrawTopTri_Scanline(float x0, float y0, float x1, float y1, float x2, float y2, SColor color);
 		///////	根据画家算法对三角面列表进行排序
 		static void	SortTris_PainterAlgorithm(const VertexBuffer& verts, FaceList& faces);
-		///////	绘制三角形的第二个版本.Gouraud插值顶点颜色和纹理坐标. TODO: 左上填充规则,三角面裁剪
-		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2);
-		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2);
-		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2);
+		///////	绘制三角形的第二个版本.Gouraud插值顶点颜色和纹理着色.
+		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex);
+		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex);
+		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex);
 	};
 }
 

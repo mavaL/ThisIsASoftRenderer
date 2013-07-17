@@ -103,9 +103,14 @@ namespace SR
 		STexture():texName(""),pData(nullptr) {}
 		~STexture() { SAFE_DELETE(pData); }
 
-		void LoadTexture(const STRING& filename);
+		STexture(const STexture& rhs);
+		STexture& operator= (const STexture& rhs);
 
-		STRING		texName;
+		void		LoadTexture(const STRING& filename);
+		//µã²ÉÑù
+		SColor		Tex2D_Point(const VEC2& uv) const;
+
+		STRING		texName;		
 		Common::PixelBox*	pData;
 	};
 

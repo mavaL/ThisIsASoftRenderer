@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "PixelBox.h"
+#include "Utility.h"
 
 namespace Common
 {
@@ -7,27 +8,36 @@ namespace Common
 	:m_width(width)
 	,m_height(height)
 	,m_bytesPerPixel(bytesPerPixel)
-	,m_pitch(m_width * m_bytesPerPixel)
+	,m_pitch(width * bytesPerPixel)
 	{
-		m_data.resize(width * height * bytesPerPixel);
+		m_data = new char[width * height * bytesPerPixel];
+		m_ownData = true;
 	}
 
-	PixelBox::PixelBox( BITMAP* bm )
+	PixelBox::PixelBox( BITMAP* bm, bool bCopyData )
 	{
 		m_width = bm->bmWidth;
 		m_height = bm->bmHeight;
 		m_bytesPerPixel = bm->bmBitsPixel / 8;
 		m_pitch = bm->bmWidthBytes;
-		assert(m_bytesPerPixel == 4 && "Error, currently only support 32bit texture!");
 
-		m_data.resize(m_width * m_height * m_bytesPerPixel);
-		memcpy(&m_data[0], bm->bmBits, m_width * m_height * m_bytesPerPixel);
+		if(bCopyData)
+		{
+			m_data = new char[m_width * m_height * m_bytesPerPixel];
+			memcpy(&m_data[0], bm->bmBits, m_width * m_height * m_bytesPerPixel);
+			m_ownData = true;
+		}
+		else
+		{
+			m_data = (char*)bm->bmBits;
+			m_ownData = false;
+		}
 	}
 
-
-	void* PixelBox::GetDataPointer()
+	PixelBox::~PixelBox()
 	{
-		return &m_data[0];
+		if(m_ownData)
+			SAFE_DELETE_ARRAY(m_data);
 	}
 }
 

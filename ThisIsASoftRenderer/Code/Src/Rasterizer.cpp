@@ -5,9 +5,10 @@
 
 namespace SR
 {
-	void RasWireFrame::RasterizeTriangleList( const VertexBuffer& vb, FaceList& faces )
+	void RasWireFrame::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
 	{
 		//each triangle
+		FaceList& faces = obj.faces;
 		size_t nFace = faces.size();
 
 		for (size_t iFace=0; iFace<nFace; ++iFace)
@@ -19,11 +20,11 @@ namespace SR
 			const Index idx2 = faces[iFace].index2;
 			const Index idx3 = faces[iFace].index3;
 
-			const VEC4& p0 = vb[idx1].pos;
-			const VEC4& p1 = vb[idx2].pos;
-			const VEC4& p2 = vb[idx3].pos;
+			const VEC4& p0 = workingVB[idx1].pos;
+			const VEC4& p1 = workingVB[idx2].pos;
+			const VEC4& p2 = workingVB[idx3].pos;
 
-			assert(vb[idx1].bActive && vb[idx2].bActive && vb[idx3].bActive && "Shit, this can't be true!");
+			assert(workingVB[idx1].bActive && workingVB[idx2].bActive && workingVB[idx3].bActive && "Shit, this can't be true!");
 
 			//each line
 			RenderUtil::DrawLine_Bresenahams((int)p0.x, (int)p0.y, (int)p1.x, (int)p1.y, SColor::WHITE, true);
@@ -32,9 +33,10 @@ namespace SR
 		}
 	}
 
-	void RasFlat::RasterizeTriangleList( const VertexBuffer& vb, FaceList& faces )
+	void RasFlat::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
 	{
-		RenderUtil::SortTris_PainterAlgorithm(vb, faces);
+		FaceList& faces = obj.faces;
+		RenderUtil::SortTris_PainterAlgorithm(workingVB, faces);
 
 		//each triangle
 		size_t nFace = faces.size();
@@ -48,9 +50,9 @@ namespace SR
 			const Index idx2 = faces[iFace].index2;
 			const Index idx3 = faces[iFace].index3;
 
-			const SVertex& vert0 = vb[idx1];
-			const SVertex& vert1 = vb[idx2];
-			const SVertex& vert2 = vb[idx3];
+			const SVertex& vert0 = workingVB[idx1];
+			const SVertex& vert1 = workingVB[idx2];
+			const SVertex& vert2 = workingVB[idx3];
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
@@ -84,9 +86,10 @@ namespace SR
 	}
 
 
-	void RasGouraud::RasterizeTriangleList( const VertexBuffer& vb, FaceList& faces )
+	void RasGouraud::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
 	{
-		RenderUtil::SortTris_PainterAlgorithm(vb, faces);
+		FaceList& faces = obj.faces;
+		RenderUtil::SortTris_PainterAlgorithm(workingVB, faces);
 
 		//each triangle
 		size_t nFace = faces.size();
@@ -100,13 +103,13 @@ namespace SR
 			const Index idx2 = faces[iFace].index2;
 			const Index idx3 = faces[iFace].index3;
 
-			const SVertex& vert0 = vb[idx1];
-			const SVertex& vert1 = vb[idx2];
-			const SVertex& vert2 = vb[idx3];
+			const SVertex& vert0 = workingVB[idx1];
+			const SVertex& vert1 = workingVB[idx2];
+			const SVertex& vert2 = workingVB[idx3];
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
-			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2);			
+			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, false, nullptr);			
 		}
 	}
 
@@ -133,6 +136,34 @@ namespace SR
 			{
 				vert.color = light.color * nl;
 			}
+		}
+	}
+
+
+	void RasTextured::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
+	{
+		FaceList& faces = obj.faces;
+		RenderUtil::SortTris_PainterAlgorithm(workingVB, faces);
+
+		//each triangle
+		size_t nFace = faces.size();
+
+		for (size_t iFace=0; iFace<nFace; ++iFace)
+		{
+			if(faces[iFace].IsBackface)
+				continue;
+
+			const Index idx1 = faces[iFace].index1;
+			const Index idx2 = faces[iFace].index2;
+			const Index idx3 = faces[iFace].index3;
+
+			const SVertex& vert0 = workingVB[idx1];
+			const SVertex& vert1 = workingVB[idx2];
+			const SVertex& vert2 = workingVB[idx3];
+
+			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
+
+			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, true, &obj.texture);			
 		}
 	}
 

@@ -59,50 +59,57 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_THISISASOFTRENDERER));
 
 	// 主消息循环:
-	while (GetMessage(&msg, NULL, 0, 0))
+	while (1)
 	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-		{
+		if (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+		{ 
+			if (msg.message == WM_QUIT)
+				break;
+
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+		} 
+		//////////////////////////////////////////////////////////
+		/////////////// main game processing goes here
+		g_renderer.RenderOneFrame();
 
-			g_renderer.RenderOneFrame();
+		//显示一些辅助信息
+		{
+			const VEC4& pos = g_renderer.m_camera.GetPos();
+			char szText[256];
+			sprintf_s(szText, ARRAYSIZE(szText), "lastFPS : %d, CamPos : (%f, %f, %f)", g_renderer.GetLastFPS(), pos.x, pos.y, pos.z);
 
-			//显示一些辅助信息
+			auto& renderList = g_renderer.GetRenderList();
+			size_t nCulled = std::count_if(renderList.begin(), renderList.end(), [&](const SR::SRenderObj& obj){ return obj.m_bCull; });
+
+			size_t nBackface = 0;
+			for (size_t iObj=0; iObj<renderList.size(); ++iObj)
 			{
-				const VEC4& pos = g_renderer.m_camera.GetPos();
-				char szText[256];
-				sprintf_s(szText, ARRAYSIZE(szText), "CamPos : (%f, %f, %f)", pos.x, pos.y, pos.z);
-
-				auto& renderList = g_renderer.GetRenderList();
-				size_t nCulled = std::count_if(renderList.begin(), renderList.end(), [&](const SR::SRenderObj& obj){ return obj.m_bCull; });
-
-				size_t nBackface = 0;
-				for (size_t iObj=0; iObj<renderList.size(); ++iObj)
+				const SR::FaceList& faces = renderList[iObj].faces;
+				for (size_t iFace=0; iFace<faces.size(); ++iFace)
 				{
-					const SR::FaceList& faces = renderList[iObj].faces;
-					for (size_t iFace=0; iFace<faces.size(); ++iFace)
-					{
-						if(faces[iFace].IsBackface) ++nBackface;
-					}
+					if(faces[iFace].IsBackface) ++nBackface;
 				}
-
-				char szText2[128];
-				sprintf_s(szText2, ARRAYSIZE(szText2), "      Culled Object : %d, Culled Backface : %d", nCulled, nBackface);
-				strcat_s(szText, sizeof(szText), szText2);
-
-				SR::RenderUtil::DrawText(10, 5, szText, RGB(0,255,0));
 			}
 
-			{
-				const float speed = g_renderer.m_camera.GetMoveSpeed();
-				char szText[256];
-				sprintf_s(szText, ARRAYSIZE(szText), 
-					"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed.", speed);
+			char szText2[128];
+			sprintf_s(szText2, ARRAYSIZE(szText2), "      Culled Object : %d, Culled Backface : %d", nCulled, nBackface);
+			strcat_s(szText, sizeof(szText), szText2);
 
-				SR::RenderUtil::DrawText(10, 25, szText, RGB(0,255,0));
-			}
+			SR::RenderUtil::DrawText(10, 10, szText, RGB(0,255,0));
 		}
+
+		{
+			const float speed = g_renderer.m_camera.GetMoveSpeed();
+			char szText[256];
+			sprintf_s(szText, ARRAYSIZE(szText), 
+				"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed.", speed);
+
+			SR::RenderUtil::DrawText(10, 35, szText, RGB(0,255,0));
+		}
+
+		//swap!!
+		g_renderer.Present();
 	}
 
 	//GdiplusShutdown(g_gdiplusToken);
@@ -174,15 +181,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    /////////////////////////////////////////////////////////
    /////////////// Init here
    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
- 
    GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, NULL);
 
+   g_renderer.Init();
    g_renderer.m_hwnd = hWnd;
-   g_renderer.SetRasterizeType(SR::eRasterizeType_Gouraud);
+   g_renderer.SetRasterizeType(SR::eRasterizeType_Textured);
 
    try
    {
 	   g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"));
+	   g_meshLoader.m_obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
    }
    catch (std::exception& e)
    {
@@ -204,6 +212,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   v1.normal = VEC3::UNIT_Z;
 	   v2.normal = VEC3::UNIT_Z;
 	   v3.normal = VEC3::UNIT_Z;
+
+	   v1.uv = VEC2(0.0f, 1.0f);
+	   v2.uv = VEC2(1.0f, 1.0f);
+	   v3.uv = VEC2(0.5f, 0.0f);
 
 	   obj.VB.push_back(v1);
 	   obj.VB.push_back(v2);
@@ -295,6 +307,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					return 0;
 				}
 				break;
+			case VK_ESCAPE:
+				{
+					DestroyWindow(hWnd);	
+					return 0;
+				}
 			default: return DefWindowProc(hWnd, message, wParam, lParam);
 			}
 		}
@@ -304,10 +321,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if(wParam == 'r')
 			{
-				if(g_renderer.GetRasterizeType() == SR::eRasterizeType_Wireframe)
-					g_renderer.SetRasterizeType(SR::eRasterizeType_Flat);
-				else
-					g_renderer.SetRasterizeType(SR::eRasterizeType_Wireframe);
+				g_renderer.ToggleShadingMode();
 				return 0;
 			}
 		}

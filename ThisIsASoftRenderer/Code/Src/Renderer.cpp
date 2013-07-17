@@ -8,17 +8,32 @@ const int PIXEL_MODE	=	4;
 namespace SR
 {
 	Renderer::Renderer()
-		:m_hwnd(nullptr)
-		,m_curRas(nullptr)
+	:m_hwnd(nullptr)
+	,m_curRas(nullptr)
+	,m_lastFPS(0)
+	{
+		
+	}
+
+	void Renderer::Init()
 	{
 		//初始化所有光栅器
 		m_rasLib.insert(std::make_pair(eRasterizeType_Wireframe, new RasWireFrame));
 		m_rasLib.insert(std::make_pair(eRasterizeType_Flat, new RasFlat));
 		m_rasLib.insert(std::make_pair(eRasterizeType_Gouraud, new RasGouraud));
+		m_rasLib.insert(std::make_pair(eRasterizeType_Textured, new RasTextured));
 
 		//创建后备缓冲
 		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
 
+		int bmWidth = m_backBuffer->GetWidth();
+		int bmHeight = m_backBuffer->GetHeight();
+		int bmPitch = m_backBuffer->GetPitch();
+		BYTE* data = (BYTE*)m_backBuffer->GetDataPointer();
+
+		m_bmBackBuffer.reset(new Gdiplus::Bitmap(bmWidth, bmHeight, bmPitch, PixelFormat32bppARGB, data));
+
+		//测试方向光
 		m_testLight.dir = VEC3(0.3f,-1,-1);
 		m_testLight.dir.Normalize();
 		m_testLight.color = SColor::WHITE;
@@ -41,6 +56,21 @@ namespace SR
 
 	void Renderer::RenderOneFrame()
 	{
+		//update FPS
+		DWORD curTime = GetTickCount();
+		static DWORD lastTime = curTime;
+		static DWORD passedFrameCnt = 0;
+		
+		DWORD passedTime = curTime - lastTime;
+		++passedFrameCnt;
+
+		if(passedTime >= 1000)
+		{
+			m_lastFPS = (DWORD)(passedFrameCnt / (float)passedTime * 1000);
+			lastTime = curTime;
+			passedFrameCnt = 0;
+		}
+
 		m_camera.Update();
 
 		/////////////////////////////////////////////////
@@ -105,15 +135,11 @@ namespace SR
 
 			/////////////////////////////////////////////////
 			///////// 光栅化物体
-			m_curRas->RasterizeTriangleList(workingVB, obj.faces);
+			m_curRas->RasterizeTriangleList(workingVB, obj);
 		}
-
-		/////////////////////////////////////////////////
-		///////// 最后进行swap
-		_Present();
 	}
 
-	void Renderer::_Present()
+	void Renderer::Present()
 	{
 		HDC dc = ::GetDC(m_hwnd);
 		assert(dc);
@@ -130,10 +156,6 @@ namespace SR
 		bi.bV4Width = m_backBuffer->GetWidth();
 		bi.bV4Height = -m_backBuffer->GetHeight();		//负的表示Y轴向下,见MSDN
 		bi.bV4V4Compression = BI_RGB;
-		// 			bi.bV4AlphaMask = 0x1 << 15;
-		// 			bi.bV4RedMask = 0x1f << 10;
-		// 			bi.bV4GreenMask = 0x1f << 5;
-		// 			bi.bV4BlueMask = 0x1f;
 
 		StretchDIBits(dc, 0,0, rect.right, rect.bottom,
 			0, 0, m_backBuffer->GetWidth(), m_backBuffer->GetHeight(),
@@ -195,4 +217,17 @@ namespace SR
 
 		return std::move(vb);
 	}
+
+	void Renderer::ToggleShadingMode()
+	{
+		switch (m_curRas->GetType())
+		{
+		case SR::eRasterizeType_Wireframe:	g_renderer.SetRasterizeType(SR::eRasterizeType_Flat); break;
+		case SR::eRasterizeType_Flat:		g_renderer.SetRasterizeType(SR::eRasterizeType_Gouraud); break;
+		case SR::eRasterizeType_Gouraud:	g_renderer.SetRasterizeType(SR::eRasterizeType_Textured); break;
+		case SR::eRasterizeType_Textured:	g_renderer.SetRasterizeType(SR::eRasterizeType_Wireframe); break;
+		default: assert(0);
+		}
+	}
+
 }

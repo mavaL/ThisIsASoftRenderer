@@ -14,20 +14,20 @@ namespace Common
 	{
 	public:
 		PixelBox(int width, int height, int bytesPerPixel);
-		PixelBox(BITMAP* bm);
-
-		typedef std::vector<char>	DataBuffer;	
+		PixelBox(BITMAP* bm, bool bCopyData);
+		~PixelBox();
 
 	public:
-		void*		GetDataPointer();
-		int			GetWidth() const	{ return m_width; }
-		int			GetHeight() const	{ return m_height; }
-		int			GetPitch() const	{ return m_pitch; }
-		int			GetBitsPerPixel() const	{ return m_bytesPerPixel * 8; }
-		int			GetBytesPerPixel() const	{ return m_bytesPerPixel; }
+		inline void*	GetDataPointer()	{ return (void*)m_data; }
+		inline int		GetWidth() const	{ return m_width; }
+		inline int		GetHeight() const	{ return m_height; }
+		inline int		GetPitch() const	{ return m_pitch; }
+		inline int		GetBitsPerPixel() const	{ return m_bytesPerPixel * 8; }
+		inline int		GetBytesPerPixel() const	{ return m_bytesPerPixel; }
 
 	private:
-		DataBuffer	m_data;
+		char*		m_data;
+		bool		m_ownData;			//数据是否是自己分配的.是则需要自己销毁,否则不用
 		int			m_width;
 		int			m_height;
 		int			m_pitch;

@@ -194,7 +194,7 @@ namespace SR
 	void Camera::AddMoveSpeed( float delta )
 	{
 		m_moveSpeed += delta;
-		m_moveSpeed = max(min(m_moveSpeed, 10), 0.1f);
+		m_moveSpeed = Ext::Clamp(m_moveSpeed, 0.1f, 10.0f);
 	}
 
 }
