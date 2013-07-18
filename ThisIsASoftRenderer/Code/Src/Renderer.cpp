@@ -33,6 +33,9 @@ namespace SR
 
 		m_bmBackBuffer.reset(new Gdiplus::Bitmap(bmWidth, bmHeight, bmPitch, PixelFormat32bppARGB, data));
 
+		//创建z-buffer
+		m_zBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
+
 		//测试方向光
 		m_testLight.dir = VEC3(0.3f,-1,-1);
 		m_testLight.dir.Normalize();
@@ -75,7 +78,7 @@ namespace SR
 
 		/////////////////////////////////////////////////
 		///////// 刷新后备缓冲
-		_Clear();
+		_Clear(SColor::BLACK, 1.0f);
 
 		//for each object
 		for (size_t iObj=0; iObj<m_renderList.size(); ++iObj)
@@ -164,10 +167,36 @@ namespace SR
 		ReleaseDC(m_hwnd, dc);
 	}
 
-	void Renderer::_Clear()
+	void Renderer::_Clear(const SColor& color, float depth)
 	{
-		int bufBytes = m_backBuffer->GetWidth() * m_backBuffer->GetHeight() * m_backBuffer->GetBytesPerPixel();
-		memset(m_backBuffer->GetDataPointer(), 0, bufBytes);
+		//clear backbuffer
+		{
+			DWORD nBuffer = m_backBuffer->GetWidth() * m_backBuffer->GetHeight();
+			void* dst = m_backBuffer->GetDataPointer();
+			int clr = color.color;
+
+			_asm
+			{
+				mov edi, dst
+				mov ecx, nBuffer
+				mov eax, clr
+				rep stosd 
+			}
+		}
+		//clear z-buffer
+		{
+			DWORD nBuffer = m_zBuffer->GetWidth() * m_zBuffer->GetHeight();
+			void* dst = m_zBuffer->GetDataPointer();
+			int d = *(int*)&depth;
+
+			_asm
+			{
+				mov edi, dst
+				mov ecx, nBuffer
+				mov eax, d
+				rep stosd 
+			}
+		}
 	}
 
 	void Renderer::AddRenderable(const SRenderObj& obj)

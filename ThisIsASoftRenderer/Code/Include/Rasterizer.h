@@ -65,11 +65,12 @@ namespace SR
 
 	/////////////////////////////////////////////////////////////
 	//////// ÎÆÀí×ÅÉ«
-	class RasTextured : public RasGouraud
+	class RasTextured : public Rasterizer
 	{
 	public:
 		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Textured; }
+		virtual void	DoLighting(VertexBuffer&, SRenderObj&, const SDirectionLight&) {}
 	};
 }
 

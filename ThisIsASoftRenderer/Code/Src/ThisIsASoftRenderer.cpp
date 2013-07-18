@@ -103,7 +103,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			const float speed = g_renderer.m_camera.GetMoveSpeed();
 			char szText[256];
 			sprintf_s(szText, ARRAYSIZE(szText), 
-				"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed.", speed);
+				"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed. Press R to toggle shade mode!", speed);
 
 			SR::RenderUtil::DrawText(10, 35, szText, RGB(0,255,0));
 		}

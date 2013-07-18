@@ -51,13 +51,14 @@ namespace SR
 		DWORD	GetLastFPS() const	{ return m_lastFPS; }
 
 	private:
-		void	_Clear();
+		void	_Clear(const SColor& color, float depth);
 		//背面拣选.同时对被剔除的顶点做上标记,它们是不需要参与接下来的T&L的.
 		VertexBuffer	_DoBackfaceCulling(SRenderObj& obj);
 
 	private:
 		std::unique_ptr<Gdiplus::Bitmap>	m_bmBackBuffer;
 		std::unique_ptr<Common::PixelBox>	m_backBuffer;
+		std::unique_ptr<Common::PixelBox>	m_zBuffer;
 		std::unordered_map<eRasterizeType, Rasterizer*>	m_rasLib;		//所有可用光栅化器
 		Rasterizer*							m_curRas;					//当前使用光栅化器
 		RenderList							m_renderList;				//渲染列表

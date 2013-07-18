@@ -462,6 +462,8 @@ namespace SR
 	void RenderUtil::DrawText( float x, float y, const STRING& text, const Gdiplus::Color& color )
 	{
 		Gdiplus::Graphics g(g_renderer.m_bmBackBuffer.get());
+		g.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
+		g.SetCompositingQuality(Gdiplus::CompositingQualityHighQuality);
 		Gdiplus::Font font(L"Arial", 11);
 		Gdiplus::PointF origin(x, y);
 		Gdiplus::SolidBrush bru(Gdiplus::Color(255,0,255,0));
@@ -689,8 +691,12 @@ namespace SR
 				float y0 = vert0->pos.y;
 				float y1 = vert1->pos.y;
 				float y2 = vert2->pos.y;
-				vert3.pos.x = x0 + (y2-y0) * (x1-x0) / (y1-y0);
+				float z0 = vert0->pos.z;
+				float z1 = vert1->pos.z;
+				float z2 = vert2->pos.z;
+				vert3.pos.x = x0 + (y2-y0)*(x1-x0)/(y1-y0);
 				vert3.pos.y = y2;
+				vert3.pos.z = z0 + (y2-y0)*(z1-z0)/(y1-y0);
 				vert3.color.a = 255;
 				float t = (y2-y0)/(y1-y0);
 				vert3.color.r = Ext::LinearLerp(vert0->color.r, vert1->color.r, t);
@@ -719,6 +725,9 @@ namespace SR
 		float y0 = vert0->pos.y;
 		float y1 = vert1->pos.y;
 		float y2 = vert2->pos.y;
+		float z0 = vert0->pos.z;
+		float z1 = vert1->pos.z;
+		float z2 = vert2->pos.z;
 		SColor c0 = vert0->color;
 		SColor c1 = vert1->color;
 		SColor c2 = vert2->color;
@@ -729,11 +738,13 @@ namespace SR
 		assert((int)y1 == (int)y2);
 
 		//位置坐标及增量
-		float curLX = x0, curRX = x0;
+		float curLX = x0, curRX = x0, curLZ = z0, curRZ = z0;
 		float curY = y0, endY = y1;
 		float inv_dy = 1.0f/(y1-y0);
 		float left_incX = (x1-x0)*inv_dy;
 		float right_incX = (x2-x0)*inv_dy;
+		float left_incZ = (z1-z0)*inv_dy;
+		float right_incZ = (z2-z0)*inv_dy;
 		//当前两端点颜色分量及增量
 		float rl = c0.r, rr = c0.r;
 		float gl = c0.g, gr = c0.g;
@@ -754,6 +765,8 @@ namespace SR
 			curY = min_clip_y;
 			curLX += left_incX*dy;
 			curRX += right_incX*dy;
+			curLZ += left_incZ*dy;
+			curRZ += right_incZ*dy;
 			rl += drl*dy; gl += dgl*dy; bl += dbl*dy;
 			rr += drr*dy; gr += dgr*dy; br += dbr*dy;
 			curUL += dul*dy; curVL += dvl*dy;
@@ -768,6 +781,7 @@ namespace SR
 		DWORD* vb_start = (DWORD*)g_renderer.m_backBuffer->GetDataPointer();
 		int lpitch = g_renderer.m_backBuffer->GetWidth();
 		DWORD* destBuffer = vb_start + (int)curY*lpitch;
+		float* zBuffer = (float*)g_renderer.m_zBuffer->GetDataPointer() + (int)curY*lpitch;
 
 		{
 			//单独处理第一行,不然下面除0错误
@@ -777,7 +791,10 @@ namespace SR
 			++curY;
 			curLX += left_incX;
 			curRX += right_incX;
+			curLZ += left_incZ;
+			curRZ += right_incZ;
 			destBuffer += lpitch;
+			zBuffer += lpitch;
 			rl += drl; rr += drr;
 			gl += dgl; gr += dgr;
 			bl += dbl; br += dbr;
@@ -796,19 +813,23 @@ namespace SR
 			float db = (br-bl)*invdx;
 			float du = (curUR-curUL)*invdx;
 			float dv = (curVR-curVL)*invdx;
+			float dz = (curRZ-curLZ)*invdx;
 
 			float r = rl, g = gl, b = bl;
 			float u = curUL, v = curVL;
+			float z = curLZ;
 
 			//裁剪区域裁剪x
 			if(lineX0 < min_clip_x)
 			{
-				r += (min_clip_x-lineX0)*dr;
-				g += (min_clip_x-lineX0)*dg;
-				b += (min_clip_x-lineX0)*db;
-				u += (min_clip_x-lineX0)*du;
-				v += (min_clip_x-lineX0)*dv;
+				const int dx = min_clip_x-lineX0;
+				r += dx*dr;
+				g += dx*dg;
+				b += dx*db;
+				u += dx*du;
+				v += dx*dv;
 				lineX0 = min_clip_x;
+				z += dx*dz;
 			}
 			if(lineX1 > max_clip_x)
 			{
@@ -818,29 +839,38 @@ namespace SR
 			//画水平直线
 			for (int curX=lineX0; curX<=lineX1; ++curX)
 			{
-				SColor clr;
-				if(bTextured)
+				//深度测试
+				if(z < zBuffer[curX])
 				{
-					clr = tex->Tex2D_Point(VEC2(u, v));
+					SColor clr;
+					if(bTextured)
+					{
+						clr = tex->Tex2D_Point(VEC2(u, v));
+					}
+					else
+					{
+						clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
+					}
+
+					destBuffer[curX] = clr.color;
+					zBuffer[curX] = z;
 				}
-				else
-				{
-					clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
-				}
-				
-				destBuffer[curX] = clr.color;
 
 				r += dr;
 				g += dg;
 				b += db;
 				u += du;
 				v += dv;
+				z += dz;
 			}
 
 			++curY;
 			curLX += left_incX;
 			curRX += right_incX;
+			curLZ += left_incZ;
+			curRZ += right_incZ;
 			destBuffer += lpitch;
+			zBuffer += lpitch;
 			rl += drl; rr += drr;
 			gl += dgl; gr += dgr;
 			bl += dbl; br += dbr;
@@ -861,6 +891,9 @@ namespace SR
 		float y0 = vert0->pos.y;
 		float y1 = vert1->pos.y;
 		float y2 = vert2->pos.y;
+		float z0 = vert0->pos.z;
+		float z1 = vert1->pos.z;
+		float z2 = vert2->pos.z;
 		SColor c0 = vert0->color;
 		SColor c1 = vert1->color;
 		SColor c2 = vert2->color;
@@ -872,10 +905,12 @@ namespace SR
 
 		//位置坐标及增量
 		float inv_dy = 1.0f/(y1-y0);
-		float curLX = x0, curRX = x2;
+		float curLX = x0, curRX = x2, curLZ = z0, curRZ = z2;
 		float curY = y0, endY = y1;
 		float left_incX = (x1-x0)*inv_dy;
 		float right_incX = (x1-x2)*inv_dy;
+		float left_incZ = (z1-z0)*inv_dy;
+		float right_incZ = (z1-z2)*inv_dy;
 		//当前两端点颜色分量及增量
 		float rl = c0.r, rr = c2.r;
 		float gl = c0.g, gr = c2.g;
@@ -896,6 +931,8 @@ namespace SR
 			curY = min_clip_y;
 			curLX += left_incX * dy;
 			curRX += right_incX * dy;
+			curLZ += left_incZ*dy;
+			curRZ += right_incZ*dy;
 			rl += drl*dy; gl += dgl*dy; bl += dbl*dy;
 			rr += drr*dy; gr += dgr*dy; br += dbr*dy;
 			curUL += dul*dy; curVL += dvl*dy;
@@ -910,6 +947,7 @@ namespace SR
 		DWORD* vb_start = (DWORD*)g_renderer.m_backBuffer->GetDataPointer();
 		int lpitch = g_renderer.m_backBuffer->GetWidth();
 		DWORD* destBuffer = vb_start + (int)curY*lpitch;
+		float* zBuffer = (float*)g_renderer.m_zBuffer->GetDataPointer() + (int)curY*lpitch;
 
 		while (curY <= endY)
 		{
@@ -922,19 +960,23 @@ namespace SR
 			float db = (br-bl)*invdx;
 			float du = (curUR-curUL)*invdx;
 			float dv = (curVR-curVL)*invdx;
+			float dz = (curRZ-curLZ)*invdx;
 
 			float r = rl, g = gl, b = bl;
 			float u = curUL, v = curVL;
+			float z = curLZ;
 
 			//裁剪区域裁剪x
 			if(lineX0 < min_clip_x)
 			{
-				r += (min_clip_x-lineX0)*dr;
-				g += (min_clip_x-lineX0)*dg;
-				b += (min_clip_x-lineX0)*db;
-				u += (min_clip_x-lineX0)*du;
-				v += (min_clip_x-lineX0)*dv;
+				const int dx = min_clip_x-lineX0;
+				r += dx*dr;
+				g += dx*dg;
+				b += dx*db;
+				u += dx*du;
+				v += dx*dv;
 				lineX0 = min_clip_x;
+				z += dx*dz;
 			}
 			if(lineX1 > max_clip_x)
 			{
@@ -944,29 +986,38 @@ namespace SR
 			//画水平直线
 			for (int curX=lineX0; curX<=lineX1; ++curX)
 			{
-				SColor clr;
-				if(bTextured)
+				//深度测试
+				if(z < zBuffer[curX])
 				{
-					clr = tex->Tex2D_Point(VEC2(u, v));
-				}
-				else
-				{
-					clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
-				}
+					SColor clr;
+					if(bTextured)
+					{
+						clr = tex->Tex2D_Point(VEC2(u, v));
+					}
+					else
+					{
+						clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
+					}
 
-				destBuffer[curX] = clr.color;
+					destBuffer[curX] = clr.color;
+					zBuffer[curX] = z;
+				}
 
 				r += dr;
 				g += dg;
 				b += db;
 				u += du;
 				v += dv;
+				z += dz;
 			}
 
 			++curY;
 			curLX += left_incX;
 			curRX += right_incX;
+			curLZ += left_incZ;
+			curRZ += right_incZ;
 			destBuffer += lpitch;
+			zBuffer += lpitch;
 			rl += drl;
 			rr += drr;
 			gl += dgl;

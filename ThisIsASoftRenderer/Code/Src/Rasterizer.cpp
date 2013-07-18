@@ -89,7 +89,6 @@ namespace SR
 	void RasGouraud::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
 	{
 		FaceList& faces = obj.faces;
-		RenderUtil::SortTris_PainterAlgorithm(workingVB, faces);
 
 		//each triangle
 		size_t nFace = faces.size();
@@ -143,7 +142,6 @@ namespace SR
 	void RasTextured::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
 	{
 		FaceList& faces = obj.faces;
-		RenderUtil::SortTris_PainterAlgorithm(workingVB, faces);
 
 		//each triangle
 		size_t nFace = faces.size();
