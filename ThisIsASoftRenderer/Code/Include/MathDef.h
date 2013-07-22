@@ -22,7 +22,7 @@ namespace Common
 	//////// 2D Vector
 	struct SVector2
 	{
-		SVector2() {}
+		SVector2():x(0),y(0) {}
 		SVector2(float _x, float _y):x(_x),y(_y) {}
 
 		float x, y;
@@ -32,7 +32,7 @@ namespace Common
 	//////// 3D Vector
 	struct SVector3
 	{
-		SVector3() {}
+		SVector3():x(0),y(0),z(0) {}
 		SVector3(float _x, float _y, float _z):x(_x),y(_y),z(_z) {}
 		SVector3(const SVector3& rhs):x(rhs.x),y(rhs.y),z(rhs.z) {}
 
@@ -62,7 +62,7 @@ namespace Common
 	//////// 4D Vector
 	struct SVector4
 	{
-		SVector4() {}
+		SVector4():x(0),y(0),z(0),w(0) {}
 		SVector4(SVector3 pt, float _w):x(pt.x),y(pt.y),z(pt.z),w(_w) {}
 		SVector4(float _x, float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) {}
 

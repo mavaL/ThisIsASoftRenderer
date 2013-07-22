@@ -8,16 +8,14 @@
 #ifndef OgreMeshLoader_h__
 #define OgreMeshLoader_h__
 
-#include "GeometryDef.h"
+#include "MeshLoaderBase.h"
 
 namespace Ext
 {
-	class OgreMeshLoader
+	class OgreMeshLoader : public MeshLoader
 	{
-	public:
-		bool	LoadMeshFile(const STRING& filename);
-
-		SR::SRenderObj	m_obj;
+	protected:
+		virtual bool LoadImpl(const STRING& filename);
 	};
 }
 

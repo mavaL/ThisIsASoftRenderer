@@ -27,18 +27,18 @@ namespace SR
 		void	SetDirection(const VEC3& dir);
 		void	Yaw(float angle);
 		void	AddMoveSpeed(float delta);
-		float	GetMoveSpeed()	{ return m_moveSpeed; }
+		inline float	GetMoveSpeed()	{ return m_moveSpeed; }
 
-		const VEC4&		GetPos() const		{ return m_viewPt;	}
+		inline const VEC4&		GetPos() const		{ return m_viewPt;	}
 		VEC4			GetDirection() const;
 		VEC4			GetRight() const;
-		float			GetNearClip() const	{ return m_nearClip; }
-		float			GetFarClip() const	{ return m_farClip; }
-		float			GetFov() const		{ return m_fov; }
-		float			GetAspectRatio() const	{ return m_aspectRatio; }
+		inline float	GetNearClip() const	{ return m_nearClip; }
+		inline float	GetFarClip() const	{ return m_farClip; }
+		inline float	GetFov() const		{ return m_fov; }
+		inline float	GetAspectRatio() const	{ return m_aspectRatio; }
 
-		const MAT44&	GetViewMatrix() const	{ return m_matView; }
-		const MAT44&	GetProjMatrix() const	{ return m_matProj; }
+		inline const MAT44&	GetViewMatrix() const	{ return m_matView; }
+		inline const MAT44&	GetProjMatrix() const	{ return m_matProj; }
 
 		//对物体进行视锥裁减测试.被剪裁返回true.
 		bool	ObjectFrustumCulling(const SRenderObj& obj);

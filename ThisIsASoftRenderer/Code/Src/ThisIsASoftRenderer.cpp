@@ -5,6 +5,7 @@
 #include "../../Resource.h"
 #include "Renderer.h"
 #include "OgreMeshLoader.h"
+#include "ObjMeshLoader.h"
 #include "Utility.h"
 
 #define MAX_LOADSTRING 100
@@ -25,7 +26,8 @@ TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
 
 ULONG_PTR			g_gdiplusToken;
 SR::Renderer		g_renderer;					// 软渲染器
-Ext::OgreMeshLoader	g_meshLoader;				// mesh加载器
+Ext::OgreMeshLoader	g_meshLoader;				// .mesh加载器
+Ext::ObjMeshLoader	g_objLoader;				// .obj加载器
 
 // 此代码模块中包含的函数的前向声明:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -185,56 +187,69 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    g_renderer.Init();
    g_renderer.m_hwnd = hWnd;
-   g_renderer.SetRasterizeType(SR::eRasterizeType_Textured);
+   g_renderer.SetRasterizeType(SR::eRasterizeType_Flat);
 
-   try
+   //// Test case 1: Simple one triangle
    {
-	   g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"));
-	   g_meshLoader.m_obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
-   }
-   catch (std::exception& e)
-   {
-   		MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
-   }
-
-   //解析好的图元放入renderer
-   g_renderer.AddRenderable(g_meshLoader.m_obj);
-
-   {
-	   ///test single triangle
-	   SR::SRenderObj obj;
-
-	   SR::SVertex v1, v2, v3;
-	   v1.pos = VEC4(-20, -15, 0, 1);
-	   v2.pos = VEC4(20, -15, 0, 1);
-	   v3.pos = VEC4(0, 15, 0, 1);
-
-	   v1.normal = VEC3::UNIT_Z;
-	   v2.normal = VEC3::UNIT_Z;
-	   v3.normal = VEC3::UNIT_Z;
-
-	   v1.uv = VEC2(0.0f, 1.0f);
-	   v2.uv = VEC2(1.0f, 1.0f);
-	   v3.uv = VEC2(0.5f, 0.0f);
-
-	   obj.VB.push_back(v1);
-	   obj.VB.push_back(v2);
-	   obj.VB.push_back(v3);
-
-	   SR::SFace face(0,1,2);
-	   face.faceNormal = VEC3::UNIT_Z;
-	   obj.faces.push_back(face);
-
-	   obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(obj.VB);
-	   obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
-	   
-	   obj.matWorldIT = obj.matWorld.Inverse();
-	   obj.matWorldIT = obj.matWorldIT.Transpose();
-
-	   //g_renderer.AddRenderable(obj);
+// 	   SR::SRenderObj obj;
+// 
+// 	   SR::SVertex v1, v2, v3;
+// 	   v1.pos = VEC4(-20, -15, 0, 1);
+// 	   v2.pos = VEC4(20, -15, 0, 1);
+// 	   v3.pos = VEC4(0, 15, 0, 1);
+// 
+// 	   v1.normal = VEC3::UNIT_Z;
+// 	   v2.normal = VEC3::UNIT_Z;
+// 	   v3.normal = VEC3::UNIT_Z;
+// 
+// 	   v1.uv = VEC2(0.0f, 1.0f);
+// 	   v2.uv = VEC2(1.0f, 1.0f);
+// 	   v3.uv = VEC2(0.5f, 0.0f);
+// 
+// 	   obj.VB.push_back(v1);
+// 	   obj.VB.push_back(v2);
+// 	   obj.VB.push_back(v3);
+// 
+// 	   SR::SFace face(0,1,2);
+// 	   face.faceNormal = VEC3::UNIT_Z;
+// 	   obj.faces.push_back(face);
+// 
+// 	   obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(obj.VB);
+// 	   obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 
+// 	   obj.matWorldIT = obj.matWorld.Inverse();
+// 	   obj.matWorldIT = obj.matWorldIT.Transpose();
+// 
+// 	   g_renderer.AddRenderable(obj);
    }
 
-   g_renderer.m_camera.SetPosition(VEC3(0,0,10));
+   //// Test case 2: marine.mesh
+   {
+// 	   try
+// 	   {
+// 		   g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"));
+// 		   g_meshLoader.m_obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 	   }
+// 	   catch (std::exception& e)
+// 	   {
+// 		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
+// 		   return FALSE;
+// 	   }
+// 
+// 	   g_renderer.AddRenderable(g_meshLoader.m_obj);
+   }
+  
+   //// Test case 3: sponza.obj
+   {
+	   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj")))
+	   {
+		   MessageBoxA(hWnd, "Reading .obj failed!", "Error", MB_ICONERROR);
+		   return FALSE;
+	   }
+	   g_renderer.AddRenderObjs(g_objLoader.m_objs);
+   }
+
+   g_renderer.m_camera.SetPosition(VEC3(0,0,200));
 
    //居中鼠标
    RECT rcClient;

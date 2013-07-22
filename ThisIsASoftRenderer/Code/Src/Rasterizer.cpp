@@ -139,7 +139,7 @@ namespace SR
 	}
 
 
-	void RasTextured::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
+	void RasTexturedGouraud::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
 	{
 		FaceList& faces = obj.faces;
 

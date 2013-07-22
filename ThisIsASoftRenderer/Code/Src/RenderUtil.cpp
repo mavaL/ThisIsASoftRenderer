@@ -782,6 +782,8 @@ namespace SR
 		int lpitch = g_renderer.m_backBuffer->GetWidth();
 		DWORD* destBuffer = vb_start + (int)curY*lpitch;
 		float* zBuffer = (float*)g_renderer.m_zBuffer->GetDataPointer() + (int)curY*lpitch;
+		SColor pixelColor;
+		float inv_texel = 1.0f/255;
 
 		{
 			//单独处理第一行,不然下面除0错误
@@ -842,17 +844,19 @@ namespace SR
 				//深度测试
 				if(z < zBuffer[curX])
 				{
-					SColor clr;
-					if(bTextured)
+					if(bTextured && tex->pData)
 					{
-						clr = tex->Tex2D_Point(VEC2(u, v));
+						pixelColor = tex->Tex2D_Point(VEC2(u, v));
+						pixelColor.r *= r * inv_texel;
+						pixelColor.g *= g * inv_texel;
+						pixelColor.b *= b * inv_texel;
 					}
 					else
 					{
-						clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
+						pixelColor.a = 255; pixelColor.r = (BYTE)r; pixelColor.g = (BYTE)g; pixelColor.b = (BYTE)b;
 					}
 
-					destBuffer[curX] = clr.color;
+					destBuffer[curX] = pixelColor.color;
 					zBuffer[curX] = z;
 				}
 
@@ -948,6 +952,8 @@ namespace SR
 		int lpitch = g_renderer.m_backBuffer->GetWidth();
 		DWORD* destBuffer = vb_start + (int)curY*lpitch;
 		float* zBuffer = (float*)g_renderer.m_zBuffer->GetDataPointer() + (int)curY*lpitch;
+		SColor pixelColor;
+		float inv_texel = 1.0f/255;
 
 		while (curY <= endY)
 		{
@@ -989,17 +995,19 @@ namespace SR
 				//深度测试
 				if(z < zBuffer[curX])
 				{
-					SColor clr;
-					if(bTextured)
+					if(bTextured && tex->pData)
 					{
-						clr = tex->Tex2D_Point(VEC2(u, v));
+						pixelColor = tex->Tex2D_Point(VEC2(u, v));
+						pixelColor.r *= r * inv_texel;
+						pixelColor.g *= g * inv_texel;
+						pixelColor.b *= b * inv_texel;
 					}
 					else
 					{
-						clr.a = 255; clr.r = (BYTE)r; clr.g = (BYTE)g; clr.b = (BYTE)b;
+						pixelColor.a = 255; pixelColor.r = (BYTE)r; pixelColor.g = (BYTE)g; pixelColor.b = (BYTE)b;
 					}
 
-					destBuffer[curX] = clr.color;
+					destBuffer[curX] = pixelColor.color;
 					zBuffer[curX] = z;
 				}
 

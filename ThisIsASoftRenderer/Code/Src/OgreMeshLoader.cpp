@@ -4,7 +4,7 @@
 
 namespace Ext
 {
-	bool OgreMeshLoader::LoadMeshFile( const STRING& filename )
+	bool OgreMeshLoader::LoadImpl( const STRING& filename )
 	{
 		TiXmlDocument doc;
 		if(!doc.LoadFile(filename.c_str()))
@@ -13,8 +13,9 @@ namespace Ext
 			return false;
 		}
 
-		m_obj.VB.clear();
-		m_obj.faces.clear();
+		m_objs.clear();
+		m_objs.push_back(SR::SRenderObj());
+		SR::SRenderObj& obj = m_objs.back();
 
 		TiXmlElement* submeshNode = doc.FirstChildElement("mesh")->FirstChildElement("submeshes")->FirstChildElement("submesh");
 
@@ -24,7 +25,7 @@ namespace Ext
 			int nFace = 0;
 			facesNode->Attribute("count", &nFace);
 
-			m_obj.faces.resize(nFace);
+			obj.faces.resize(nFace);
 
 			int idx = 0;
 			TiXmlElement* faceNode = facesNode->FirstChildElement("face");
@@ -36,7 +37,7 @@ namespace Ext
 				faceNode->Attribute("v3", &v3);
 
 				SR::SFace face(v1, v2, v3);
-				m_obj.faces[idx++] = std::move(face);
+				obj.faces[idx++] = std::move(face);
 
 				faceNode = faceNode->NextSiblingElement("face");
 			}
@@ -48,7 +49,7 @@ namespace Ext
 			int nVert = 0;
 			geometryNode->Attribute("vertexcount", &nVert);
 
-			m_obj.VB.resize(nVert);
+			obj.VB.resize(nVert);
 
 			TiXmlElement* vbNode = geometryNode->FirstChildElement("vertexbuffer");
 			//check what we have..
@@ -96,36 +97,11 @@ namespace Ext
 				vert.normal.Normalize();
 				if(uvNode)
 					vert.uv = VEC2(texu, texv);
-				m_obj.VB[idx++] = std::move(vert);
+				obj.VB[idx++] = std::move(vert);
 
 				vertNode = vertNode->NextSiblingElement("vertex");
 			}
 		}
-
-		//计算包围球
-		m_obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(m_obj.VB);
-
-		//计算面法线
-		for (size_t i=0; i<m_obj.faces.size(); ++i)
-		{
-			//fetch vertexs
-			const SR::Index idx1 = m_obj.faces[i].index1;
-			const SR::Index idx2 = m_obj.faces[i].index2;
-			const SR::Index idx3 = m_obj.faces[i].index3;
-
-			const VEC4& p0 = m_obj.VB[idx1].pos;
-			const VEC4& p1 = m_obj.VB[idx2].pos;
-			const VEC4& p2 = m_obj.VB[idx3].pos;
-
-			//NB: 顶点必须是逆时针顺序
-			const VEC3 u = Common::Sub_Vec4_By_Vec4(p1, p0).GetVec3();
-			const VEC3 v = Common::Sub_Vec4_By_Vec4(p2, p0).GetVec3();
-			m_obj.faces[i].faceNormal = Common::CrossProduct_Vec3_By_Vec3(u, v);
-			m_obj.faces[i].faceNormal.Normalize();
-		}
-
-		m_obj.matWorldIT = m_obj.matWorld.Inverse();
-		m_obj.matWorldIT = m_obj.matWorldIT.Transpose();
 
 		return true;
 	}

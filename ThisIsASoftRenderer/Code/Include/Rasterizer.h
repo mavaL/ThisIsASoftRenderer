@@ -17,7 +17,7 @@ namespace SR
 		eRasterizeType_Wireframe,
 		eRasterizeType_Flat,
 		eRasterizeType_Gouraud,
-		eRasterizeType_Textured
+		eRasterizeType_TexturedGouraud
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -64,13 +64,12 @@ namespace SR
 	};
 
 	/////////////////////////////////////////////////////////////
-	//////// 纹理着色
-	class RasTextured : public Rasterizer
+	//////// 纹理+gouraud
+	class RasTexturedGouraud : public RasGouraud
 	{
 	public:
 		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
-		virtual eRasterizeType	GetType()	{ return eRasterizeType_Textured; }
-		virtual void	DoLighting(VertexBuffer&, SRenderObj&, const SDirectionLight&) {}
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_TexturedGouraud; }
 	};
 }
 

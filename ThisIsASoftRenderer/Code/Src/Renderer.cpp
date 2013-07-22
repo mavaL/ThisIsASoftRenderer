@@ -21,7 +21,7 @@ namespace SR
 		m_rasLib.insert(std::make_pair(eRasterizeType_Wireframe, new RasWireFrame));
 		m_rasLib.insert(std::make_pair(eRasterizeType_Flat, new RasFlat));
 		m_rasLib.insert(std::make_pair(eRasterizeType_Gouraud, new RasGouraud));
-		m_rasLib.insert(std::make_pair(eRasterizeType_Textured, new RasTextured));
+		m_rasLib.insert(std::make_pair(eRasterizeType_TexturedGouraud, new RasTexturedGouraud));
 
 		//创建后备缓冲
 		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
@@ -109,6 +109,10 @@ namespace SR
 					continue;
 
 				VEC4& vertPos = workingVB[iVert].pos;
+
+				/////////////////////////////////////////////////
+				///////// 世界变换
+				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, obj.matWorld);
 
 				/////////////////////////////////////////////////
 				///////// 相机变换
@@ -204,6 +208,11 @@ namespace SR
 		m_renderList.push_back(obj);
 	}
 
+	void Renderer::AddRenderObjs( const RenderList& objs )
+	{
+		m_renderList.insert(m_renderList.end(), objs.begin(), objs.end());
+	}
+
 	VertexBuffer Renderer::_DoBackfaceCulling( SRenderObj& obj )
 	{
 		VertexBuffer vb;
@@ -230,7 +239,7 @@ namespace SR
 			faceToCam = Common::Transform_Vec4_By_Mat44(faceToCam, obj.matWorld);
 			faceToCam = Common::Sub_Vec4_By_Vec4(camPos, faceToCam);
 
-			VEC4 faceWorldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.matWorld, false);
+			VEC4 faceWorldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.matWorldIT, false);
 
 			if(Common::DotProduct_Vec3_By_Vec3(faceToCam.GetVec3(), faceWorldNormal.GetVec3()) <= 0.0f)
 			{
@@ -253,8 +262,8 @@ namespace SR
 		{
 		case SR::eRasterizeType_Wireframe:	g_renderer.SetRasterizeType(SR::eRasterizeType_Flat); break;
 		case SR::eRasterizeType_Flat:		g_renderer.SetRasterizeType(SR::eRasterizeType_Gouraud); break;
-		case SR::eRasterizeType_Gouraud:	g_renderer.SetRasterizeType(SR::eRasterizeType_Textured); break;
-		case SR::eRasterizeType_Textured:	g_renderer.SetRasterizeType(SR::eRasterizeType_Wireframe); break;
+		case SR::eRasterizeType_Gouraud:	g_renderer.SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
+		case SR::eRasterizeType_TexturedGouraud:	g_renderer.SetRasterizeType(SR::eRasterizeType_Wireframe); break;
 		default: assert(0);
 		}
 	}

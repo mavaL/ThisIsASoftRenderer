@@ -48,7 +48,8 @@ namespace SR
 	STexture& STexture::operator=( const STexture& rhs )
 	{
 		SAFE_DELETE(pData);
-		LoadTexture(rhs.texName);
+		if(!rhs.texName.empty())
+			LoadTexture(rhs.texName);
 		return *this;
 	}
 }

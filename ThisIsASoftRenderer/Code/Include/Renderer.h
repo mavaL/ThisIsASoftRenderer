@@ -45,8 +45,9 @@ namespace SR
 		void	RenderOneFrame();
 		//交换前后缓冲
 		void	Present();
-		//插入渲染图元
+		//添加渲染对象
 		void	AddRenderable(const SRenderObj& obj);
+		void	AddRenderObjs(const RenderList& objs);
 		const RenderList&	GetRenderList() const { return m_renderList; }
 		DWORD	GetLastFPS() const	{ return m_lastFPS; }
 
