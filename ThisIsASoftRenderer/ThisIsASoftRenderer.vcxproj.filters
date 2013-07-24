@@ -75,6 +75,15 @@
     <ClInclude Include="Code\Include\MeshLoaderBase.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Include\AABB.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Include\RenderObject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Include\Prerequiestity.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Renderer.cpp">
@@ -126,6 +135,12 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Code\Src\MeshLoaderBase.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\AABB.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\RenderObject.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>

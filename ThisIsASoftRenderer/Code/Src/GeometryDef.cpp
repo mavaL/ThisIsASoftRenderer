@@ -29,11 +29,11 @@ namespace SR
 		int w = pData->GetWidth() - 1;
 		int h = pData->GetHeight() - 1;
 
-		int x = (int)(uv.x * w);
-		int y = (int)((1 - uv.y) * h);	//.bmp¸ñÊ½!
+		int x = Ext::Ftoi32_Fast(uv.x * w);
+		int y = Ext::Ftoi32_Fast(uv.y * h);
 
-		x = Ext::Clamp(x, 0, w);
-		y = Ext::Clamp(y, 0, h);
+// 		x = Ext::Clamp(x, 0, w);
+// 		y = Ext::Clamp(y, 0, h);
 
 		return std::move(SColor(pTexData[y * pData->GetWidth() + x]));
 	}

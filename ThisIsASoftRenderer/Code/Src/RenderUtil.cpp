@@ -24,9 +24,9 @@ namespace SR
 		if(bClip && !ClipLine(cxs, cys, cxe, cye))
 			return;
 
-		UCHAR* vb_start = (UCHAR*)g_renderer.m_backBuffer->GetDataPointer();
-		int bytesPerPixel = g_renderer.m_backBuffer->GetBytesPerPixel();
-		int lpitch = g_renderer.m_backBuffer->GetWidth() * bytesPerPixel;
+		UCHAR* vb_start = (UCHAR*)g_env.renderer->m_backBuffer->GetDataPointer();
+		int bytesPerPixel = g_env.renderer->m_backBuffer->GetBytesPerPixel();
+		int lpitch = g_env.renderer->m_backBuffer->GetWidth() * bytesPerPixel;
 
 		int dx,             // difference in x's
 			dy,             // difference in y's
@@ -151,9 +151,9 @@ namespace SR
 		if(bClip && !ClipLine(cxs, cxe, cys, cye))
 			return;
 
-		UCHAR* vb_start = (UCHAR*)g_renderer.m_backBuffer->GetDataPointer();
-		int bytesPerPixel = g_renderer.m_backBuffer->GetBytesPerPixel();
-		int lpitch = g_renderer.m_backBuffer->GetWidth() * bytesPerPixel;
+		UCHAR* vb_start = (UCHAR*)g_env.renderer->m_backBuffer->GetDataPointer();
+		int bytesPerPixel = g_env.renderer->m_backBuffer->GetBytesPerPixel();
+		int lpitch = g_env.renderer->m_backBuffer->GetWidth() * bytesPerPixel;
 
 		vb_start = vb_start + cxs*bytesPerPixel + cys*lpitch;
 		int dx = cxe-cxs;
@@ -461,9 +461,8 @@ namespace SR
 
 	void RenderUtil::DrawText( float x, float y, const STRING& text, const Gdiplus::Color& color )
 	{
-		Gdiplus::Graphics g(g_renderer.m_bmBackBuffer.get());
-		g.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
-		g.SetCompositingQuality(Gdiplus::CompositingQualityHighQuality);
+		Gdiplus::Graphics g(g_env.renderer->m_bmBackBuffer.get());
+		g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHighQuality);
 		Gdiplus::Font font(L"Arial", 11);
 		Gdiplus::PointF origin(x, y);
 		Gdiplus::SolidBrush bru(Gdiplus::Color(255,0,255,0));
@@ -474,29 +473,29 @@ namespace SR
 		g.DrawString(wstr.c_str(), -1, &font, origin, &format, &bru);
 	}
 
-	float RenderUtil::ComputeBoundingRadius( const VertexBuffer& verts )
+	void RenderUtil::ComputeAABB( RenderObject& obj )
 	{
-		float maxSqRadius = 0;
+		AABB& aabb = obj.m_localAABB;
+		const VertexBuffer& verts = obj.m_verts;
 
-		for (size_t i=0; i<verts.size(); ++i)
+		//AABB start with the first pos
+		aabb.m_minCorner = verts[0].pos.GetVec3();
+		aabb.m_maxCorner = verts[0].pos.GetVec3();
+
+		for (size_t i=1; i<verts.size(); ++i)
 		{
-			const VEC4& pos = verts[i].pos;
-			float SqRadius = pos.x * pos.x + pos.y * pos.y + pos.z * pos.z;
-			if(SqRadius > maxSqRadius)
-				maxSqRadius = SqRadius;
+			aabb.Merge(verts[i].pos);
 		}
-
-		return std::sqrt(maxSqRadius);
 	}
 
 	bool RenderUtil::PreDrawTriangle( const SVertex*& vert0, const SVertex*& vert1, const SVertex*& vert2, eTriangleShape& retType )
 	{
-		int x0 = (int)vert0->pos.x;
-		int x1 = (int)vert1->pos.x;
-		int x2 = (int)vert2->pos.x;
-		int y0 = (int)vert0->pos.y;
-		int y1 = (int)vert1->pos.y;
-		int y2 = (int)vert2->pos.y;
+		int x0 = Ext::Floor32_Fast(vert0->pos.x);
+		int x1 = Ext::Floor32_Fast(vert1->pos.x);
+		int x2 = Ext::Floor32_Fast(vert2->pos.x);
+		int y0 = Ext::Floor32_Fast(vert0->pos.y);
+		int y1 = Ext::Floor32_Fast(vert1->pos.y);
+		int y2 = Ext::Floor32_Fast(vert2->pos.y);
 
 		//该三角面不在裁剪区域内,不绘制
 		if(	(x0 < min_clip_x && x1 < min_clip_x && x2 < min_clip_x) ||
@@ -607,18 +606,32 @@ namespace SR
 
 	void RenderUtil::DrawBottomTri_Scanline( float x0, float y0, float x1, float y1, float x2, float y2, SColor color )
 	{
-		assert((int)y1 == (int)y2);
+		//NB: 为了填充规则,要保持x坐标有序
+		if(x1 > x2)
+		{
+			Ext::Swap(x1, x2);
+			Ext::Swap(y1, y2);
+		}
 
-		float curLX = x0, curRX = x0, curY = y0;
+		assert(Ext::Floor32_Fast(y1) == Ext::Floor32_Fast(y2));
+
+		//左上填充规则
+		int curY = Ext::Ceil32_Fast(y0);
+		int endY = Ext::Ceil32_Fast(y1) - 1;
+		float curLX = x0, curRX = x0;
 		float left_incX = (x1-x0)/(y1-y0);
 		float right_incX = (x2-x0)/(y2-y0);
 
 		while (curY <= y1)
 		{
-			int lineX0 = floor(curLX + 0.5f);
-			int lineX1 = floor(curRX + 0.5f);
+			//左上填充规则
+			int lineX0 = Ext::Ceil32_Fast(curLX);
+			int lineX1 = Ext::Ceil32_Fast(curRX) - 1;
 
-			RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+			if(lineX1 - lineX0 >= 0)
+			{
+				RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+			}
 
 			++curY;
 			curLX += left_incX;
@@ -628,18 +641,32 @@ namespace SR
 
 	void RenderUtil::DrawTopTri_Scanline( float x0, float y0, float x1, float y1, float x2, float y2, SColor color )
 	{
-		assert((int)y0 == (int)y2);
+		//NB: 为了填充规则,要保持x坐标有序
+		if(x0 > x2)
+		{
+			Ext::Swap(x0, x2);
+			Ext::Swap(y0, y2);
+		}
 
-		float curLX = x0, curRX = x2, curY = y0;
+		assert(Ext::Floor32_Fast(y0) == Ext::Floor32_Fast(y2));
+
+		//左上填充规则
+		int curY = Ext::Ceil32_Fast(y0);
+		int endY = Ext::Ceil32_Fast(y1) - 1;
+		float curLX = x0, curRX = x2;
 		float left_incX = (x1-x0)/(y1-y0);
 		float right_incX = (x1-x2)/(y1-y2);
 
-		while (curY <= y1)
+		while (curY <= endY)
 		{
-			int lineX0 = floor(curLX + 0.5f);
-			int lineX1 = floor(curRX + 0.5f);
+			//左上填充规则
+			int lineX0 = Ext::Ceil32_Fast(curLX);
+			int lineX1 = Ext::Ceil32_Fast(curRX) - 1;
 
-			RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+			if(lineX1 - lineX0 >= 0)
+			{
+				RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+			}
 
 			++curY;
 			curLX += left_incX;
@@ -694,11 +721,12 @@ namespace SR
 				float z0 = vert0->pos.z;
 				float z1 = vert1->pos.z;
 				float z2 = vert2->pos.z;
-				vert3.pos.x = x0 + (y2-y0)*(x1-x0)/(y1-y0);
-				vert3.pos.y = y2;
-				vert3.pos.z = z0 + (y2-y0)*(z1-z0)/(y1-y0);
-				vert3.color.a = 255;
+
 				float t = (y2-y0)/(y1-y0);
+				vert3.pos.x = x0 + (x1-x0)*t;
+				vert3.pos.y = y2;
+				vert3.pos.z = z0 + (z1-z0)*t;
+				vert3.color.a = 255;
 				vert3.color.r = Ext::LinearLerp(vert0->color.r, vert1->color.r, t);
 				vert3.color.g = Ext::LinearLerp(vert0->color.g, vert1->color.g, t);
 				vert3.color.b = Ext::LinearLerp(vert0->color.b, vert1->color.b, t);
@@ -715,7 +743,7 @@ namespace SR
 
 	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
 	{
-		//NB: 为了正确插值颜色和UV,要保持x坐标有序
+		//NB: 为了正确插值和填充规则,要保持x坐标有序
 		if(vert1->pos.x > vert2->pos.x)
 			Ext::Swap(vert1, vert2);
 
@@ -735,16 +763,17 @@ namespace SR
 		float u1 = vert1->uv.x, v1 = vert1->uv.y;
 		float u2 = vert2->uv.x, v2 = vert2->uv.y;
 
-		assert((int)y1 == (int)y2);
+		assert(Ext::Floor32_Fast(y1) == Ext::Floor32_Fast(y2));
 
 		//位置坐标及增量
 		float curLX = x0, curRX = x0, curLZ = z0, curRZ = z0;
-		float curY = y0, endY = y1;
 		float inv_dy = 1.0f/(y1-y0);
 		float left_incX = (x1-x0)*inv_dy;
 		float right_incX = (x2-x0)*inv_dy;
 		float left_incZ = (z1-z0)*inv_dy;
 		float right_incZ = (z2-z0)*inv_dy;
+		//左上填充规则
+		int curY = Ext::Ceil32_Fast(y0), endY = Ext::Ceil32_Fast(y1) - 1;
 		//当前两端点颜色分量及增量
 		float rl = c0.r, rr = c0.r;
 		float gl = c0.g, gr = c0.g;
@@ -778,94 +807,82 @@ namespace SR
 		}
 
 		//定位输出位置
-		DWORD* vb_start = (DWORD*)g_renderer.m_backBuffer->GetDataPointer();
-		int lpitch = g_renderer.m_backBuffer->GetWidth();
-		DWORD* destBuffer = vb_start + (int)curY*lpitch;
-		float* zBuffer = (float*)g_renderer.m_zBuffer->GetDataPointer() + (int)curY*lpitch;
+		DWORD* vb_start = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer();
+		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
+		DWORD* destBuffer = vb_start + curY*lpitch;
+		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + curY*lpitch;
 		SColor pixelColor;
 		float inv_texel = 1.0f/255;
 
-		{
-			//单独处理第一行,不然下面除0错误
-			//TODO: how to clean this ugly code
-			//destBuffer[(int)(curLX + 0.5f)] = c0.color;
-
-			++curY;
-			curLX += left_incX;
-			curRX += right_incX;
-			curLZ += left_incZ;
-			curRZ += right_incZ;
-			destBuffer += lpitch;
-			zBuffer += lpitch;
-			rl += drl; rr += drr;
-			gl += dgl; gr += dgr;
-			bl += dbl; br += dbr;
-			curUL += dul; curVL += dvl;
-			curUR += dur; curVR += dvr;
-		}
-
 		while (curY <= endY)
 		{
-			int lineX0 = (int)(curLX + 0.5f);
-			int lineX1 = (int)(curRX + 0.5f);
+			//左上填充规则
+			int lineX0 = Ext::Ceil32_Fast(curLX);
+			int lineX1 = Ext::Ceil32_Fast(curRX) - 1;
 
-			float invdx = 1.0f/(lineX1-lineX0); // <-除0
-			float dr = (rr-rl)*invdx;
-			float dg = (gr-gl)*invdx;
-			float db = (br-bl)*invdx;
-			float du = (curUR-curUL)*invdx;
-			float dv = (curVR-curVL)*invdx;
-			float dz = (curRZ-curLZ)*invdx;
+			if(lineX1 - lineX0 >= 0)
+			{
+				float invdx = 1/(curRX-curLX);
+				float dr = (rr-rl)*invdx;
+				float dg = (gr-gl)*invdx;
+				float db = (br-bl)*invdx;
+				float du = (curUR-curUL)*invdx;
+				float dv = (curVR-curVL)*invdx;
+				float dz = (curRZ-curLZ)*invdx;
 
-			float r = rl, g = gl, b = bl;
-			float u = curUL, v = curVL;
-			float z = curLZ;
+				float r = rl, g = gl, b = bl;
+				float u = curUL, v = curVL;
+				float z = curLZ;
 
-			//裁剪区域裁剪x
-			if(lineX0 < min_clip_x)
-			{
-				const int dx = min_clip_x-lineX0;
-				r += dx*dr;
-				g += dx*dg;
-				b += dx*db;
-				u += dx*du;
-				v += dx*dv;
-				lineX0 = min_clip_x;
-				z += dx*dz;
-			}
-			if(lineX1 > max_clip_x)
-			{
-				lineX1 = max_clip_x;
-			}
-			
-			//画水平直线
-			for (int curX=lineX0; curX<=lineX1; ++curX)
-			{
-				//深度测试
-				if(z < zBuffer[curX])
+				//裁剪区域裁剪x
+				if(lineX0 < min_clip_x)
 				{
-					if(bTextured && tex->pData)
-					{
-						pixelColor = tex->Tex2D_Point(VEC2(u, v));
-						pixelColor.r *= r * inv_texel;
-						pixelColor.g *= g * inv_texel;
-						pixelColor.b *= b * inv_texel;
-					}
-					else
-					{
-						pixelColor.a = 255; pixelColor.r = (BYTE)r; pixelColor.g = (BYTE)g; pixelColor.b = (BYTE)b;
-					}
-
-					destBuffer[curX] = pixelColor.color;
-					zBuffer[curX] = z;
+					const int dx = min_clip_x-lineX0;
+					r += dx*dr;
+					g += dx*dg;
+					b += dx*db;
+					u += dx*du;
+					v += dx*dv;
+					lineX0 = min_clip_x;
+					z += dx*dz;
+				}
+				if(lineX1 > max_clip_x)
+				{
+					lineX1 = max_clip_x;
 				}
 
-				r += dr;
-				g += dg;
-				b += db;
-				u += du;
-				v += dv;
-				z += dz;
+				//画水平直线
+				for (int curX=lineX0; curX<=lineX1; ++curX)
+				{
+					//深度测试
+					if(z < zBuffer[curX])
+					{
+						if(bTextured && tex->pData)
+						{
+							pixelColor = tex->Tex2D_Point(VEC2(u, v));
+							pixelColor.r *= r * inv_texel;
+							pixelColor.g *= g * inv_texel;
+							pixelColor.b *= b * inv_texel;
+						}
+						else
+						{
+							pixelColor.a = 255; 
+							pixelColor.r = (BYTE)Ext::Ftoi32_Fast(r);
+							pixelColor.g = (BYTE)Ext::Ftoi32_Fast(g); 
+							pixelColor.b = (BYTE)Ext::Ftoi32_Fast(b);
+						}
+
+						destBuffer[curX] = pixelColor.color;
+						zBuffer[curX] = z;
+					}
+
+					r += dr;
+					g += dg;
+					b += db;
+					u += du;
+					v += dv;
+					z += dz;
+				}
 			}
 
 			++curY;
@@ -885,7 +902,7 @@ namespace SR
 
 	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
 	{
-		//NB: 为了正确插值颜色和UV,要保持x坐标有序
+		//NB: 为了正确插值和填充规则,要保持x坐标有序
 		if(vert0->pos.x > vert2->pos.x)
 			Ext::Swap(vert0, vert2);
 
@@ -905,16 +922,17 @@ namespace SR
 		float u1 = vert1->uv.x, v1 = vert1->uv.y;
 		float u2 = vert2->uv.x, v2 = vert2->uv.y;
 
-		assert((int)y0 == (int)y2);
+		assert(Ext::Floor32_Fast(y0) == Ext::Floor32_Fast(y2));
 
 		//位置坐标及增量
 		float inv_dy = 1.0f/(y1-y0);
 		float curLX = x0, curRX = x2, curLZ = z0, curRZ = z2;
-		float curY = y0, endY = y1;
 		float left_incX = (x1-x0)*inv_dy;
 		float right_incX = (x1-x2)*inv_dy;
 		float left_incZ = (z1-z0)*inv_dy;
 		float right_incZ = (z1-z2)*inv_dy;
+		//左上填充规则
+		int curY = Ext::Ceil32_Fast(y0), endY = Ext::Ceil32_Fast(y1) - 1;
 		//当前两端点颜色分量及增量
 		float rl = c0.r, rr = c2.r;
 		float gl = c0.g, gr = c2.g;
@@ -948,75 +966,81 @@ namespace SR
 		}
 
 		//定位输出位置
-		DWORD* vb_start = (DWORD*)g_renderer.m_backBuffer->GetDataPointer();
-		int lpitch = g_renderer.m_backBuffer->GetWidth();
-		DWORD* destBuffer = vb_start + (int)curY*lpitch;
-		float* zBuffer = (float*)g_renderer.m_zBuffer->GetDataPointer() + (int)curY*lpitch;
+		DWORD* vb_start = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer();
+		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
+		DWORD* destBuffer = vb_start + curY*lpitch;
+		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + curY*lpitch;
 		SColor pixelColor;
 		float inv_texel = 1.0f/255;
 
 		while (curY <= endY)
 		{
-			int lineX0 = (int)(curLX + 0.5f);
-			int lineX1 = (int)(curRX + 0.5f);
+			//左上填充规则
+			int lineX0 = Ext::Ceil32_Fast(curLX);
+			int lineX1 = Ext::Ceil32_Fast(curRX) - 1;
 
-			float invdx = 1.0f/(lineX1-lineX0);
-			float dr = (rr-rl)*invdx;
-			float dg = (gr-gl)*invdx;
-			float db = (br-bl)*invdx;
-			float du = (curUR-curUL)*invdx;
-			float dv = (curVR-curVL)*invdx;
-			float dz = (curRZ-curLZ)*invdx;
-
-			float r = rl, g = gl, b = bl;
-			float u = curUL, v = curVL;
-			float z = curLZ;
-
-			//裁剪区域裁剪x
-			if(lineX0 < min_clip_x)
+			if(lineX1 - lineX0 >= 0)
 			{
-				const int dx = min_clip_x-lineX0;
-				r += dx*dr;
-				g += dx*dg;
-				b += dx*db;
-				u += dx*du;
-				v += dx*dv;
-				lineX0 = min_clip_x;
-				z += dx*dz;
-			}
-			if(lineX1 > max_clip_x)
-			{
-				lineX1 = max_clip_x;
-			}
+				float invdx = 1/(curRX-curLX);
+				float dr = (rr-rl)*invdx;
+				float dg = (gr-gl)*invdx;
+				float db = (br-bl)*invdx;
+				float du = (curUR-curUL)*invdx;
+				float dv = (curVR-curVL)*invdx;
+				float dz = (curRZ-curLZ)*invdx;
 
-			//画水平直线
-			for (int curX=lineX0; curX<=lineX1; ++curX)
-			{
-				//深度测试
-				if(z < zBuffer[curX])
+				float r = rl, g = gl, b = bl;
+				float u = curUL, v = curVL;
+				float z = curLZ;
+
+				//裁剪区域裁剪x
+				if(lineX0 < min_clip_x)
 				{
-					if(bTextured && tex->pData)
-					{
-						pixelColor = tex->Tex2D_Point(VEC2(u, v));
-						pixelColor.r *= r * inv_texel;
-						pixelColor.g *= g * inv_texel;
-						pixelColor.b *= b * inv_texel;
-					}
-					else
-					{
-						pixelColor.a = 255; pixelColor.r = (BYTE)r; pixelColor.g = (BYTE)g; pixelColor.b = (BYTE)b;
-					}
-
-					destBuffer[curX] = pixelColor.color;
-					zBuffer[curX] = z;
+					const int dx = min_clip_x-lineX0;
+					r += dx*dr;
+					g += dx*dg;
+					b += dx*db;
+					u += dx*du;
+					v += dx*dv;
+					lineX0 = min_clip_x;
+					z += dx*dz;
+				}
+				if(lineX1 > max_clip_x)
+				{
+					lineX1 = max_clip_x;
 				}
 
-				r += dr;
-				g += dg;
-				b += db;
-				u += du;
-				v += dv;
-				z += dz;
+				//画水平直线
+				for (int curX=lineX0; curX<=lineX1; ++curX)
+				{
+					//深度测试
+					if(z < zBuffer[curX])
+					{
+						if(bTextured && tex->pData)
+						{
+							pixelColor = tex->Tex2D_Point(VEC2(u, v));
+							pixelColor.r *= r * inv_texel;
+							pixelColor.g *= g * inv_texel;
+							pixelColor.b *= b * inv_texel;
+						}
+						else
+						{
+							pixelColor.r = (BYTE)Ext::Ftoi32_Fast(r);
+							pixelColor.g = (BYTE)Ext::Ftoi32_Fast(g); 
+							pixelColor.b = (BYTE)Ext::Ftoi32_Fast(b);
+						}
+
+						destBuffer[curX] = pixelColor.color;
+						zBuffer[curX] = z;
+					}
+
+					r += dr;
+					g += dg;
+					b += db;
+					u += du;
+					v += dv;
+					z += dz;
+				}
 			}
 
 			++curY;

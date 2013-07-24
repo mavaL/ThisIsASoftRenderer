@@ -20,21 +20,27 @@ namespace Common
 {
 	/////////////////////////////////////////////////////////////
 	//////// 2D Vector
-	struct SVector2
+	class Vector2
 	{
-		SVector2():x(0),y(0) {}
-		SVector2(float _x, float _y):x(_x),y(_y) {}
+	public:
+		Vector2():x(0),y(0) {}
+		Vector2(float _x, float _y):x(_x),y(_y) {}
+
+		inline void Set(float _x, float _y) { x=_x; y=_y; }
 
 		float x, y;
 	};
 
 	/////////////////////////////////////////////////////////////
 	//////// 3D Vector
-	struct SVector3
+	class Vector3
 	{
-		SVector3():x(0),y(0),z(0) {}
-		SVector3(float _x, float _y, float _z):x(_x),y(_y),z(_z) {}
-		SVector3(const SVector3& rhs):x(rhs.x),y(rhs.y),z(rhs.z) {}
+	public:
+		Vector3():x(0),y(0),z(0) {}
+		Vector3(float _x, float _y, float _z):x(_x),y(_y),z(_z) {}
+		Vector3(const Vector3& rhs):x(rhs.x),y(rhs.y),z(rhs.z) {}
+
+		inline void Set(float _x, float _y, float _z) { x=_x; y=_y; z=_z; }
 
 		inline void	Normalize()
 		{
@@ -49,38 +55,41 @@ namespace Common
 
 		float x, y, z;
 
-		static SVector3		ZERO;
-		static SVector3		UNIT_X;
-		static SVector3		UNIT_Y;
-		static SVector3		UNIT_Z;
-		static SVector3		NEG_UNIT_X;
-		static SVector3		NEG_UNIT_Y;
-		static SVector3		NEG_UNIT_Z;
+		static Vector3		ZERO;
+		static Vector3		UNIT_X;
+		static Vector3		UNIT_Y;
+		static Vector3		UNIT_Z;
+		static Vector3		NEG_UNIT_X;
+		static Vector3		NEG_UNIT_Y;
+		static Vector3		NEG_UNIT_Z;
 	};
 
 	/////////////////////////////////////////////////////////////
 	//////// 4D Vector
-	struct SVector4
+	class Vector4
 	{
-		SVector4():x(0),y(0),z(0),w(0) {}
-		SVector4(SVector3 pt, float _w):x(pt.x),y(pt.y),z(pt.z),w(_w) {}
-		SVector4(float _x, float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) {}
+	public:
+		Vector4():x(0),y(0),z(0),w(0) {}
+		Vector4(Vector3 pt, float _w):x(pt.x),y(pt.y),z(pt.z),w(_w) {}
+		Vector4(float _x, float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) {}
 
-		inline SVector3	GetVec3()	{ return std::move(SVector3(x,y,z)); }
+		inline void		Set(float _x, float _y, float _z, float _w) { x=_x; y=_y; z=_z; w=_w; }
+		inline Vector3	GetVec3() const	{ return std::move(Vector3(x,y,z)); }
 		//求负
 		inline void	Neg() { x = -x; y = -y; z = -z; w = -w; }
 
 		float x, y, z, w;
 
-		static SVector4		ZERO;
+		static Vector4		ZERO;
 	};
 
 	/////////////////////////////////////////////////////////////
 	//////// 4x4 Matrix
-	struct SMatrix44
+	class Matrix44
 	{
-		SMatrix44() { MakeIdentity(); }
-		SMatrix44(	float _m00, float _m01, float _m02, float _m03,
+	public:
+		Matrix44() { MakeIdentity(); }
+		Matrix44(	float _m00, float _m01, float _m02, float _m03,
 					float _m10, float _m11, float _m12, float _m13,
 					float _m20, float _m21, float _m22, float _m23,
 					float _m30, float _m31, float _m32, float _m33)
@@ -89,25 +98,25 @@ namespace Common
 					,m20(_m20),m21(_m21),m22(_m22),m23(_m23)
 					,m30(_m30),m31(_m31),m32(_m32),m33(_m33) {}
 
-		void		SetRow(int row, const SVector4 vec);
+		void		SetRow(int row, const Vector4 vec);
 		//单位矩阵化
 		void		MakeIdentity();
 		//零矩阵化
-		void		MakeZero();
+		inline void	MakeZero() { memset(m_arr, 0, sizeof(m_arr)); }
 		//求逆
-		SMatrix44	Inverse();
+		Matrix44	Inverse();
 		//转置
-		SMatrix44	Transpose();
+		Matrix44	Transpose();
 		//清除平移部分
-		void		ClearTranslation();
+		inline void	ClearTranslation() { m_arr[0][3] = m_arr[1][3] = m_arr[2][3] = 0; m_arr[3][3] = 1; }
 		//设置平移部分
-		void		SetTranslation(const SVector4& t);
+		void		SetTranslation(const Vector4& t);
 		//获取平移部分
-		SVector4	GetTranslation() const;
+		inline Vector4	GetTranslation() const { return std::move(VEC4(m03, m13, m23, m33)); }
 		//通过轴角对构建旋转矩阵,平移部分设为0
-		void		FromAxisAngle(const SVector3& axis, float angle);
+		void		FromAxisAngle(const Vector3& axis, float angle);
 		//通过轴构建矩阵
-		void		FromAxises(const SVector3& v1, const SVector3& v2, const SVector3& v3);
+		void		FromAxises(const Vector3& v1, const Vector3& v2, const Vector3& v3);
 
 		union
 		{
@@ -123,57 +132,78 @@ namespace Common
 		};
 	};
 
-	/////////////////////////////////////////////////////////////
-	//////// 以4x4矩阵变换3d坐标,bPosOrDir为true表示变换的是点,否则是方向
-	SVector4	Transform_Vec3_By_Mat44(const SVector3& pt, const SMatrix44& mat, bool bPosOrDir);
-
-	/////////////////////////////////////////////////////////////
 	//////// 以4x4矩阵变换4d坐标
-	SVector4	Transform_Vec4_By_Mat44(const SVector4& pt, const SMatrix44& mat);
+	Vector4	Transform_Vec4_By_Mat44(const Vector4& pt, const Matrix44& mat);
 
-	/////////////////////////////////////////////////////////////
+	//////// 以4x4矩阵变换3d坐标,bPosOrDir为true表示变换的是点,否则是方向
+	inline Vector4	Transform_Vec3_By_Mat44(const Vector3& pt, const Matrix44& mat, bool bPosOrDir)
+	{
+		return Transform_Vec4_By_Mat44(Vector4(pt, bPosOrDir ? 1.0f : 0.0f), mat);
+	}
+
 	//////// 4x4矩阵相乘
-	SMatrix44	Multiply_Mat44_By_Mat44(const SMatrix44& mat1, const SMatrix44& mat2);
+	Matrix44	Multiply_Mat44_By_Mat44(const Matrix44& mat1, const Matrix44& mat2);
 
-	/////////////////////////////////////////////////////////////
 	//////// 4d向量相加
-	SVector4	Add_Vec4_By_Vec4(const SVector4& v1, const SVector4& v2);
+	inline Vector4	Add_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2)
+	{
+		return std::move(Vector4(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z, v1.w+v2.w));
+	}
 
-	/////////////////////////////////////////////////////////////
 	//////// 4d向量乘以常数
-	SVector4	Multiply_Vec4_By_K(const SVector4& v, float k);
+	inline Vector4	Multiply_Vec4_By_K(const Vector4& v, float k)
+	{
+		return std::move(Vector4(v.x * k, v.y * k, v.z * k, v.w * k));
+	}
 
-	/////////////////////////////////////////////////////////////
 	//////// 4d向量相减
-	SVector4	Sub_Vec4_By_Vec4(const SVector4& v1, const SVector4& v2);
+	inline Vector4	Sub_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2)
+	{
+		return std::move(Vector4(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z, v1.w-v2.w));
+	}
 
-	/////////////////////////////////////////////////////////////
 	//////// 3d向量相加
-	SVector3	Add_Vec3_By_Vec3(const SVector3& v1, const SVector3& v2);
+	inline Vector3	Add_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
+	{
+		return std::move(Vector3(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z));
+	}
 
-	/////////////////////////////////////////////////////////////
 	//////// 3d向量点乘
-	float		DotProduct_Vec3_By_Vec3(const SVector3& v1, const SVector3& v2);
+	inline float	DotProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
+	{
+		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+	}
 
-	/////////////////////////////////////////////////////////////
 	//////// 3d向量叉乘
-	SVector3	CrossProduct_Vec3_By_Vec3(const SVector3& v1, const SVector3& v2);
+	inline Vector3	CrossProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
+	{
+		Vector3 ret;
 
-	/////////////////////////////////////////////////////////////
+		ret.x = v1.y * v2.z - v1.z * v2.y;
+		ret.y = v1.z * v2.x - v1.x * v2.z;
+		ret.z = v1.x * v2.y - v1.y * v2.x;
+
+		return std::move(ret);
+	}
+
 	//////// 3d向量乘以常数
-	SVector3	Multiply_Vec3_By_K(const SVector3& v, float k);
+	inline Vector3	Multiply_Vec3_By_K(const Vector3& v, float k)
+	{
+		return std::move(Vector3(v.x * k, v.y * k, v.z * k));
+	}
 
-	/////////////////////////////////////////////////////////////
 	//////// 角度转弧度
-	inline float Angle_To_Radian(float angle)
+	inline float	Angle_To_Radian(float angle)
 	{
 		return angle * PI / 180;
 	}
-}
 
-typedef Common::SVector2	VEC2;
-typedef Common::SVector3	VEC3;
-typedef Common::SVector4	VEC4;
-typedef Common::SMatrix44	MAT44;
+	//////// 两点间距离
+	inline float	Vec3_Distance(const Vector3& v1, const Vector3& v2)
+	{
+		float dx = v1.x - v2.x, dy = v1.y - v2.y, dz = v1.z - v2.z;
+		return sqrt(dx * dx + dy * dy + dz * dz);
+	}
+}
 
 #endif // MathDef_h__

@@ -5,6 +5,7 @@
 
 	purpose:	.obj .mtl 加载器.
 				艹,obj格式太恶心了,不便利的感觉
+				TODO:后台增量加载场景
 *********************************************************************/
 
 #ifndef ObjMeshLoader_h__
@@ -29,7 +30,7 @@ namespace Ext
 
 	private:
 		void	_PreReadObject(std::ifstream& file, DWORD& nVert, DWORD& nUv, DWORD& nNormal, DWORD& nFace);
-		void	_DefineVertex(const SR::SVertex& vert, const SVertCompare& comp, SR::SRenderObj& obj, SR::Index& retIdx);
+		void	_DefineVertex(const SR::SVertex& vert, const SVertCompare& comp, SR::RenderObject& obj, SR::Index& retIdx);
 
 		std::vector<SVertCompare>	m_vecComp;
 	};

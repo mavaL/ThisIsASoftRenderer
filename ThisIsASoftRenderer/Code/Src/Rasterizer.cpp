@@ -5,75 +5,85 @@
 
 namespace SR
 {
-	void RasWireFrame::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
+	void RasWireFrame::RasterizeTriangleList( SRenderContext& context )
 	{
+		FaceList& faces = *context.faces;
+		VertexBuffer& verts = *context.verts;
+
 		//each triangle
-		FaceList& faces = obj.faces;
 		size_t nFace = faces.size();
 
 		for (size_t iFace=0; iFace<nFace; ++iFace)
 		{
-			if(faces[iFace].IsBackface)
+			const SFace& face = faces[iFace];
+			if(face.IsBackface || face.bCulled)
 				continue;
 
 			const Index idx1 = faces[iFace].index1;
 			const Index idx2 = faces[iFace].index2;
 			const Index idx3 = faces[iFace].index3;
 
-			const VEC4& p0 = workingVB[idx1].pos;
-			const VEC4& p1 = workingVB[idx2].pos;
-			const VEC4& p2 = workingVB[idx3].pos;
+			const VEC4& p0 = verts[idx1].pos;
+			const VEC4& p1 = verts[idx2].pos;
+			const VEC4& p2 = verts[idx3].pos;
 
-			assert(workingVB[idx1].bActive && workingVB[idx2].bActive && workingVB[idx3].bActive && "Shit, this can't be true!");
+			assert(verts[idx1].bActive && verts[idx2].bActive && verts[idx3].bActive && "Shit, this can't be true!");
 
 			//each line
 			RenderUtil::DrawLine_Bresenahams((int)p0.x, (int)p0.y, (int)p1.x, (int)p1.y, SColor::WHITE, true);
 			RenderUtil::DrawLine_Bresenahams((int)p1.x, (int)p1.y, (int)p2.x, (int)p2.y, SColor::WHITE, true);
 			RenderUtil::DrawLine_Bresenahams((int)p0.x, (int)p0.y, (int)p2.x, (int)p2.y, SColor::WHITE, true);
+
+			++g_env.renderer->m_frameStatics.nRenderedFace;
 		}
 	}
 
-	void RasFlat::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
+	void RasFlat::RasterizeTriangleList( SRenderContext& context )
 	{
-		FaceList& faces = obj.faces;
-		RenderUtil::SortTris_PainterAlgorithm(workingVB, faces);
+		FaceList& faces = *context.faces;
+		VertexBuffer& verts = *context.verts;
+
+		RenderUtil::SortTris_PainterAlgorithm(verts, faces);
 
 		//each triangle
 		size_t nFace = faces.size();
 
 		for (size_t iFace=0; iFace<nFace; ++iFace)
 		{
-			if(faces[iFace].IsBackface)
+			const SFace& face = faces[iFace];
+			if(face.IsBackface || face.bCulled)
 				continue;
 
 			const Index idx1 = faces[iFace].index1;
 			const Index idx2 = faces[iFace].index2;
 			const Index idx3 = faces[iFace].index3;
 
-			const SVertex& vert0 = workingVB[idx1];
-			const SVertex& vert1 = workingVB[idx2];
-			const SVertex& vert2 = workingVB[idx3];
+			const SVertex& vert0 = verts[idx1];
+			const SVertex& vert1 = verts[idx2];
+			const SVertex& vert2 = verts[idx3];
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
-			RenderUtil::DrawTriangle_Scanline(&vert0, &vert1, &vert2, faces[iFace].color);			
+			RenderUtil::DrawTriangle_Scanline(&vert0, &vert1, &vert2, faces[iFace].color);
+
+			++g_env.renderer->m_frameStatics.nRenderedFace;
 		}
 	}
 
-	void RasFlat::DoLighting( VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light )
+	void RasFlat::DoLighting( VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj, const SDirectionLight& light )
 	{
 		///Flat shade基于面法线
 		VEC3 lightDir = light.dir;
 		lightDir.Neg();
-		for (size_t iFace=0; iFace<obj.faces.size(); ++iFace)
+		for (size_t iFace=0; iFace<workingFaces.size(); ++iFace)
 		{
-			SFace& face = obj.faces[iFace];
+			SFace& face = workingFaces[iFace];
 
-			if(face.IsBackface)
+			if(face.IsBackface || face.bCulled)
 				continue;
 
 			//在世界空间进行光照
-			VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.matWorldIT, false).GetVec3();
+			VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.m_matWorldIT, false).GetVec3();
 			worldNormal.Normalize();
 			float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
 
@@ -85,34 +95,37 @@ namespace SR
 		}
 	}
 
-
-	void RasGouraud::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
+	void RasGouraud::RasterizeTriangleList( SRenderContext& context )
 	{
-		FaceList& faces = obj.faces;
+		FaceList& faces = *context.faces;
+		VertexBuffer& verts = *context.verts;
 
 		//each triangle
 		size_t nFace = faces.size();
 
 		for (size_t iFace=0; iFace<nFace; ++iFace)
 		{
-			if(faces[iFace].IsBackface)
+			const SFace& face = faces[iFace];
+			if(face.IsBackface || face.bCulled)
 				continue;
 
 			const Index idx1 = faces[iFace].index1;
 			const Index idx2 = faces[iFace].index2;
 			const Index idx3 = faces[iFace].index3;
 
-			const SVertex& vert0 = workingVB[idx1];
-			const SVertex& vert1 = workingVB[idx2];
-			const SVertex& vert2 = workingVB[idx3];
+			const SVertex& vert0 = verts[idx1];
+			const SVertex& vert1 = verts[idx2];
+			const SVertex& vert2 = verts[idx3];
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
-			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, false, nullptr);			
+			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, false, nullptr);
+
+			++g_env.renderer->m_frameStatics.nRenderedFace;
 		}
 	}
 
-	void RasGouraud::DoLighting( VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light )
+	void RasGouraud::DoLighting( VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj, const SDirectionLight& light )
 	{
 		///Gouraud shade基于逐顶点法线
 		VEC3 lightDir = light.dir;
@@ -126,7 +139,7 @@ namespace SR
 				continue;
 
 			//在世界空间进行光照
-			VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(vert.normal, obj.matWorldIT, false).GetVec3();
+			VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(vert.normal, obj.m_matWorldIT, false).GetVec3();
 			worldNormal.Normalize();
 			float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
 
@@ -139,29 +152,33 @@ namespace SR
 	}
 
 
-	void RasTexturedGouraud::RasterizeTriangleList( const VertexBuffer& workingVB, SRenderObj& obj )
+	void RasTexturedGouraud::RasterizeTriangleList( SRenderContext& context )
 	{
-		FaceList& faces = obj.faces;
+		FaceList& faces = *context.faces;
+		VertexBuffer& verts = *context.verts;
 
 		//each triangle
 		size_t nFace = faces.size();
 
 		for (size_t iFace=0; iFace<nFace; ++iFace)
 		{
-			if(faces[iFace].IsBackface)
+			const SFace& face = faces[iFace];
+			if(face.IsBackface || face.bCulled)
 				continue;
 
 			const Index idx1 = faces[iFace].index1;
 			const Index idx2 = faces[iFace].index2;
 			const Index idx3 = faces[iFace].index3;
 
-			const SVertex& vert0 = workingVB[idx1];
-			const SVertex& vert1 = workingVB[idx2];
-			const SVertex& vert2 = workingVB[idx3];
+			const SVertex& vert0 = verts[idx1];
+			const SVertex& vert1 = verts[idx2];
+			const SVertex& vert2 = verts[idx3];
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
-			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, true, &obj.texture);			
+			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, true, context.texture);
+
+			++g_env.renderer->m_frameStatics.nRenderedFace;
 		}
 	}
 

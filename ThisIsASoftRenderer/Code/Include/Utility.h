@@ -8,7 +8,7 @@
 #ifndef Utility_h__
 #define Utility_h__
 
-typedef std::string STRING;
+#include "Prerequiestity.h"
 
 #ifndef SAFE_DELETE
 #define SAFE_DELETE(p) if(p) { delete p; p=nullptr; }
@@ -42,8 +42,52 @@ namespace Ext
 	template<class T>
 	inline T LinearLerp(const T& s, const T& e, float t)
 	{
-		assert(t >= 0.0f && t<= 1.0f);
 		return T(s + (e - s) * t);
+	}
+
+	__forceinline int Ceil32_Fast(float x)
+	{
+		const float h = 0.5f;
+		int t;
+
+		_asm
+		{
+			fld	x
+			fadd	h
+			fistp	t
+		}
+
+		return t;
+	}
+
+	__forceinline int Floor32_Fast(float x)
+	{
+		const float h = 0.5f;
+		int t;
+
+		_asm
+		{
+			fld	x
+			fsub	h
+			fistp	t
+		}
+
+		return t;
+	}
+
+	__forceinline int Ftoi32_Fast(float x)
+	{
+		int t;
+		_asm
+		{
+			fld	x
+			fistp	t
+		}
+
+		return t;
+
+		// SSE?
+		//return _mm_cvtt_ss2si(_mm_load_ss(&x)); 
 	}
 
 	std::wstring	AnsiToUnicode(const char* src);

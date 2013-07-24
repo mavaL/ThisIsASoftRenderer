@@ -152,10 +152,12 @@ namespace SR
 		return Common::Transform_Vec3_By_Mat44(VEC3::UNIT_X, m_matRot, false);
 	}
 
-	bool Camera::ObjectFrustumCulling( const SRenderObj& obj )
+	bool Camera::ObjectFrustumCulling( const RenderObject& obj )
 	{
+		const AABB& aabb = obj.m_worldAABB;
+
 		//物体坐标转换到相机空间进行裁减
-		VEC4 pos = obj.matWorld.GetTranslation();
+		VEC4 pos(aabb.GetCenter(), 1.0f);
 		pos = Common::Transform_Vec4_By_Mat44(pos, GetViewMatrix());
 
 		float n = GetNearClip();
@@ -165,19 +167,19 @@ namespace SR
 		float half_h = half_w / GetAspectRatio();
 
 		//检测前后面
-		if(pos.z >= -n || pos.z <= -f)
+		if(-pos.z+aabb.m_boundingRadius <= n || -pos.z-aabb.m_boundingRadius >= f)
 			return true;
 
 		//检测左右面
 		float planeX = half_w * pos.z / -n;
-		if(pos.x - planeX >= obj.boundingRadius ||
-			pos.x + obj.boundingRadius <= -planeX)
+		if(pos.x - planeX >= aabb.m_boundingRadius ||
+			pos.x + aabb.m_boundingRadius <= -planeX)
 			return true;
 
 		//检测上下面
 		float planeY = half_h * pos.z / -n;
-		if(pos.y - planeY >= obj.boundingRadius ||
-			pos.y + obj.boundingRadius <= -planeY)
+		if(pos.y - planeY >= aabb.m_boundingRadius ||
+			pos.y + aabb.m_boundingRadius <= -planeY)
 			return true;
 
 		return false;

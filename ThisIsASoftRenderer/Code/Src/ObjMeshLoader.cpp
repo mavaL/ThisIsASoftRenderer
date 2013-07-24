@@ -25,12 +25,8 @@ namespace Ext
 			if(file.eof())
 				break;
 
-			//物体一多直接卡死了..艹
-			if(m_objs.size() > 10)
-				break;
-
-			m_objs.push_back(SR::SRenderObj());
-			SR::SRenderObj& obj = m_objs.back();
+			m_objs.push_back(SR::RenderObject());
+			SR::RenderObject& obj = m_objs.back();
 
 			//获取数据量,避免反复分配存储空间
 			DWORD nPos, nUv, nNormal, nFace;
@@ -41,8 +37,8 @@ namespace Ext
 			vector<VEC2> vecUv(nUv);
 			vector<VEC3> vecNormal(nNormal);
 
-			obj.VB.reserve(nFace*3);
-			obj.faces.resize(nFace);
+			obj.m_verts.reserve(nFace*3);
+			obj.m_faces.resize(nFace);
 			m_vecComp.clear();
 			m_vecComp.reserve(nFace*3);
 
@@ -78,6 +74,8 @@ namespace Ext
 				{
 					VEC2& uv = vecUv[curUv++];
 					file >> uv.x >> uv.y;
+					//NB: 纹理目前只支持.bmp格式
+					uv.y = 1 - uv.y;
 				}
 				else if (strcmp(command.c_str(), "vn") == 0)
 				{
@@ -116,7 +114,7 @@ namespace Ext
 						_DefineVertex(vertex, comp, obj, idxVert[i]);
 					}
 
-					SR::SFace& face = obj.faces[curFace++];
+					SR::SFace& face = obj.m_faces[curFace++];
 					face.index1 = idxVert[0]; face.index2 = idxVert[1]; face.index3 = idxVert[2];
 				}
 				else if (strcmp(command.c_str(), "g") == 0)
@@ -193,9 +191,9 @@ namespace Ext
 		}
 	}
 
-	void ObjMeshLoader::_DefineVertex( const SR::SVertex& vert, const SVertCompare& comp, SR::SRenderObj& obj, SR::Index& retIdx )
+	void ObjMeshLoader::_DefineVertex( const SR::SVertex& vert, const SVertCompare& comp, SR::RenderObject& obj, SR::Index& retIdx )
 	{
-		//.obj这种面的定义不是直接给顶点索引,而是各成分都可自由组合.所以构建VB要麻烦些.
+		//.obj这种面的定义不是直接给顶点索引,而是各成分都可自由组合.所以构建m_verts要麻烦些.
 		//1. 在当前顶点列表中查找,是否有相同顶点
 		auto iter = std::find(m_vecComp.begin(), m_vecComp.end(), comp);
 
@@ -207,9 +205,9 @@ namespace Ext
 		else
 		{
 			//3. 如果没有,则插入新顶点到末尾
-			obj.VB.push_back(vert);
+			obj.m_verts.push_back(vert);
 			m_vecComp.push_back(comp);
-			retIdx = obj.VB.size() - 1;
+			retIdx = obj.m_verts.size() - 1;
 		}
 	}
 

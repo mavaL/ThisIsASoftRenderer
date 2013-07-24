@@ -7,6 +7,7 @@
 #include "OgreMeshLoader.h"
 #include "ObjMeshLoader.h"
 #include "Utility.h"
+#include "RenderObject.h"
 
 #define MAX_LOADSTRING 100
 const int		SCREEN_WIDTH	=	800;
@@ -25,9 +26,10 @@ TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
 
 ULONG_PTR			g_gdiplusToken;
-SR::Renderer		g_renderer;					// 软渲染器
-Ext::OgreMeshLoader	g_meshLoader;				// .mesh加载器
-Ext::ObjMeshLoader	g_objLoader;				// .obj加载器
+SR::Renderer		g_renderer;			
+Ext::OgreMeshLoader	g_meshLoader;		
+Ext::ObjMeshLoader	g_objLoader;
+SGlobalEnv			g_env;
 
 // 此代码模块中包含的函数的前向声明:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -71,47 +73,45 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		} 
-		//////////////////////////////////////////////////////////
-		/////////////// main game processing goes here
-		g_renderer.RenderOneFrame();
-
-		//显示一些辅助信息
+		else
 		{
-			const VEC4& pos = g_renderer.m_camera.GetPos();
-			char szText[256];
-			sprintf_s(szText, ARRAYSIZE(szText), "lastFPS : %d, CamPos : (%f, %f, %f)", g_renderer.GetLastFPS(), pos.x, pos.y, pos.z);
+			// Render a frame during idle time (no messages are waiting)
 
-			auto& renderList = g_renderer.GetRenderList();
-			size_t nCulled = std::count_if(renderList.begin(), renderList.end(), [&](const SR::SRenderObj& obj){ return obj.m_bCull; });
+			//////////////////////////////////////////////////////////
+			/////////////// main game processing goes here
+			g_renderer.OnFrameMove();
+			g_renderer.RenderOneFrame();
 
-			size_t nBackface = 0;
-			for (size_t iObj=0; iObj<renderList.size(); ++iObj)
+			//显示一些辅助信息
 			{
-				const SR::FaceList& faces = renderList[iObj].faces;
-				for (size_t iFace=0; iFace<faces.size(); ++iFace)
-				{
-					if(faces[iFace].IsBackface) ++nBackface;
-				}
+				const VEC4& pos = g_renderer.m_camera.GetPos();
+				char szText[128];
+				sprintf_s(szText, ARRAYSIZE(szText), "lastFPS : %d, CamPos : (%f, %f, %f)", 
+					g_renderer.m_frameStatics.lastFPS, pos.x, pos.y, pos.z);
+
+				SR::RenderUtil::DrawText(10, 10, szText, RGB(0,255,0));
 			}
 
-			char szText2[128];
-			sprintf_s(szText2, ARRAYSIZE(szText2), "      Culled Object : %d, Culled Backface : %d", nCulled, nBackface);
-			strcat_s(szText, sizeof(szText), szText2);
+			{
+				char szText[128];
+				sprintf_s(szText, ARRAYSIZE(szText), "RenderedTris : %d, Culled Object : %d, Culled Backface : %d", 
+					g_renderer.m_frameStatics.nRenderedFace, g_renderer.m_frameStatics.nObjCulled, g_renderer.m_frameStatics.nBackFace);
 
-			SR::RenderUtil::DrawText(10, 10, szText, RGB(0,255,0));
+				SR::RenderUtil::DrawText(10, 35, szText, RGB(0,255,0));
+			}
+
+			{
+				const float speed = g_renderer.m_camera.GetMoveSpeed();
+				char szText[128];
+				sprintf_s(szText, ARRAYSIZE(szText), 
+					"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed. Press R to toggle shade mode!", speed);
+
+				SR::RenderUtil::DrawText(10, 60, szText, RGB(0,255,0));
+			}
+
+			//swap!!
+			g_renderer.Present();
 		}
-
-		{
-			const float speed = g_renderer.m_camera.GetMoveSpeed();
-			char szText[256];
-			sprintf_s(szText, ARRAYSIZE(szText), 
-				"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed. Press R to toggle shade mode!", speed);
-
-			SR::RenderUtil::DrawText(10, 35, szText, RGB(0,255,0));
-		}
-
-		//swap!!
-		g_renderer.Present();
 	}
 
 	//GdiplusShutdown(g_gdiplusToken);
@@ -168,30 +168,52 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    HWND hWnd;
+   hInst = hInstance;
 
-   hInst = hInstance; // 将实例句柄存储在全局变量中
+   //调整真正渲染窗口大小
+   RECT rcClient;
+   rcClient.top = 0;
+   rcClient.left = 0;
+   rcClient.right = SCREEN_WIDTH;
+   rcClient.bottom = SCREEN_HEIGHT;
 
-   DWORD style = WS_SYSMENU | WS_BORDER | WS_CAPTION | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_POPUP;
+   DWORD style = WS_SYSMENU | WS_BORDER | WS_CAPTION | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+
+   AdjustWindowRect(&rcClient, style, FALSE);
+
+   const int realWidth = rcClient.right - rcClient.left;
+   const int realHeight = rcClient.bottom - rcClient.top;
+
+   int windowLeft = (GetSystemMetrics(SM_CXSCREEN) - realWidth) / 2;
+   int windowTop = (GetSystemMetrics(SM_CYSCREEN) - realHeight) / 2;
+ 
    hWnd = CreateWindow(szWindowClass, szTitle, style,
-      CW_USEDEFAULT, 0, SCREEN_WIDTH, SCREEN_HEIGHT, NULL, NULL, hInstance, NULL);
+      windowLeft, windowTop, realWidth, realHeight, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
-   {
       return FALSE;
-   }
+
+   ShowWindow(hWnd, SW_SHOWNORMAL);
+   UpdateWindow(hWnd);
 
    /////////////////////////////////////////////////////////
    /////////////// Init here
    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
    GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, NULL);
 
-   g_renderer.Init();
-   g_renderer.m_hwnd = hWnd;
-   g_renderer.SetRasterizeType(SR::eRasterizeType_Flat);
+   //init globals
+   g_env.hwnd = hWnd;
+   g_env.renderer = &g_renderer;
+   g_env.meshLoader = &g_meshLoader;
+   g_env.objLoader = &g_objLoader;
+
+   //init renderer
+   g_env.renderer->Init();
+   g_env.renderer->SetRasterizeType(SR::eRasterizeType_Gouraud);
 
    //// Test case 1: Simple one triangle
    {
-// 	   SR::SRenderObj obj;
+// 	   SR::RenderObject obj;
 // 
 // 	   SR::SVertex v1, v2, v3;
 // 	   v1.pos = VEC4(-20, -15, 0, 1);
@@ -206,29 +228,28 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 	   v2.uv = VEC2(1.0f, 1.0f);
 // 	   v3.uv = VEC2(0.5f, 0.0f);
 // 
-// 	   obj.VB.push_back(v1);
-// 	   obj.VB.push_back(v2);
-// 	   obj.VB.push_back(v3);
+// 	   obj.m_verts.push_back(v1);
+// 	   obj.m_verts.push_back(v2);
+// 	   obj.m_verts.push_back(v3);
 // 
 // 	   SR::SFace face(0,1,2);
 // 	   face.faceNormal = VEC3::UNIT_Z;
-// 	   obj.faces.push_back(face);
+// 	   obj.m_faces.push_back(face);
 // 
-// 	   obj.boundingRadius = SR::RenderUtil::ComputeBoundingRadius(obj.VB);
-// 	   obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 	   obj.m_matWorld.SetTranslation(VEC4(100,0,0,1));
+// 	   obj.m_texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
 // 
-// 	   obj.matWorldIT = obj.matWorld.Inverse();
-// 	   obj.matWorldIT = obj.matWorldIT.Transpose();
+// 	   SR::RenderUtil::ComputeAABB(obj);
 // 
-// 	   g_renderer.AddRenderable(obj);
+// 	   g_env.renderer->AddRenderable(obj);
    }
 
    //// Test case 2: marine.mesh
    {
 // 	   try
 // 	   {
-// 		   g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"));
-// 		   g_meshLoader.m_obj.texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 		   g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"), true);
+// 		   g_meshLoader.m_objs[0].m_texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
 // 	   }
 // 	   catch (std::exception& e)
 // 	   {
@@ -236,29 +257,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 		   return FALSE;
 // 	   }
 // 
-// 	   g_renderer.AddRenderable(g_meshLoader.m_obj);
+// 	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
    }
   
    //// Test case 3: sponza.obj
    {
-	   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj")))
+	   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
 	   {
 		   MessageBoxA(hWnd, "Reading .obj failed!", "Error", MB_ICONERROR);
 		   return FALSE;
 	   }
-	   g_renderer.AddRenderObjs(g_objLoader.m_objs);
+	   g_env.renderer->AddRenderObjs(g_objLoader.m_objs);
    }
 
-   g_renderer.m_camera.SetPosition(VEC3(0,0,200));
-
-   //居中鼠标
-   RECT rcClient;
-   GetClientRect(hWnd, &rcClient);
-   int w = rcClient.right - rcClient.left;
-   int h = rcClient.bottom - rcClient.top;
-   SetCursorPos(rcClient.left+w/2, rcClient.top+h/2);
-   ShowWindow(hWnd, SW_SHOWNORMAL);
-   UpdateWindow(hWnd);
+   g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
+   //g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
 
    return TRUE;
 }
@@ -312,13 +325,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 			case VK_ADD:
 				{
-					g_renderer.m_camera.AddMoveSpeed(1.0f);
+					g_env.renderer->m_camera.AddMoveSpeed(1.0f);
 					return 0;
 				}
 				break;
 			case VK_SUBTRACT:
 				{
-					g_renderer.m_camera.AddMoveSpeed(-0.2f);
+					g_env.renderer->m_camera.AddMoveSpeed(-0.2f);
 					return 0;
 				}
 				break;
@@ -336,7 +349,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if(wParam == 'r')
 			{
-				g_renderer.ToggleShadingMode();
+				g_env.renderer->ToggleShadingMode();
 				return 0;
 			}
 		}

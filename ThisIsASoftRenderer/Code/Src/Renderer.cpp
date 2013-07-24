@@ -8,9 +8,7 @@ const int PIXEL_MODE	=	4;
 namespace SR
 {
 	Renderer::Renderer()
-	:m_hwnd(nullptr)
-	,m_curRas(nullptr)
-	,m_lastFPS(0)
+	:m_curRas(nullptr)
 	{
 		
 	}
@@ -57,25 +55,29 @@ namespace SR
 		m_curRas = iter->second;
 	}
 
-	void Renderer::RenderOneFrame()
+	void Renderer::OnFrameMove()
 	{
 		//update FPS
 		DWORD curTime = GetTickCount();
 		static DWORD lastTime = curTime;
 		static DWORD passedFrameCnt = 0;
-		
+
 		DWORD passedTime = curTime - lastTime;
 		++passedFrameCnt;
 
 		if(passedTime >= 1000)
 		{
-			m_lastFPS = (DWORD)(passedFrameCnt / (float)passedTime * 1000);
+			m_frameStatics.lastFPS = (DWORD)(passedFrameCnt / (float)passedTime * 1000);
 			lastTime = curTime;
 			passedFrameCnt = 0;
 		}
 
+		m_frameStatics.Reset();
 		m_camera.Update();
+	}
 
+	void Renderer::RenderOneFrame()
+	{
 		/////////////////////////////////////////////////
 		///////// 刷新后备缓冲
 		_Clear(SColor::BLACK, 1.0f);
@@ -83,24 +85,26 @@ namespace SR
 		//for each object
 		for (size_t iObj=0; iObj<m_renderList.size(); ++iObj)
 		{
-			SRenderObj& obj = m_renderList[iObj];
-			obj.ResetState();
+			RenderObject& obj = m_renderList[iObj];
+			obj.OnFrameMove();
 
 			/////////////////////////////////////////////////
 			///////// 视锥裁减
 			if(m_camera.ObjectFrustumCulling(obj))
 			{
-				obj.m_bCull = true;
+				++m_frameStatics.nObjCulled;
 				continue;
 			}
 
+			FaceList workingFaces(obj.m_faces.begin(), obj.m_faces.end());
+
 			/////////////////////////////////////////////////
 			///////// 世界空间进行背面剔除
-			VertexBuffer workingVB = _DoBackfaceCulling(obj);
+			VertexBuffer workingVB = _DoBackfaceCulling(workingFaces, obj);
 
 			/////////////////////////////////////////////////
 			///////// 世界空间进行光照
-			m_curRas->DoLighting(workingVB, obj, m_testLight);
+			m_curRas->DoLighting(workingVB, workingFaces, obj, m_testLight);
 
 			//transform each vertex
 			for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
@@ -112,12 +116,26 @@ namespace SR
 
 				/////////////////////////////////////////////////
 				///////// 世界变换
-				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, obj.matWorld);
+				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, obj.m_matWorld);
 
 				/////////////////////////////////////////////////
 				///////// 相机变换
 				auto matView = m_camera.GetViewMatrix();
 				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matView);
+			}
+
+			/////////////////////////////////////////////////
+			///////// 相机空间进行三角面级别的3D裁减
+			///////// 必须在透视变换之前,不然小于近裁面的顶点会被反转
+			_Do3DClipping(workingVB, workingFaces);
+
+			//继续顶点变换流水线..
+			for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
+			{
+				if(!workingVB[iVert].bActive)
+					continue;
+
+				VEC4& vertPos = workingVB[iVert].pos;
 
 				/////////////////////////////////////////////////
 				///////// 透视投影变换
@@ -142,17 +160,23 @@ namespace SR
 
 			/////////////////////////////////////////////////
 			///////// 光栅化物体
-			m_curRas->RasterizeTriangleList(workingVB, obj);
+			Rasterizer::SRenderContext context;
+			context.verts = &workingVB;
+			context.faces = &workingFaces;
+			context.texture = &obj.m_texture;
+
+			m_curRas->RasterizeTriangleList(context);
 		}
 	}
 
 	void Renderer::Present()
 	{
-		HDC dc = ::GetDC(m_hwnd);
+		HWND hwnd = g_env.hwnd;
+		HDC dc = ::GetDC(hwnd);
 		assert(dc);
 
 		RECT rect;
-		GetClientRect(m_hwnd, &rect);
+		GetClientRect(hwnd, &rect);
 		const void* memory = m_backBuffer->GetDataPointer();
 
 		BITMAPV4HEADER bi;
@@ -168,7 +192,7 @@ namespace SR
 			0, 0, m_backBuffer->GetWidth(), m_backBuffer->GetHeight(),
 			memory, (const BITMAPINFO*)(&bi), DIB_RGB_COLORS, SRCCOPY);
 
-		ReleaseDC(m_hwnd, dc);
+		ReleaseDC(hwnd, dc);
 	}
 
 	void Renderer::_Clear(const SColor& color, float depth)
@@ -203,7 +227,7 @@ namespace SR
 		}
 	}
 
-	void Renderer::AddRenderable(const SRenderObj& obj)
+	void Renderer::AddRenderable(const RenderObject& obj)
 	{
 		m_renderList.push_back(obj);
 	}
@@ -213,37 +237,38 @@ namespace SR
 		m_renderList.insert(m_renderList.end(), objs.begin(), objs.end());
 	}
 
-	VertexBuffer Renderer::_DoBackfaceCulling( SRenderObj& obj )
+	VertexBuffer Renderer::_DoBackfaceCulling( FaceList& workingFaces, RenderObject& obj )
 	{
 		VertexBuffer vb;
-		vb.assign(obj.VB.begin(), obj.VB.end());
+		vb.assign(obj.m_verts.begin(), obj.m_verts.end());
 
 		const VEC4& camPos = m_camera.GetPos();
 
-		for (size_t i=0; i<obj.faces.size(); ++i)
+		for (size_t i=0; i<workingFaces.size(); ++i)
 		{
-			SFace& face = obj.faces[i];
+			SFace& face = workingFaces[i];
 			
 			//fetch vertexs
 			const SR::Index idx1 = face.index1;
 			const SR::Index idx2 = face.index2;
 			const SR::Index idx3 = face.index3;
 
-			const VEC4& pos1 = obj.VB[idx1].pos;
-			const VEC4& pos2 = obj.VB[idx2].pos;
-			const VEC4& pos3 = obj.VB[idx3].pos;
+			const VEC4& pos1 = obj.m_verts[idx1].pos;
+			const VEC4& pos2 = obj.m_verts[idx2].pos;
+			const VEC4& pos3 = obj.m_verts[idx3].pos;
 
 			VEC4 faceToCam = Common::Add_Vec4_By_Vec4(Common::Add_Vec4_By_Vec4(pos1, pos2), pos3);
 			faceToCam = Common::Multiply_Vec4_By_K(faceToCam, 0.33333f);
 			faceToCam.w = 1;
-			faceToCam = Common::Transform_Vec4_By_Mat44(faceToCam, obj.matWorld);
+			faceToCam = Common::Transform_Vec4_By_Mat44(faceToCam, obj.m_matWorld);
 			faceToCam = Common::Sub_Vec4_By_Vec4(camPos, faceToCam);
 
-			VEC4 faceWorldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.matWorldIT, false);
+			VEC4 faceWorldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.m_matWorldIT, false);
 
 			if(Common::DotProduct_Vec3_By_Vec3(faceToCam.GetVec3(), faceWorldNormal.GetVec3()) <= 0.0f)
 			{
 				face.IsBackface = true;
+				++m_frameStatics.nBackFace;
 			}
 			else
 			{
@@ -256,14 +281,197 @@ namespace SR
 		return std::move(vb);
 	}
 
+	void Renderer::_Do3DClipping( VertexBuffer& VB, FaceList& faces )
+	{
+		const float n = m_camera.GetNearClip();
+		const float f = m_camera.GetFarClip();
+		const float fov = m_camera.GetFov();
+		const float half_w = n * std::tan(fov/2);
+		const float half_h = half_w / m_camera.GetAspectRatio();
+
+		size_t nFaces = faces.size();
+		for (size_t i=0; i<nFaces; ++i)
+		{
+			SFace& face = faces[i];
+
+			if(face.IsBackface)
+				continue;
+
+			//fetch vertexs
+			const SR::Index idx1 = face.index1;
+			const SR::Index idx2 = face.index2;
+			const SR::Index idx3 = face.index3;
+
+			SVertex& vert1 = VB[idx1];
+			SVertex& vert2 = VB[idx2];
+			SVertex& vert3 = VB[idx3];
+
+			//左右面
+			float x1 = half_w * vert1.pos.z / -n;
+			float x2 = half_w * vert2.pos.z / -n;
+			float x3 = half_w * vert3.pos.z / -n;
+
+			if(	(vert1.pos.x < -x1 && vert2.pos.x < -x2 && vert3.pos.x < -x3) ||
+				(vert1.pos.x > x1 && vert2.pos.x > x2 && vert3.pos.x > x3)	)
+			{
+				face.bCulled = true;
+				continue;
+			}
+
+			//上下面
+			float y1 = half_h * vert1.pos.z / -n;
+			float y2 = half_h * vert2.pos.z / -n;
+			float y3 = half_h * vert3.pos.z / -n;
+
+			if(	(vert1.pos.y < -y1 && vert2.pos.y < -y2 && vert3.pos.y < -y3) ||
+				(vert1.pos.y > y1 && vert2.pos.y > y2 && vert3.pos.y > y3)	)
+			{
+				face.bCulled = true;
+				continue;
+			}
+
+			//远裁面
+			if(-vert1.pos.z > f && -vert2.pos.z > f && -vert3.pos.z > f)
+			{
+				face.bCulled = true;
+				continue;
+			}
+
+			// 近裁面,需要处理3种情况:
+			int nVertOut = 0;
+			bool flags[3] = { false };
+			if(-vert1.pos.z < n) { flags[0] = true; ++nVertOut; }
+			if(-vert2.pos.z < n) { flags[1] = true; ++nVertOut; }
+			if(-vert3.pos.z < n) { flags[2] = true; ++nVertOut; }
+
+			/*	1.完全在视锥外,则剔除:
+
+				  ___________ near clip plane
+					  p0
+					  /\
+					 /  \
+					/____\
+				  p1	  p2					*/
+
+			if(flags[0] && flags[1] && flags[2])
+			{
+				face.bCulled = true;
+				continue;
+			}
+
+			/*	2.2个顶点在视锥内,1个顶点在视锥外,裁剪后需要分割为2个三角面:
+
+				   p0______p2
+				     \    /
+				 _____\__/_____ near clip plane
+				       \/
+				       p1							*/
+
+			else if(nVertOut == 1)
+			{
+				//找出内外的顶点
+				SVertex *p0, *p1, *p2; 
+				Index idxp0, idxp1, idxp2;
+				if(flags[0])		{ p1 = &vert1; p0 = &vert2; p2 = &vert3; idxp1 = idx1; idxp0 = idx2; idxp2 = idx3; }
+				else if(flags[1])	{ p1 = &vert2; p0 = &vert1; p2 = &vert3; idxp1 = idx2; idxp0 = idx1; idxp2 = idx3; }
+				else				{ p1 = &vert3; p0 = &vert1; p2 = &vert2; idxp1 = idx3; idxp0 = idx1; idxp2 = idx2; }
+
+				//直线参数化方程求t
+				const VEC4 line1 = Common::Sub_Vec4_By_Vec4(p1->pos, p0->pos);
+				float t1 = (-n - p0->pos.z)/(line1.z);
+				float newX1 = p0->pos.x + line1.x * t1;
+				float newY1 = p0->pos.y + line1.y * t1;
+				//覆盖原来的p1
+				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
+
+				//另一个交点得创建新的顶点和切割新的面
+				const VEC4 line2 = Common::Sub_Vec4_By_Vec4(p1->pos, p2->pos);
+				float t2 = (-n - p2->pos.z)/(line2.z);
+				float newX2 = p2->pos.x + line2.x * t2;
+				float newY2 = p2->pos.y + line2.y * t2;
+	
+				SVertex newVert;
+				newVert.bActive = true;
+				newVert.normal = p1->normal;
+				newVert.pos.Set(newX2, newY2, -n, 1.0f);
+				newVert.color = p1->color;
+
+				SFace newFace;
+				newFace.faceNormal = face.faceNormal;
+				newFace.color = face.color;
+				newFace.index1 = idxp2;
+				newFace.index2 = idxp1;
+				newFace.index3 = VB.size();
+
+				//是否需要计算新的uv
+				if (m_curRas->GetType() == eRasterizeType_TexturedGouraud)
+				{
+					p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
+					p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
+
+					newVert.uv.x = p2->uv.x + (p1->uv.x - p2->uv.x) * t2;
+					newVert.uv.y = p2->uv.y + (p1->uv.y - p2->uv.y) * t2;
+				}
+
+				//NB: 最后进行插入操作,不然会使指向元素的指针无效化
+				VB.push_back(newVert);
+				faces.push_back(newFace);
+			}
+
+			/*    3.1个顶点在视锥内,2个顶点在视锥外,裁剪后还是1个三角面:
+
+						p0
+						/\
+				  _____/__\_____ near clip plane
+					  /____\
+					 p1	   p2
+
+													*/
+			else if(nVertOut == 2)
+			{
+				//找出内外的顶点
+				SVertex *p0, *p1, *p2; 
+				if(flags[0] && flags[1])		{ p1 = &vert1; p2 = &vert2; p0 = &vert3; }
+				else if(flags[0] && flags[2])	{ p1 = &vert1; p2 = &vert3; p0 = &vert2; }
+				else							{ p1 = &vert2; p2 = &vert3; p0 = &vert1; }
+
+				//直线参数化方程求t
+				const VEC4 line1 = Common::Sub_Vec4_By_Vec4(p1->pos, p0->pos);
+				float t1 = (-n - p0->pos.z)/(line1.z);
+				float newX1 = p0->pos.x + line1.x * t1;
+				float newY1 = p0->pos.y + line1.y * t1;
+				//覆盖原来的p1
+				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
+
+				//另一个交点
+				const VEC4 line2 = Common::Sub_Vec4_By_Vec4(p2->pos, p0->pos);
+				float t2 = (-n - p0->pos.z)/(line2.z);
+				float newX2 = p0->pos.x + line2.x * t2;
+				float newY2 = p0->pos.y + line2.y * t2;
+				//覆盖原来的p2
+				p2->pos.x = newX2; p2->pos.y = newY2; p2->pos.z = -n;
+
+				//是否需要计算新的uv
+				if (m_curRas->GetType() == eRasterizeType_TexturedGouraud)
+				{
+					p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
+					p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
+
+					p2->uv.x = p0->uv.x + (p2->uv.x - p0->uv.x) * t2;
+					p2->uv.y = p0->uv.y + (p2->uv.y - p0->uv.y) * t2;
+				}
+			}
+		}
+	}
+
 	void Renderer::ToggleShadingMode()
 	{
 		switch (m_curRas->GetType())
 		{
-		case SR::eRasterizeType_Wireframe:	g_renderer.SetRasterizeType(SR::eRasterizeType_Flat); break;
-		case SR::eRasterizeType_Flat:		g_renderer.SetRasterizeType(SR::eRasterizeType_Gouraud); break;
-		case SR::eRasterizeType_Gouraud:	g_renderer.SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
-		case SR::eRasterizeType_TexturedGouraud:	g_renderer.SetRasterizeType(SR::eRasterizeType_Wireframe); break;
+		case SR::eRasterizeType_Wireframe:			SetRasterizeType(SR::eRasterizeType_Flat); break;
+		case SR::eRasterizeType_Flat:				SetRasterizeType(SR::eRasterizeType_Gouraud); break;
+		case SR::eRasterizeType_Gouraud:			SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
+		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_Wireframe); break;
 		default: assert(0);
 		}
 	}

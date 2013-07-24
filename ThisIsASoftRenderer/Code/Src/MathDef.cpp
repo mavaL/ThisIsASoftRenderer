@@ -3,24 +3,19 @@
 
 namespace Common
 {
-	Common::SVector3 SVector3::ZERO			=	SVector3(0, 0, 0);
-	Common::SVector3 SVector3::UNIT_X		=	SVector3(1, 0, 0);
-	Common::SVector3 SVector3::UNIT_Y		=	SVector3(0, 1, 0);
-	Common::SVector3 SVector3::UNIT_Z		=	SVector3(0, 0, 1);
-	Common::SVector3 SVector3::NEG_UNIT_X	=	SVector3(-1, 0, 0);
-	Common::SVector3 SVector3::NEG_UNIT_Y	=	SVector3(0, -1, 0);
-	Common::SVector3 SVector3::NEG_UNIT_Z	=	SVector3(0, 0, -1);
-	Common::SVector4 SVector4::ZERO			=	SVector4(0, 0, 0, 0);
+	Common::Vector3 Vector3::ZERO			=	Vector3(0, 0, 0);
+	Common::Vector3 Vector3::UNIT_X		=	Vector3(1, 0, 0);
+	Common::Vector3 Vector3::UNIT_Y		=	Vector3(0, 1, 0);
+	Common::Vector3 Vector3::UNIT_Z		=	Vector3(0, 0, 1);
+	Common::Vector3 Vector3::NEG_UNIT_X	=	Vector3(-1, 0, 0);
+	Common::Vector3 Vector3::NEG_UNIT_Y	=	Vector3(0, -1, 0);
+	Common::Vector3 Vector3::NEG_UNIT_Z	=	Vector3(0, 0, -1);
+	Common::Vector4 Vector4::ZERO			=	Vector4(0, 0, 0, 0);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
-	SVector4 Transform_Vec3_By_Mat44( const SVector3& pt, const SMatrix44& mat, bool bPosOrDir )
+	Vector4 Transform_Vec4_By_Mat44( const Vector4& pt, const Matrix44& mat )
 	{
-		return Transform_Vec4_By_Mat44(SVector4(pt, bPosOrDir ? 1.0f : 0.0f), mat);
-	}
-
-	SVector4 Transform_Vec4_By_Mat44( const SVector4& pt, const SMatrix44& mat )
-	{
-		return SVector4(
+		return Vector4(
 			mat.m_arr[0][0] * pt.x + mat.m_arr[0][1] * pt.y + mat.m_arr[0][2] * pt.z + mat.m_arr[0][3] * pt.w, 
 			mat.m_arr[1][0] * pt.x + mat.m_arr[1][1] * pt.y + mat.m_arr[1][2] * pt.z + mat.m_arr[1][3] * pt.w,
 			mat.m_arr[2][0] * pt.x + mat.m_arr[2][1] * pt.y + mat.m_arr[2][2] * pt.z + mat.m_arr[2][3] * pt.w,
@@ -29,7 +24,7 @@ namespace Common
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
-	void SMatrix44::MakeIdentity()
+	void Matrix44::MakeIdentity()
 	{
 		m00 = 1; m01 = 0; m02 = 0; m03 = 0;
 		m10 = 0; m11 = 1; m12 = 0; m13 = 0;
@@ -37,7 +32,7 @@ namespace Common
 		m30 = 0; m31 = 0; m32 = 0; m33 = 1;
 	}
 
-	void SMatrix44::SetTranslation( const SVector4& t )
+	void Matrix44::SetTranslation( const Vector4& t )
 	{
 		m_arr[0][3] = t.x;
 		m_arr[1][3] = t.y;
@@ -45,15 +40,15 @@ namespace Common
 		m_arr[3][3] = t.w;
 	}
 
-	Common::SMatrix44 SMatrix44::Transpose()
+	Common::Matrix44 Matrix44::Transpose()
 	{
-		return SMatrix44(	m00, m10, m20, m30,
+		return Matrix44(	m00, m10, m20, m30,
 							m01, m11, m21, m31,
 							m02, m12, m22, m32,
 							m03, m13, m23, m33);
 	}
 
-	void SMatrix44::FromAxisAngle( const SVector3& axis, float angle )
+	void Matrix44::FromAxisAngle( const Vector3& axis, float angle )
 	{
 		MakeZero();
 
@@ -85,13 +80,7 @@ namespace Common
 		ClearTranslation();
 	}
 
-	void SMatrix44::ClearTranslation()
-	{
-		m_arr[0][3] = m_arr[1][3] = m_arr[2][3] = 0;
-		m_arr[3][3] = 1;
-	}
-
-	void SMatrix44::FromAxises( const SVector3& v1, const SVector3& v2, const SVector3& v3 )
+	void Matrix44::FromAxises( const Vector3& v1, const Vector3& v2, const Vector3& v3 )
 	{
 		m00 = v1.x; m01 = v2.x; m02 = v3.x; m03 = 0;
 		m10 = v1.y; m11 = v2.y; m12 = v3.y; m13 = 0;
@@ -99,7 +88,7 @@ namespace Common
 		m30 = 0;	m31 = 0;	m32 = 0;	m33 = 1;
 	}
 
-	void SMatrix44::SetRow( int row, const SVector4 vec )
+	void Matrix44::SetRow( int row, const Vector4 vec )
 	{
 		assert(row >= 0 && row < 4);
 		m_arr[row][0] = vec.x;
@@ -108,17 +97,7 @@ namespace Common
 		m_arr[row][3] = vec.w;		
 	}
 
-	Common::SVector4 SMatrix44::GetTranslation() const
-	{
-		return std::move(VEC4(m03, m13, m23, m33));
-	}
-
-	void SMatrix44::MakeZero()
-	{
-		memset(m_arr, 0, sizeof(m_arr));
-	}
-
-	SMatrix44 SMatrix44::Inverse()
+	Matrix44 Matrix44::Inverse()
 	{
 		//from ogre
 		float m00 = m_arr[0][0], m01 = m_arr[0][1], m02 = m_arr[0][2], m03 = m_arr[0][3];
@@ -174,16 +153,16 @@ namespace Common
 		float d23 = - (v4 * m00 - v2 * m01 + v0 * m03) * invDet;
 		float d33 = + (v3 * m00 - v1 * m01 + v0 * m02) * invDet;
 
-		return SMatrix44(
+		return Matrix44(
 			d00, d01, d02, d03,
 			d10, d11, d12, d13,
 			d20, d21, d22, d23,
 			d30, d31, d32, d33);
 	}
 
-	Common::SMatrix44 Multiply_Mat44_By_Mat44( const SMatrix44& mat1, const SMatrix44& mat2 )
+	Common::Matrix44 Multiply_Mat44_By_Mat44( const Matrix44& mat1, const Matrix44& mat2 )
 	{
-		SMatrix44 ret;
+		Matrix44 ret;
 
 		//TODO: SSE
 		ret.m00 = mat1.m00 * mat2.m00 + mat1.m01 * mat2.m10 + mat1.m02 * mat2.m20 + mat1.m03 * mat2.m30;
@@ -208,49 +187,6 @@ namespace Common
 
 		return std::move(ret);
 	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////
-	Common::SVector4 Add_Vec4_By_Vec4( const SVector4& v1, const SVector4& v2 )
-	{
-		return std::move(SVector4(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z, v1.w+v2.w));
-	}
-
-	Common::SVector4 Sub_Vec4_By_Vec4( const SVector4& v1, const SVector4& v2 )
-	{
-		return std::move(SVector4(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z, v1.w-v2.w));
-	}
-
-	Common::SVector3 CrossProduct_Vec3_By_Vec3( const SVector3& v1, const SVector3& v2 )
-	{
-		SVector3 ret;
-
-		ret.x = v1.y * v2.z - v1.z * v2.y;
-		ret.y = v1.z * v2.x - v1.x * v2.z;
-		ret.z = v1.x * v2.y - v1.y * v2.x;
-
-		return std::move(ret);
-	}
-
-	Common::SVector4 Multiply_Vec4_By_K( const SVector4& v, float k )
-	{
-		return std::move(SVector4(v.x * k, v.y * k, v.z * k, v.w * k));
-	}
-
-	Common::SVector3 Add_Vec3_By_Vec3( const SVector3& v1, const SVector3& v2 )
-	{
-		return std::move(SVector3(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z));
-	}
-
-	Common::SVector3 Multiply_Vec3_By_K( const SVector3& v, float k )
-	{
-		return std::move(SVector3(v.x * k, v.y * k, v.z * k));
-	}
-
-	float DotProduct_Vec3_By_Vec3( const SVector3& v1, const SVector3& v2 )
-	{
-		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-	}
-
 }
 
 

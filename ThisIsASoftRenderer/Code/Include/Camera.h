@@ -9,12 +9,11 @@
 #ifndef Camera_h__
 #define Camera_h__
 
+#include "Prerequiestity.h"
 #include "MathDef.h"
 
 namespace SR
 {
-	struct SRenderObj;
-
 	class Camera
 	{
 	public:
@@ -41,7 +40,7 @@ namespace SR
 		inline const MAT44&	GetProjMatrix() const	{ return m_matProj; }
 
 		//对物体进行视锥裁减测试.被剪裁返回true.
-		bool	ObjectFrustumCulling(const SRenderObj& obj);
+		bool	ObjectFrustumCulling(const RenderObject& obj);
 
 	private:
 		void	_BuildViewMatrix();

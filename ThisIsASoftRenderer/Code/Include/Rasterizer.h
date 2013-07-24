@@ -27,10 +27,19 @@ namespace SR
 	public:
 		virtual ~Rasterizer() {}
 
+		struct SRenderContext 
+		{
+			SRenderContext():verts(nullptr),faces(nullptr),texture(nullptr) {}
+
+			VertexBuffer*	verts;
+			FaceList*		faces;
+			STexture*		texture;
+		};
+
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj) = 0;
+		virtual void	RasterizeTriangleList(SRenderContext& context) = 0;
 		virtual eRasterizeType	GetType() = 0;
-		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light) = 0;
+		virtual void	DoLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj, const SDirectionLight& light) = 0;
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -38,9 +47,9 @@ namespace SR
 	class RasWireFrame : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
+		virtual void	RasterizeTriangleList(SRenderContext& context);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Wireframe; }
-		virtual void	DoLighting(VertexBuffer&, SRenderObj&, const SDirectionLight&) {}
+		virtual void	DoLighting(VertexBuffer&, FaceList&, RenderObject&, const SDirectionLight&) {}
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -48,9 +57,9 @@ namespace SR
 	class RasFlat : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
+		virtual void	RasterizeTriangleList(SRenderContext& context);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Flat; }
-		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light);
+		virtual void	DoLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj, const SDirectionLight& light);
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -58,9 +67,9 @@ namespace SR
 	class RasGouraud : public Rasterizer
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
+		virtual void	RasterizeTriangleList(SRenderContext& context);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Gouraud; }
-		virtual void	DoLighting(VertexBuffer& workingVB, SRenderObj& obj, const SDirectionLight& light);
+		virtual void	DoLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj, const SDirectionLight& light);
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -68,7 +77,7 @@ namespace SR
 	class RasTexturedGouraud : public RasGouraud
 	{
 	public:
-		virtual void	RasterizeTriangleList(const VertexBuffer& workingVB, SRenderObj& obj);
+		virtual void	RasterizeTriangleList(SRenderContext& context);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_TexturedGouraud; }
 	};
 }
