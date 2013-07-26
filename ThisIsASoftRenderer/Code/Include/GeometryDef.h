@@ -8,6 +8,7 @@
 #ifndef GeometryDef_h__
 #define GeometryDef_h__
 
+#include "Prerequiestity.h"
 #include "Utility.h"
 #include "MathDef.h"
 #include "PixelBox.h"
@@ -37,20 +38,20 @@ namespace SR
 		inline SColor operator* (float k) const
 		{ 
 			SColor ret;
-			ret.a = (BYTE)(a * k); 
-			ret.r = (BYTE)(r * k);
-			ret.g = (BYTE)(g * k);
-			ret.b = (BYTE)(b * k);
+			ret.a = Ext::Ftoi32_Fast(a * k); 
+			ret.r = Ext::Ftoi32_Fast(r * k);
+			ret.g = Ext::Ftoi32_Fast(g * k);
+			ret.b = Ext::Ftoi32_Fast(b * k);
 
 			return ret;
 		}
 
 		inline SColor operator*= (float k)
 		{
-			a = (BYTE)(a * k); 
-			r = (BYTE)(r * k); 
-			g = (BYTE)(g * k); 
-			b = (BYTE)(b * k);
+			a = Ext::Ftoi32_Fast(a * k); 
+			r = Ext::Ftoi32_Fast(r * k); 
+			g = Ext::Ftoi32_Fast(g * k); 
+			b = Ext::Ftoi32_Fast(b * k);
 			return *this;
 		}
 
@@ -107,10 +108,20 @@ namespace SR
 
 		void		LoadTexture(const STRING& filename);
 		//µã²ÉÑù
-		SColor		Tex2D_Point(const VEC2& uv) const;
+		SColor		Tex2D_Point(VEC2& uv) const;
 
 		STRING		texName;		
 		Common::PixelBox*	pData;
+	};
+
+	///////////////////////////////////////////////////
+	struct SMaterial 
+	{
+		SMaterial():ambient(VEC3::ZERO),diffuse(VEC3::ZERO),specular(VEC3::ZERO),pTexture(nullptr) {}
+		~SMaterial() { SAFE_DELETE(pTexture); }
+
+		VEC3		ambient, diffuse, specular;
+		STexture*	pTexture;
 	};
 
 	///////////////////////////////////////////////////

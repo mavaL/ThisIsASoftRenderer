@@ -698,7 +698,7 @@ namespace SR
 		});
 	}
 
-	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
+	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData )
 	{
 		eTriangleShape triType;
 		if(!PreDrawTriangle(vert0, vert1, vert2, triType))
@@ -706,8 +706,8 @@ namespace SR
 
 		switch (triType)
 		{
-		case eTriangleShape_Bottom: DrawBottomTri_Scanline_V2(vert0, vert1, vert2, bTextured, tex); break;
-		case eTriangleShape_Top: DrawTopTri_Scanline_V2(vert0, vert1, vert2, bTextured, tex); break;
+		case eTriangleShape_Bottom: DrawBottomTri_Scanline_V2(vert0, vert1, vert2, bTextured, context, scanLineData); break;
+		case eTriangleShape_Top: DrawTopTri_Scanline_V2(vert0, vert1, vert2, bTextured, context, scanLineData); break;
 		case eTriangleShape_General:	
 			{
 				//创建切割生成的新顶点
@@ -733,265 +733,150 @@ namespace SR
 				vert3.uv.x = Ext::LinearLerp(vert0->uv.x, vert1->uv.x, t);
 				vert3.uv.y = Ext::LinearLerp(vert0->uv.y, vert1->uv.y, t);
 
-				DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, bTextured, tex);
-				DrawTopTri_Scanline_V2(&vert3, vert1, vert2, bTextured, tex);
+				DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, bTextured, context, scanLineData);
+				DrawTopTri_Scanline_V2(&vert3, vert1, vert2, bTextured, context, scanLineData);
 			}
 			break;
 		default: assert(0);
 		}
 	}
 
-	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
+	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData )
 	{
 		//NB: 为了正确插值和填充规则,要保持x坐标有序
 		if(vert1->pos.x > vert2->pos.x)
 			Ext::Swap(vert1, vert2);
 
-		float x0 = vert0->pos.x;
-		float x1 = vert1->pos.x;
-		float x2 = vert2->pos.x;
-		float y0 = vert0->pos.y;
-		float y1 = vert1->pos.y;
-		float y2 = vert2->pos.y;
-		float z0 = vert0->pos.z;
-		float z1 = vert1->pos.z;
-		float z2 = vert2->pos.z;
-		SColor c0 = vert0->color;
-		SColor c1 = vert1->color;
-		SColor c2 = vert2->color;
-		float u0 = vert0->uv.x, v0 = vert0->uv.y;
-		float u1 = vert1->uv.x, v1 = vert1->uv.y;
-		float u2 = vert2->uv.x, v2 = vert2->uv.y;
+		const VEC3 p0(vert0->pos.x, vert0->pos.y, vert0->pos.z);
+		const VEC3 p1(vert1->pos.x, vert1->pos.y, vert1->pos.z);
+		const VEC3 p2(vert2->pos.x, vert2->pos.y, vert2->pos.z);
 
-		assert(Ext::Floor32_Fast(y1) == Ext::Floor32_Fast(y2));
+		const SColor& c0 = vert0->color;
+		const SColor& c1 = vert1->color;
+		const SColor& c2 = vert2->color;
 
+		const VEC2 uv0(vert0->uv.x, vert0->uv.y);
+		const VEC2 uv1(vert1->uv.x, vert1->uv.y);
+		const VEC2 uv2(vert2->uv.x, vert2->uv.y);
+
+		assert(Ext::Floor32_Fast(p1.y) == Ext::Floor32_Fast(p2.y));
+
+		///填充光栅化结构
 		//位置坐标及增量
-		float curLX = x0, curRX = x0, curLZ = z0, curRZ = z0;
-		float inv_dy = 1.0f/(y1-y0);
-		float left_incX = (x1-x0)*inv_dy;
-		float right_incX = (x2-x0)*inv_dy;
-		float left_incZ = (z1-z0)*inv_dy;
-		float right_incZ = (z2-z0)*inv_dy;
-		//左上填充规则
-		int curY = Ext::Ceil32_Fast(y0), endY = Ext::Ceil32_Fast(y1) - 1;
+		scanLineData.y0 = p0.y;
+		float inv_dy = 1.0f / (p1.y - p0.y);
+		scanLineData.curP_L.Set(p0.x, p0.z);
+		scanLineData.curP_R.Set(p0.x, p0.z);
+		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy);
+		scanLineData.dp_R.Set((p2.x-p0.x)*inv_dy, (p2.z-p0.z)*inv_dy);
+		//左上填充规则:上
+		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
 		//当前两端点颜色分量及增量
-		float rl = c0.r, rr = c0.r;
-		float gl = c0.g, gr = c0.g;
-		float bl = c0.b, br = c0.b;
-		float drl = (c1.r-c0.r)*inv_dy, drr = (c2.r-c0.r)*inv_dy;
-		float dgl = (c1.g-c0.g)*inv_dy, dgr = (c2.g-c0.g)*inv_dy;
-		float dbl = (c1.b-c0.b)*inv_dy, dbr = (c2.b-c0.b)*inv_dy;
+		scanLineData.clr_L.Set(c0.r, c0.g, c0.b);
+		scanLineData.clr_R.Set(c0.r, c0.g, c0.b);
+		scanLineData.dclr_L.Set((c1.r-c0.r)*inv_dy, (c1.g-c0.g)*inv_dy, (c1.b-c0.b)*inv_dy);
+		scanLineData.dclr_R.Set((c2.r-c0.r)*inv_dy, (c2.g-c0.g)*inv_dy, (c2.b-c0.b)*inv_dy);
 		//当前两端点uv分量及增量
-		float curUL = u0, curVL = v0;
-		float curUR = u0, curVR = v0;
-		float dul = (u1-u0)*inv_dy, dvl = (v1-v0)*inv_dy;
-		float dur = (u2-u0)*inv_dy, dvr = (v2-v0)*inv_dy;
+		scanLineData.curUV_L = uv0;
+		scanLineData.curUV_R = uv0;
+		scanLineData.duv_L.Set((uv1.x-uv0.x)*inv_dy, (uv1.y-uv0.y)*inv_dy);
+		scanLineData.duv_R.Set((uv2.x-uv0.x)*inv_dy, (uv2.y-uv0.y)*inv_dy);
 
-		//裁剪区域裁剪y
-		if(curY < min_clip_y)
-		{
-			float dy = min_clip_y-y0;
-			curY = min_clip_y;
-			curLX += left_incX*dy;
-			curRX += right_incX*dy;
-			curLZ += left_incZ*dy;
-			curRZ += right_incZ*dy;
-			rl += drl*dy; gl += dgl*dy; bl += dbl*dy;
-			rr += drr*dy; gr += dgr*dy; br += dbr*dy;
-			curUL += dul*dy; curVL += dvl*dy;
-			curUR += dur*dy; curVR += dvr*dy;
-		}
-		if(endY > max_clip_y)
-		{
-			endY = max_clip_y;
-		}
-
-		//定位输出位置
-		DWORD* vb_start = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer();
-		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
-		DWORD* destBuffer = vb_start + curY*lpitch;
-		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + curY*lpitch;
-		SColor pixelColor;
-		float inv_texel = 1.0f/255;
-
-		while (curY <= endY)
-		{
-			//左上填充规则
-			int lineX0 = Ext::Ceil32_Fast(curLX);
-			int lineX1 = Ext::Ceil32_Fast(curRX) - 1;
-
-			if(lineX1 - lineX0 >= 0)
-			{
-				float invdx = 1/(curRX-curLX);
-				float dr = (rr-rl)*invdx;
-				float dg = (gr-gl)*invdx;
-				float db = (br-bl)*invdx;
-				float du = (curUR-curUL)*invdx;
-				float dv = (curVR-curVL)*invdx;
-				float dz = (curRZ-curLZ)*invdx;
-
-				float r = rl, g = gl, b = bl;
-				float u = curUL, v = curVL;
-				float z = curLZ;
-
-				//裁剪区域裁剪x
-				if(lineX0 < min_clip_x)
-				{
-					const int dx = min_clip_x-lineX0;
-					r += dx*dr;
-					g += dx*dg;
-					b += dx*db;
-					u += dx*du;
-					v += dx*dv;
-					lineX0 = min_clip_x;
-					z += dx*dz;
-				}
-				if(lineX1 > max_clip_x)
-				{
-					lineX1 = max_clip_x;
-				}
-
-				//画水平直线
-				for (int curX=lineX0; curX<=lineX1; ++curX)
-				{
-					//深度测试
-					if(z < zBuffer[curX])
-					{
-						if(bTextured && tex->pData)
-						{
-							pixelColor = tex->Tex2D_Point(VEC2(u, v));
-							pixelColor.r *= r * inv_texel;
-							pixelColor.g *= g * inv_texel;
-							pixelColor.b *= b * inv_texel;
-						}
-						else
-						{
-							pixelColor.a = 255; 
-							pixelColor.r = (BYTE)Ext::Ftoi32_Fast(r);
-							pixelColor.g = (BYTE)Ext::Ftoi32_Fast(g); 
-							pixelColor.b = (BYTE)Ext::Ftoi32_Fast(b);
-						}
-
-						destBuffer[curX] = pixelColor.color;
-						zBuffer[curX] = z;
-					}
-
-					r += dr;
-					g += dg;
-					b += db;
-					u += du;
-					v += dv;
-					z += dz;
-				}
-			}
-
-			++curY;
-			curLX += left_incX;
-			curRX += right_incX;
-			curLZ += left_incZ;
-			curRZ += right_incZ;
-			destBuffer += lpitch;
-			zBuffer += lpitch;
-			rl += drl; rr += drr;
-			gl += dgl; gr += dgr;
-			bl += dbl; br += dbr;
-			curUL += dul; curUR += dur;
-			curVL += dvl; curVR += dvr;
-		}
+		DrawScanLines(scanLineData, bTextured, context);
 	}
 
-	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex )
+	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData )
 	{
 		//NB: 为了正确插值和填充规则,要保持x坐标有序
 		if(vert0->pos.x > vert2->pos.x)
 			Ext::Swap(vert0, vert2);
 
-		float x0 = vert0->pos.x;
-		float x1 = vert1->pos.x;
-		float x2 = vert2->pos.x;
-		float y0 = vert0->pos.y;
-		float y1 = vert1->pos.y;
-		float y2 = vert2->pos.y;
-		float z0 = vert0->pos.z;
-		float z1 = vert1->pos.z;
-		float z2 = vert2->pos.z;
-		SColor c0 = vert0->color;
-		SColor c1 = vert1->color;
-		SColor c2 = vert2->color;
-		float u0 = vert0->uv.x, v0 = vert0->uv.y;
-		float u1 = vert1->uv.x, v1 = vert1->uv.y;
-		float u2 = vert2->uv.x, v2 = vert2->uv.y;
+		const VEC3 p0(vert0->pos.x, vert0->pos.y, vert0->pos.z);
+		const VEC3 p1(vert1->pos.x, vert1->pos.y, vert1->pos.z);
+		const VEC3 p2(vert2->pos.x, vert2->pos.y, vert2->pos.z);
+		
+		const SColor& c0 = vert0->color;
+		const SColor& c1 = vert1->color;
+		const SColor& c2 = vert2->color;
 
-		assert(Ext::Floor32_Fast(y0) == Ext::Floor32_Fast(y2));
+		const VEC2 uv0(vert0->uv.x, vert0->uv.y);
+		const VEC2 uv1(vert1->uv.x, vert1->uv.y);
+		const VEC2 uv2(vert2->uv.x, vert2->uv.y);
 
+		assert(Ext::Floor32_Fast(p0.y) == Ext::Floor32_Fast(p2.y));
+
+		///填充光栅化结构
 		//位置坐标及增量
-		float inv_dy = 1.0f/(y1-y0);
-		float curLX = x0, curRX = x2, curLZ = z0, curRZ = z2;
-		float left_incX = (x1-x0)*inv_dy;
-		float right_incX = (x1-x2)*inv_dy;
-		float left_incZ = (z1-z0)*inv_dy;
-		float right_incZ = (z1-z2)*inv_dy;
-		//左上填充规则
-		int curY = Ext::Ceil32_Fast(y0), endY = Ext::Ceil32_Fast(y1) - 1;
+		scanLineData.y0 = p0.y;
+		float inv_dy = 1.0f / (p1.y - p0.y);
+		scanLineData.curP_L.Set(p0.x, p0.z);
+		scanLineData.curP_R.Set(p2.x, p2.z);
+		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy);
+		scanLineData.dp_R.Set((p1.x-p2.x)*inv_dy, (p1.z-p2.z)*inv_dy);
+		//左上填充规则:上
+		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
 		//当前两端点颜色分量及增量
-		float rl = c0.r, rr = c2.r;
-		float gl = c0.g, gr = c2.g;
-		float bl = c0.b, br = c2.b;
-		float drl = (c1.r-c0.r)*inv_dy, drr = (c1.r-c2.r)*inv_dy;
-		float dgl = (c1.g-c0.g)*inv_dy, dgr = (c1.g-c2.g)*inv_dy;
-		float dbl = (c1.b-c0.b)*inv_dy, dbr = (c1.b-c2.b)*inv_dy;
+		scanLineData.clr_L.Set(c0.r, c0.g, c0.b);
+		scanLineData.clr_R.Set(c2.r, c2.g, c2.b);
+		scanLineData.dclr_L.Set((c1.r-c0.r)*inv_dy, (c1.g-c0.g)*inv_dy, (c1.b-c0.b)*inv_dy);
+		scanLineData.dclr_R.Set((c1.r-c2.r)*inv_dy, (c1.g-c2.g)*inv_dy, (c1.b-c2.b)*inv_dy);
 		//当前两端点uv分量及增量
-		float curUL = u0, curVL = v0;
-		float curUR = u2, curVR = v2;
-		float dul = (u1-u0)*inv_dy, dvl = (v1-v0)*inv_dy;
-		float dur = (u1-u2)*inv_dy, dvr = (v1-v2)*inv_dy;
+		scanLineData.curUV_L = uv0;
+		scanLineData.curUV_R = uv2;
+		scanLineData.duv_L.Set((uv1.x-uv0.x)*inv_dy, (uv1.y-uv0.y)*inv_dy);
+		scanLineData.duv_R.Set((uv1.x-uv2.x)*inv_dy, (uv1.y-uv2.y)*inv_dy);
 
+		DrawScanLines(scanLineData, bTextured, context);
+	}
+
+
+	void RenderUtil::DrawScanLines( RasGouraud::SScanLineData& scanLineData, bool bTextured, const SRenderContext& context )
+	{
 		//裁剪区域裁剪y
-		if(curY < min_clip_y)
+		if(scanLineData.curY < min_clip_y)
 		{
-			float dy = min_clip_y-y0;
-			curY = min_clip_y;
-			curLX += left_incX * dy;
-			curRX += right_incX * dy;
-			curLZ += left_incZ*dy;
-			curRZ += right_incZ*dy;
-			rl += drl*dy; gl += dgl*dy; bl += dbl*dy;
-			rr += drr*dy; gr += dgr*dy; br += dbr*dy;
-			curUL += dul*dy; curVL += dvl*dy;
-			curUR += dur*dy; curVR += dvr*dy;
+			float dy = min_clip_y - scanLineData.y0;
+			scanLineData.curY = min_clip_y;
+			Common::Add_Vec2_By_Vec2(scanLineData.curP_L, scanLineData.curP_L, Common::Multiply_Vec2_By_K(scanLineData.dp_L, dy));
+			Common::Add_Vec2_By_Vec2(scanLineData.curP_R, scanLineData.curP_R, Common::Multiply_Vec2_By_K(scanLineData.dp_R, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.clr_L, scanLineData.clr_L, Common::Multiply_Vec3_By_K(scanLineData.dclr_L, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.clr_R, scanLineData.clr_R, Common::Multiply_Vec3_By_K(scanLineData.dclr_R, dy));
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, Common::Multiply_Vec2_By_K(scanLineData.duv_L, dy));
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, Common::Multiply_Vec2_By_K(scanLineData.duv_R, dy));
 		}
-		if(endY > max_clip_y)
+		if(scanLineData.endY > max_clip_y)
 		{
-			endY = max_clip_y;
+			scanLineData.endY = max_clip_y;
 		}
 
 		//定位输出位置
 		DWORD* vb_start = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer();
 		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
-		DWORD* destBuffer = vb_start + curY*lpitch;
-		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + curY*lpitch;
+		DWORD* destBuffer = vb_start + scanLineData.curY * lpitch;
+		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + scanLineData.curY * lpitch;
 		SColor pixelColor;
 		float inv_texel = 1.0f/255;
+		VEC2 uv;
 
-		while (curY <= endY)
+		while (scanLineData.curY <= scanLineData.endY)
 		{
-			//左上填充规则
-			int lineX0 = Ext::Ceil32_Fast(curLX);
-			int lineX1 = Ext::Ceil32_Fast(curRX) - 1;
+			//左上填充规则:左
+			int lineX0 = Ext::Ceil32_Fast(scanLineData.curP_L.x);
+			int lineX1 = Ext::Ceil32_Fast(scanLineData.curP_R.x) - 1;
 
 			if(lineX1 - lineX0 >= 0)
 			{
-				float invdx = 1/(curRX-curLX);
-				float dr = (rr-rl)*invdx;
-				float dg = (gr-gl)*invdx;
-				float db = (br-bl)*invdx;
-				float du = (curUR-curUL)*invdx;
-				float dv = (curVR-curVL)*invdx;
-				float dz = (curRZ-curLZ)*invdx;
+				float invdx = 1 / (scanLineData.curP_R.x - scanLineData.curP_L.x);
+				float dr = (scanLineData.clr_R.x - scanLineData.clr_L.x) * invdx;
+				float dg = (scanLineData.clr_R.y - scanLineData.clr_L.y) * invdx;
+				float db = (scanLineData.clr_R.z - scanLineData.clr_L.z) * invdx;
+				float du = (scanLineData.curUV_R.x - scanLineData.curUV_L.x) * invdx;
+				float dv = (scanLineData.curUV_R.y - scanLineData.curUV_L.y) * invdx;
+				float dz = (scanLineData.curP_R.y - scanLineData.curP_L.y) * invdx;
 
-				float r = rl, g = gl, b = bl;
-				float u = curUL, v = curVL;
-				float z = curLZ;
+				float r = scanLineData.clr_L.x, g = scanLineData.clr_L.y, b = scanLineData.clr_L.z;
+				float u = scanLineData.curUV_L.x, v = scanLineData.curUV_L.y;
+				float z = scanLineData.curP_L.y;
 
 				//裁剪区域裁剪x
 				if(lineX0 < min_clip_x)
@@ -1016,18 +901,19 @@ namespace SR
 					//深度测试
 					if(z < zBuffer[curX])
 					{
-						if(bTextured && tex->pData)
+						if(bTextured && context.pMaterial->pTexture)
 						{
-							pixelColor = tex->Tex2D_Point(VEC2(u, v));
-							pixelColor.r *= r * inv_texel;
-							pixelColor.g *= g * inv_texel;
-							pixelColor.b *= b * inv_texel;
+							uv.Set(u, v);
+							pixelColor = context.pMaterial->pTexture->Tex2D_Point(uv);
+							pixelColor.r = Ext::Ftoi32_Fast(pixelColor.r * r * inv_texel);
+							pixelColor.g = Ext::Ftoi32_Fast(pixelColor.g * g * inv_texel);
+							pixelColor.b = Ext::Ftoi32_Fast(pixelColor.b * b * inv_texel);
 						}
 						else
 						{
-							pixelColor.r = (BYTE)Ext::Ftoi32_Fast(r);
-							pixelColor.g = (BYTE)Ext::Ftoi32_Fast(g); 
-							pixelColor.b = (BYTE)Ext::Ftoi32_Fast(b);
+							pixelColor.r = Ext::Ftoi32_Fast(r);
+							pixelColor.g = Ext::Ftoi32_Fast(g); 
+							pixelColor.b = Ext::Ftoi32_Fast(b);
 						}
 
 						destBuffer[curX] = pixelColor.color;
@@ -1043,21 +929,15 @@ namespace SR
 				}
 			}
 
-			++curY;
-			curLX += left_incX;
-			curRX += right_incX;
-			curLZ += left_incZ;
-			curRZ += right_incZ;
+			++scanLineData.curY;
+			Common::Add_Vec2_By_Vec2(scanLineData.curP_L, scanLineData.curP_L, scanLineData.dp_L);
+			Common::Add_Vec2_By_Vec2(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
+			Common::Add_Vec3_By_Vec3(scanLineData.clr_L, scanLineData.clr_L, scanLineData.dclr_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.clr_R, scanLineData.clr_R, scanLineData.dclr_R);
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, scanLineData.duv_R);
 			destBuffer += lpitch;
 			zBuffer += lpitch;
-			rl += drl;
-			rr += drr;
-			gl += dgl;
-			gr += dgr;
-			bl += dbl;
-			br += dbr;
-			curUL += dul; curUR += dur;
-			curVL += dvl; curVR += dvr;
 		}
 	}
 }

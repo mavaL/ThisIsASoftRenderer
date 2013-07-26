@@ -31,6 +31,7 @@ namespace Ext
 	private:
 		void	_PreReadObject(std::ifstream& file, DWORD& nVert, DWORD& nUv, DWORD& nNormal, DWORD& nFace);
 		void	_DefineVertex(const SR::SVertex& vert, const SVertCompare& comp, SR::RenderObject& obj, SR::Index& retIdx);
+		bool	_ReadMtrl(const STRING& filename);
 
 		std::vector<SVertCompare>	m_vecComp;
 	};

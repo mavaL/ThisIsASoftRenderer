@@ -9,7 +9,7 @@ namespace Ext
 		TiXmlDocument doc;
 		if(!doc.LoadFile(filename.c_str()))
 		{
-			throw std::logic_error("Error, Can't load .mesh file! Please make sure it's in a xml format!");
+			throw std::logic_error("Error, Can't load .mesh file! Please make sure it's xml format!");
 			return false;
 		}
 

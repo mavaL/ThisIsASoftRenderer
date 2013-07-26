@@ -13,13 +13,6 @@
 const int		SCREEN_WIDTH	=	800;
 const int		SCREEN_HEIGHT	=	600;
 
-inline STRING	GetResPath(const STRING filename)
-{
-	STRING filepath("../../../Res/");
-	filepath += filename;
-	return std::move(filepath);
-}
-
 // 全局变量:
 HINSTANCE hInst;								// 当前实例
 TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
@@ -196,6 +189,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, SW_SHOWNORMAL);
    UpdateWindow(hWnd);
 
+   float a = 3.3f;
+   BYTE b = static_cast<BYTE>(a);
+
    /////////////////////////////////////////////////////////
    /////////////// Init here
    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
@@ -233,11 +229,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 	   obj.m_verts.push_back(v3);
 // 
 // 	   SR::SFace face(0,1,2);
-// 	   face.faceNormal = VEC3::UNIT_Z;
+// 	   face.faceNormal = VEC3::UNIT_Z; 
 // 	   obj.m_faces.push_back(face);
 // 
 // 	   obj.m_matWorld.SetTranslation(VEC4(100,0,0,1));
-// 	   obj.m_texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 	  
+// 	   SR::SMaterial* mat = new SR::SMaterial;
+// 	   mat->pTexture = new SR::STexture;
+// 	   mat->pTexture->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 	   g_renderer.AddMaterial("MatMarine", mat);
+// 	   g_meshLoader.m_objs[0].m_pMaterial = mat;
 // 
 // 	   SR::RenderUtil::ComputeAABB(obj);
 // 
@@ -248,8 +249,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
 // 	   try
 // 	   {
-// 		   g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"), true);
-// 		   g_meshLoader.m_objs[0].m_texture.LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 		   if(!g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"), true))
+// 			   throw std::logic_error("Error, Load .mesh file failed!");
+// 
+// 		   SR::SMaterial* mat = new SR::SMaterial;
+// 		   mat->pTexture = new SR::STexture;
+// 		   mat->pTexture->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 		   g_renderer.AddMaterial("MatMarine", mat);
+// 		   g_meshLoader.m_objs[0].m_pMaterial = mat;
 // 	   }
 // 	   catch (std::exception& e)
 // 	   {
@@ -262,16 +269,22 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
   
    //// Test case 3: sponza.obj
    {
-	   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
+	   try
 	   {
-		   MessageBoxA(hWnd, "Reading .obj failed!", "Error", MB_ICONERROR);
+		   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
+			   throw std::logic_error("Error, Load .obj file failed!");
+	   }
+	   catch (std::exception& e)
+	   {
+		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
 		   return FALSE;
 	   }
+
 	   g_env.renderer->AddRenderObjs(g_objLoader.m_objs);
    }
 
-   g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
-   //g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
+   //g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
+   g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
 
    return TRUE;
 }

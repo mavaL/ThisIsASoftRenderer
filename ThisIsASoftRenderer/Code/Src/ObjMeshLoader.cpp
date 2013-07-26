@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ObjMeshLoader.h"
 #include <fstream>
+#include "Renderer.h"
 
 using namespace std;
 
@@ -56,7 +57,6 @@ namespace Ext
 
 				file >> command;
 
-				//TODO: 用一个table+switch-case会快不少
 				if (strcmp(command.c_str(), "v") == 0)
 				{
 					if(bFlush)
@@ -75,7 +75,11 @@ namespace Ext
 					VEC2& uv = vecUv[curUv++];
 					file >> uv.x >> uv.y;
 					//NB: 纹理目前只支持.bmp格式
-					uv.y = 1 - uv.y;
+					//uv.y = 1 - uv.y;
+
+					//Wrap mode
+					uv.x -= Ext::Floor32_Fast(uv.x);
+					uv.y -= Ext::Floor32_Fast(uv.y);
 				}
 				else if (strcmp(command.c_str(), "vn") == 0)
 				{
@@ -121,13 +125,22 @@ namespace Ext
 				{
 					bFlush = true;
 				}
-				// 			else if (strcmp(command.c_str(), "matlib") == 0)
-				// 			{
-				// 
-				// 			}
-				// 			else if (strcmp(command.c_str(), "usemtl") == 0)
-				// 			{
-				// 			}
+				else if (strcmp(command.c_str(), "mtllib") == 0)
+				{
+					STRING filename;
+					file >> filename;
+					assert(!filename.empty());
+
+					if(!_ReadMtrl(filename))
+						return false;
+				}
+				else if (strcmp(command.c_str(), "usemtl") == 0)
+				{
+					STRING matName;
+					file >> matName;
+
+					obj.m_pMaterial = g_env.renderer->GetMaterial(matName);
+				}
 
 				//读下一行
 				file.ignore(1000, '\n');
@@ -209,6 +222,57 @@ namespace Ext
 			m_vecComp.push_back(comp);
 			retIdx = obj.m_verts.size() - 1;
 		}
+	}
+
+	bool ObjMeshLoader::_ReadMtrl( const STRING& filename )
+	{
+		const STRING filepath = GetResPath(filename);
+		ifstream file(filepath);
+		if(file.fail())
+			return false;
+
+		STRING command;
+		SR::SMaterial* pNewMaterial = nullptr;
+		STRING matName;
+
+		//each command
+		for(;;)
+		{
+			if(file.eof())
+				break;
+
+			file >> command;
+
+			if (strcmp(command.c_str(), "newmtl") == 0)
+			{
+				//flush last material to MatLib
+				if(pNewMaterial)
+				{
+					g_env.renderer->AddMaterial(matName, pNewMaterial);
+				}
+
+				file >> matName;
+				pNewMaterial = new SR::SMaterial;
+			}
+			else if (strcmp(command.c_str(), "map_Kd") == 0)
+			{
+				STRING texName;
+				file >> texName;
+				pNewMaterial->pTexture = new SR::STexture;
+				pNewMaterial->pTexture->LoadTexture(GetResPath(texName));
+			}
+
+			//读下一行
+			file.ignore(1000, '\n');
+		}
+
+		//manually add last one
+		if(pNewMaterial)
+		{
+			g_env.renderer->AddMaterial(matName, pNewMaterial);
+		}
+
+		return true;
 	}
 
 }

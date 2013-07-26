@@ -18,6 +18,13 @@
 #define SAFE_DELETE_ARRAY(p) if(p) { delete []p; p=nullptr; }
 #endif
 
+inline STRING	GetResPath(const STRING filename)
+{
+	STRING filepath("../../../Res/");
+	filepath += filename;
+	return std::move(filepath);
+}
+
 namespace Ext
 {
 	template<class T>

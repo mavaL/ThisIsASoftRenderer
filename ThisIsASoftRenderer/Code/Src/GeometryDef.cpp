@@ -22,18 +22,19 @@ namespace SR
 		texName = filename;
 	}
 
-	SR::SColor STexture::Tex2D_Point( const VEC2& uv ) const
+	SR::SColor STexture::Tex2D_Point( VEC2& uv ) const
 	{
 		DWORD* pTexData = (DWORD*)pData->GetDataPointer();
 
 		int w = pData->GetWidth() - 1;
 		int h = pData->GetHeight() - 1;
 
+		//Wrap mode
+		uv.x -= Ext::Floor32_Fast(uv.x);
+		uv.y -= Ext::Floor32_Fast(uv.y);
+
 		int x = Ext::Ftoi32_Fast(uv.x * w);
 		int y = Ext::Ftoi32_Fast(uv.y * h);
-
-// 		x = Ext::Clamp(x, 0, w);
-// 		y = Ext::Clamp(y, 0, h);
 
 		return std::move(SColor(pTexData[y * pData->GetWidth() + x]));
 	}

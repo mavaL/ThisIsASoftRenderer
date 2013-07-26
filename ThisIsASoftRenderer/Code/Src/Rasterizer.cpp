@@ -119,7 +119,7 @@ namespace SR
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
-			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, false, nullptr);
+			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, false, context, m_scanLineData);
 
 			++g_env.renderer->m_frameStatics.nRenderedFace;
 		}
@@ -176,7 +176,7 @@ namespace SR
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
-			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, true, context.texture);
+			RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, true, context, m_scanLineData);
 
 			++g_env.renderer->m_frameStatics.nRenderedFace;
 		}

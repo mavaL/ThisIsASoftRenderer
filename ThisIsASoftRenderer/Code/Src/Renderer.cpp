@@ -45,6 +45,10 @@ namespace SR
 		for(auto iter=m_rasLib.begin(); iter!=m_rasLib.end(); ++iter)
 			delete iter->second;
 		m_rasLib.clear();
+
+		for(auto iter=m_matLib.begin(); iter!=m_matLib.end(); ++iter)
+			delete iter->second;
+		m_matLib.clear();
 	}
 
 	void Renderer::SetRasterizeType( eRasterizeType type )
@@ -116,12 +120,12 @@ namespace SR
 
 				/////////////////////////////////////////////////
 				///////// 世界变换
-				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, obj.m_matWorld);
+				Common::Transform_Vec4_By_Mat44(vertPos, vertPos, obj.m_matWorld);
 
 				/////////////////////////////////////////////////
 				///////// 相机变换
 				auto matView = m_camera.GetViewMatrix();
-				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matView);
+				Common::Transform_Vec4_By_Mat44(vertPos, vertPos, matView);
 			}
 
 			/////////////////////////////////////////////////
@@ -140,7 +144,7 @@ namespace SR
 				/////////////////////////////////////////////////
 				///////// 透视投影变换
 				auto matProj = m_camera.GetProjMatrix();
-				vertPos = Common::Transform_Vec4_By_Mat44(vertPos, matProj);
+				Common::Transform_Vec4_By_Mat44(vertPos, vertPos, matProj);
 
 				/////////////////////////////////////////////////
 				///////// 齐次除法
@@ -160,10 +164,10 @@ namespace SR
 
 			/////////////////////////////////////////////////
 			///////// 光栅化物体
-			Rasterizer::SRenderContext context;
+			SRenderContext context;
 			context.verts = &workingVB;
 			context.faces = &workingFaces;
-			context.texture = &obj.m_texture;
+			context.pMaterial = obj.m_pMaterial;
 
 			m_curRas->RasterizeTriangleList(context);
 		}
@@ -260,7 +264,7 @@ namespace SR
 			VEC4 faceToCam = Common::Add_Vec4_By_Vec4(Common::Add_Vec4_By_Vec4(pos1, pos2), pos3);
 			faceToCam = Common::Multiply_Vec4_By_K(faceToCam, 0.33333f);
 			faceToCam.w = 1;
-			faceToCam = Common::Transform_Vec4_By_Mat44(faceToCam, obj.m_matWorld);
+			Common::Transform_Vec4_By_Mat44(faceToCam, faceToCam, obj.m_matWorld);
 			faceToCam = Common::Sub_Vec4_By_Vec4(camPos, faceToCam);
 
 			VEC4 faceWorldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.m_matWorldIT, false);
@@ -474,6 +478,36 @@ namespace SR
 		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_Wireframe); break;
 		default: assert(0);
 		}
+	}
+
+	void Renderer::AddMaterial( const STRING& name, const SMaterial* mat )
+	{
+		auto iter = m_matLib.find(name);
+		if(iter != m_matLib.end())
+		{
+			STRING errMsg("Error, ");
+			errMsg += name;
+			errMsg += " already exist in AddMaterial()!";
+			throw std::logic_error(errMsg);
+			return;
+		}
+
+		m_matLib.insert(std::make_pair(name, const_cast<SMaterial*>(mat)));
+	}
+
+	SMaterial* Renderer::GetMaterial( const STRING& name )
+	{
+		auto iter = m_matLib.find(name);
+		if(iter == m_matLib.end())
+		{
+			STRING errMsg("Error, ");
+			errMsg += name;
+			errMsg += " doesn't exist in GetMaterial()!";
+			throw std::logic_error(errMsg);
+			return nullptr;
+		}
+
+		return iter->second;
 	}
 
 }

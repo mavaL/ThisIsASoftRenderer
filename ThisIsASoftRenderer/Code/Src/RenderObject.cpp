@@ -5,6 +5,7 @@ namespace SR
 {
 	RenderObject::RenderObject()
 	:m_bStatic(false)
+	,m_pMaterial(nullptr)
 	{
 
 	}

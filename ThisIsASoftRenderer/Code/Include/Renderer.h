@@ -22,6 +22,17 @@ extern const int	PIXEL_MODE;
 
 namespace SR
 {
+	/////////////////////////////////////////////////////////////
+	struct SRenderContext 
+	{
+		SRenderContext():verts(nullptr),faces(nullptr),pMaterial(nullptr) {}
+
+		VertexBuffer*	verts;
+		FaceList*		faces;
+		SMaterial*		pMaterial;
+	};
+
+	/////////////////////////////////////////////////////////////
 	class Renderer
 	{
 		friend class RenderUtil;
@@ -60,6 +71,10 @@ namespace SR
 		//添加渲染对象
 		void	AddRenderable(const RenderObject& obj);
 		void	AddRenderObjs(const RenderList& objs);
+		//添加材质
+		void	AddMaterial(const STRING& name, const SMaterial* mat);
+		//获取材质
+		SMaterial*	GetMaterial(const STRING& name);
 
 	private:
 		void	_Clear(const SColor& color, float depth);
@@ -72,8 +87,12 @@ namespace SR
 		std::unique_ptr<Gdiplus::Bitmap>	m_bmBackBuffer;
 		std::unique_ptr<Common::PixelBox>	m_backBuffer;
 		std::unique_ptr<Common::PixelBox>	m_zBuffer;
-		std::unordered_map<eRasterizeType, Rasterizer*>	m_rasLib;		//所有可用光栅化器
-		Rasterizer*							m_curRas;					//当前使用光栅化器
+
+		std::unordered_map<eRasterizeType, Rasterizer*>	m_rasLib;		//所有可用shader
+		Rasterizer*							m_curRas;					//当前使用shader
+
+		std::unordered_map<STRING, SMaterial*>	m_matLib;				//材质库
+
 		RenderList							m_renderList;				//渲染列表
 	};
 
@@ -101,9 +120,10 @@ namespace SR
 		///////	根据画家算法对三角面列表进行排序
 		static void	SortTris_PainterAlgorithm(const VertexBuffer& verts, FaceList& faces);
 		///////	绘制三角形的第二个版本.Gouraud插值顶点颜色和纹理着色
-		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex);
-		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex);
-		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const STexture* tex);
+		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
+		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
+		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
+		static void DrawScanLines(RasGouraud::SScanLineData& scanLineData, bool bTextured, const SRenderContext& context);
 	};
 }
 

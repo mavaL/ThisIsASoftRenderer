@@ -37,6 +37,9 @@ namespace SR
 	class RasFlat;
 	class RasGouraud;
 	class RasTexturedGouraud;
+	struct SRenderContext;
+	struct STexture;
+	struct SMaterial;
 }
 
 namespace Ext

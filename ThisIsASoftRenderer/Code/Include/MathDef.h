@@ -133,8 +133,9 @@ namespace Common
 	};
 
 	//////// 以4x4矩阵变换4d坐标
+	void	Transform_Vec4_By_Mat44(Vector4& result, const Vector4& pt, const Matrix44& mat);
 	Vector4	Transform_Vec4_By_Mat44(const Vector4& pt, const Matrix44& mat);
-
+	
 	//////// 以4x4矩阵变换3d坐标,bPosOrDir为true表示变换的是点,否则是方向
 	inline Vector4	Transform_Vec3_By_Mat44(const Vector3& pt, const Matrix44& mat, bool bPosOrDir)
 	{
@@ -162,7 +163,31 @@ namespace Common
 		return std::move(Vector4(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z, v1.w-v2.w));
 	}
 
+	//////// 3d向量相减
+	inline Vector3	Sub_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
+	{
+		return std::move(Vector3(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z));
+	}
+
+	//////// 2d向量相加
+	inline void	Add_Vec2_By_Vec2(Vector2& result, const Vector2& v1, const Vector2& v2)
+	{
+		float x = v1.x + v2.x;
+		float y = v1.y + v2.y;
+
+		result.Set(x, y);
+	}
+
 	//////// 3d向量相加
+	inline void	Add_Vec3_By_Vec3(Vector3& result, const Vector3& v1, const Vector3& v2)
+	{
+		float x = v1.x + v2.x;
+		float y = v1.y + v2.y;
+		float z = v1.z + v2.z;
+
+		result.Set(x, y, z);
+	}
+
 	inline Vector3	Add_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
 	{
 		return std::move(Vector3(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z));
@@ -190,6 +215,12 @@ namespace Common
 	inline Vector3	Multiply_Vec3_By_K(const Vector3& v, float k)
 	{
 		return std::move(Vector3(v.x * k, v.y * k, v.z * k));
+	}
+
+	//////// 2d向量乘以常数
+	inline Vector2	Multiply_Vec2_By_K(const Vector2& v, float k)
+	{
+		return std::move(Vector2(v.x * k, v.y * k));
 	}
 
 	//////// 角度转弧度

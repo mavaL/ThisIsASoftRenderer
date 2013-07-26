@@ -158,7 +158,7 @@ namespace SR
 
 		//物体坐标转换到相机空间进行裁减
 		VEC4 pos(aabb.GetCenter(), 1.0f);
-		pos = Common::Transform_Vec4_By_Mat44(pos, GetViewMatrix());
+		Common::Transform_Vec4_By_Mat44(pos, pos, GetViewMatrix());
 
 		float n = GetNearClip();
 		float f = GetFarClip();

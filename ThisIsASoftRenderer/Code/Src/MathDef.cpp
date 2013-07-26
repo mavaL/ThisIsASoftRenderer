@@ -13,7 +13,17 @@ namespace Common
 	Common::Vector4 Vector4::ZERO			=	Vector4(0, 0, 0, 0);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
-	Vector4 Transform_Vec4_By_Mat44( const Vector4& pt, const Matrix44& mat )
+	void Transform_Vec4_By_Mat44( Vector4& result, const Vector4& pt, const Matrix44& mat )
+	{
+		float x = mat.m_arr[0][0] * pt.x + mat.m_arr[0][1] * pt.y + mat.m_arr[0][2] * pt.z + mat.m_arr[0][3] * pt.w;
+		float y = mat.m_arr[1][0] * pt.x + mat.m_arr[1][1] * pt.y + mat.m_arr[1][2] * pt.z + mat.m_arr[1][3] * pt.w;
+		float z = mat.m_arr[2][0] * pt.x + mat.m_arr[2][1] * pt.y + mat.m_arr[2][2] * pt.z + mat.m_arr[2][3] * pt.w;
+		float w = mat.m_arr[3][0] * pt.x + mat.m_arr[3][1] * pt.y + mat.m_arr[3][2] * pt.z + mat.m_arr[3][3] * pt.w;
+
+		result.Set(x, y, z, w);
+	}
+
+	Common::Vector4 Transform_Vec4_By_Mat44( const Vector4& pt, const Matrix44& mat )
 	{
 		return Vector4(
 			mat.m_arr[0][0] * pt.x + mat.m_arr[0][1] * pt.y + mat.m_arr[0][2] * pt.z + mat.m_arr[0][3] * pt.w, 

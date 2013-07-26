@@ -25,7 +25,7 @@ namespace SR
 
 		VertexBuffer	m_verts;
 		FaceList		m_faces;
-		STexture		m_texture;
+		SMaterial*		m_pMaterial;
 		MAT44			m_matWorld;
 		MAT44			m_matWorldIT;		//世界矩阵的逆转置,用于法线变换
 		AABB			m_localAABB;		//本地包围盒
