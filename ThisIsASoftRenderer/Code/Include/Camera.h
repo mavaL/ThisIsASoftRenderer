@@ -22,22 +22,24 @@ namespace SR
 	public:
 		void	Update();
 
+		void	SetNearClip(float n)	{ m_nearClip = n; }
+		void	SetFarClip(float f)		{ m_farClip = f; }
 		void	SetPosition(const VEC3& pos);
 		void	SetDirection(const VEC3& dir);
 		void	Yaw(float angle);
 		void	AddMoveSpeed(float delta);
-		inline float	GetMoveSpeed()	{ return m_moveSpeed; }
+		float	GetMoveSpeed()	{ return m_moveSpeed; }
 
-		inline const VEC4&		GetPos() const		{ return m_viewPt;	}
+		const VEC4&		GetPos() const		{ return m_viewPt;	}
 		VEC4			GetDirection() const;
 		VEC4			GetRight() const;
-		inline float	GetNearClip() const	{ return m_nearClip; }
-		inline float	GetFarClip() const	{ return m_farClip; }
-		inline float	GetFov() const		{ return m_fov; }
-		inline float	GetAspectRatio() const	{ return m_aspectRatio; }
+		float	GetNearClip() const	{ return m_nearClip; }
+		float	GetFarClip() const	{ return m_farClip; }
+		float	GetFov() const		{ return m_fov; }
+		float	GetAspectRatio() const	{ return m_aspectRatio; }
 
-		inline const MAT44&	GetViewMatrix() const	{ return m_matView; }
-		inline const MAT44&	GetProjMatrix() const	{ return m_matProj; }
+		const MAT44&	GetViewMatrix() const	{ return m_matView; }
+		const MAT44&	GetProjMatrix() const	{ return m_matProj; }
 
 		//对物体进行视锥裁减测试.被剪裁返回true.
 		bool	ObjectFrustumCulling(const RenderObject& obj);

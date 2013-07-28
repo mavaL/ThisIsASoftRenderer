@@ -87,8 +87,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 			{
 				char szText[128];
-				sprintf_s(szText, ARRAYSIZE(szText), "RenderedTris : %d, Culled Object : %d, Culled Backface : %d", 
-					g_renderer.m_frameStatics.nRenderedFace, g_renderer.m_frameStatics.nObjCulled, g_renderer.m_frameStatics.nBackFace);
+				sprintf_s(szText, ARRAYSIZE(szText), "RenderedTris : %d, Culled Object : %d, Backface : %d, Culled Face : %d", 
+					g_renderer.m_frameStatics.nRenderedFace, g_renderer.m_frameStatics.nObjCulled, g_renderer.m_frameStatics.nBackFace, g_renderer.m_frameStatics.nFaceCulled);
 
 				SR::RenderUtil::DrawText(10, 35, szText, RGB(0,255,0));
 			}
@@ -205,7 +205,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //init renderer
    g_env.renderer->Init();
-   g_env.renderer->SetRasterizeType(SR::eRasterizeType_Gouraud);
+   g_env.renderer->SetRasterizeType(SR::eRasterizeType_TexturedGouraud);
 
    //// Test case 1: Simple one triangle
    {
@@ -231,21 +231,65 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 	   SR::SFace face(0,1,2);
 // 	   face.faceNormal = VEC3::UNIT_Z; 
 // 	   obj.m_faces.push_back(face);
-// 
-// 	   obj.m_matWorld.SetTranslation(VEC4(100,0,0,1));
 // 	  
 // 	   SR::SMaterial* mat = new SR::SMaterial;
 // 	   mat->pTexture = new SR::STexture;
 // 	   mat->pTexture->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
 // 	   g_renderer.AddMaterial("MatMarine", mat);
-// 	   g_meshLoader.m_objs[0].m_pMaterial = mat;
+// 	   obj.m_pMaterial = mat;
 // 
 // 	   SR::RenderUtil::ComputeAABB(obj);
 // 
 // 	   g_env.renderer->AddRenderable(obj);
    }
 
-   //// Test case 2: marine.mesh
+   //// Test case 2: 透视校正纹理映射
+   {
+	   SR::RenderObject obj;
+
+	   SR::SVertex v1, v2, v3 ,v4;
+	   v1.pos = VEC4(-500, 0, -500, 1);
+	   v2.pos = VEC4(500, 0, -500, 1);
+	   v3.pos = VEC4(-500, 0, 500, 1);
+	   v4.pos = VEC4(500, 0, 500, 1);
+
+	   v1.normal = VEC3::UNIT_Y;
+	   v2.normal = VEC3::UNIT_Y;
+	   v3.normal = VEC3::UNIT_Y;
+	   v4.normal = VEC3::UNIT_Y;
+
+	   v1.uv = VEC2(0, 0);
+	   v2.uv = VEC2(10, 0);
+	   v3.uv = VEC2(0, 10);
+	   v4.uv = VEC2(10, 10);
+
+	   obj.m_verts.push_back(v1);
+	   obj.m_verts.push_back(v2);
+	   obj.m_verts.push_back(v3);
+	   obj.m_verts.push_back(v4);
+
+	   SR::SFace face1(0,2,1);
+	   SR::SFace face2(1,2,3);
+	   face1.faceNormal = VEC3::UNIT_Y; 
+	   face2.faceNormal = VEC3::UNIT_Y; 
+	   obj.m_faces.push_back(face1);
+	   obj.m_faces.push_back(face2);
+
+	   SR::SMaterial* mat = new SR::SMaterial;
+	   mat->pTexture = new SR::STexture;
+	   mat->pTexture->LoadTexture(GetResPath("ChesePanel.bmp"));
+	   g_renderer.AddMaterial("Chese", mat);
+	   obj.m_pMaterial = mat;
+
+	   SR::RenderUtil::ComputeAABB(obj);
+
+	   g_renderer.AddRenderable(obj);
+
+	   g_renderer.m_camera.SetFarClip(10000);
+	   g_renderer.m_camera.SetPosition(VEC3(-20,706,1706));
+   }
+
+   //// Test case 3: marine.mesh
    {
 // 	   try
 // 	   {
@@ -267,24 +311,24 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
    }
   
-   //// Test case 3: sponza.obj
+   //// Test case 4: sponza.obj
    {
-	   try
-	   {
-		   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
-			   throw std::logic_error("Error, Load .obj file failed!");
-	   }
-	   catch (std::exception& e)
-	   {
-		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
-		   return FALSE;
-	   }
-
-	   g_env.renderer->AddRenderObjs(g_objLoader.m_objs);
+// 	   try
+// 	   {
+// 		   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
+// 			   throw std::logic_error("Error, Load .obj file failed!");
+// 	   }
+// 	   catch (std::exception& e)
+// 	   {
+// 		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
+// 		   return FALSE;
+// 	   }
+// 
+// 	   g_env.renderer->AddRenderObjs(g_objLoader.m_objs);
+// 	   g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
    }
 
-   //g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
-   g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
+   
 
    return TRUE;
 }

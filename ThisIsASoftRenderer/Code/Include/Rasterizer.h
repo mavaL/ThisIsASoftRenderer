@@ -65,8 +65,8 @@ namespace SR
 
 		struct SScanLineData 
 		{
-			VEC2	curP_L, curP_R;
-			VEC2	dp_L, dp_R;
+			VEC3	curP_L, curP_R;		//pos的x,z,w分量
+			VEC3	dp_L, dp_R;			//pos的x,z,w差分
 			int		curY, endY;
 			float	y0;
 			VEC3	clr_L, clr_R;

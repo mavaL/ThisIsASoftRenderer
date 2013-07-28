@@ -5,6 +5,7 @@ namespace SR
 {
 	SColor SColor::WHITE	=	SColor(0xffffffff);
 	SColor SColor::BLACK	=	SColor(0);
+	SColor SColor::BLUE		=	SColor(0xff0000ff);
 
 	void STexture::LoadTexture( const STRING& filename )
 	{

@@ -9,6 +9,8 @@
 #ifndef Prerequiestity_h__
 #define Prerequiestity_h__
 
+#define USE_PERSPEC_CORRECT		1			//是否使用透视修正
+
 typedef std::string STRING;
 
 namespace Common

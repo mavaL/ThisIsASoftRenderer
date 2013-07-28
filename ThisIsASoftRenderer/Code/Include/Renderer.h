@@ -45,11 +45,11 @@ namespace SR
 		{
 			void Reset()
 			{
-				nObjCulled = nBackFace = nRenderedVert = nRenderedFace = 0;
+				nObjCulled = nBackFace = nFaceCulled = nRenderedFace = 0;
 			}
 			DWORD	nObjCulled;
 			DWORD	nBackFace;
-			DWORD	nRenderedVert;
+			DWORD	nFaceCulled;
 			DWORD	nRenderedFace;
 			DWORD	lastFPS;
 		};

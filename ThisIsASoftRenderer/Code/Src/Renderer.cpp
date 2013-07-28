@@ -84,7 +84,7 @@ namespace SR
 	{
 		/////////////////////////////////////////////////
 		///////// 刷新后备缓冲
-		_Clear(SColor::BLACK, 1.0f);
+		_Clear(SColor::BLUE, 1.0f);
 
 		//for each object
 		for (size_t iObj=0; iObj<m_renderList.size(); ++iObj)
@@ -148,10 +148,10 @@ namespace SR
 
 				/////////////////////////////////////////////////
 				///////// 齐次除法
-				float inv_w = 1 / vertPos.w;
-				vertPos.x *= inv_w;
-				vertPos.y *= inv_w;
-				vertPos.z *= inv_w;
+				vertPos.w = 1 / vertPos.w;
+				vertPos.x *= vertPos.w;
+				vertPos.y *= vertPos.w;
+				vertPos.z *= vertPos.w;
 
 				/////////////////////////////////////////////////
 				///////// 视口映射 [-1,1] -> [0, Viewport W/H]
@@ -319,6 +319,7 @@ namespace SR
 				(vert1.pos.x > x1 && vert2.pos.x > x2 && vert3.pos.x > x3)	)
 			{
 				face.bCulled = true;
+				++m_frameStatics.nFaceCulled;
 				continue;
 			}
 
@@ -331,6 +332,7 @@ namespace SR
 				(vert1.pos.y > y1 && vert2.pos.y > y2 && vert3.pos.y > y3)	)
 			{
 				face.bCulled = true;
+				++m_frameStatics.nFaceCulled;
 				continue;
 			}
 
@@ -338,6 +340,7 @@ namespace SR
 			if(-vert1.pos.z > f && -vert2.pos.z > f && -vert3.pos.z > f)
 			{
 				face.bCulled = true;
+				++m_frameStatics.nFaceCulled;
 				continue;
 			}
 
@@ -360,6 +363,7 @@ namespace SR
 			if(flags[0] && flags[1] && flags[2])
 			{
 				face.bCulled = true;
+				++m_frameStatics.nFaceCulled;
 				continue;
 			}
 

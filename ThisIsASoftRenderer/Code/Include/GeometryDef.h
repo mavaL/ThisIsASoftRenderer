@@ -66,6 +66,7 @@ namespace SR
 
 		static SColor WHITE;
 		static SColor BLACK;
+		static SColor BLUE;
 	};
 
 	///////////////////////////////////////////////////

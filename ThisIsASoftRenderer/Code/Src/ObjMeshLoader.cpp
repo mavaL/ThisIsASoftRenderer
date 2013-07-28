@@ -76,10 +76,6 @@ namespace Ext
 					file >> uv.x >> uv.y;
 					//NB: 纹理目前只支持.bmp格式
 					//uv.y = 1 - uv.y;
-
-					//Wrap mode
-					uv.x -= Ext::Floor32_Fast(uv.x);
-					uv.y -= Ext::Floor32_Fast(uv.y);
 				}
 				else if (strcmp(command.c_str(), "vn") == 0)
 				{

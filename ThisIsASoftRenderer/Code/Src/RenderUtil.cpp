@@ -637,6 +637,8 @@ namespace SR
 			curLX += left_incX;
 			curRX += right_incX;
 		}
+
+		++g_env.renderer->m_frameStatics.nRenderedFace;
 	}
 
 	void RenderUtil::DrawTopTri_Scanline( float x0, float y0, float x1, float y1, float x2, float y2, SColor color )
@@ -672,6 +674,8 @@ namespace SR
 			curLX += left_incX;
 			curRX += right_incX;
 		}
+
+		++g_env.renderer->m_frameStatics.nRenderedFace;
 	}
 
 	void RenderUtil::SortTris_PainterAlgorithm( const VertexBuffer& verts, FaceList& faces )
@@ -720,19 +724,25 @@ namespace SR
 				float y2 = vert2->pos.y;
 				float z0 = vert0->pos.z;
 				float z1 = vert1->pos.z;
-				float z2 = vert2->pos.z;
+				float w0 = vert0->pos.w;
+				float w1 = vert1->pos.w;
 
 				float t = (y2-y0)/(y1-y0);
 				vert3.pos.x = x0 + (x1-x0)*t;
 				vert3.pos.y = y2;
 				vert3.pos.z = z0 + (z1-z0)*t;
+				vert3.pos.w = w0 + (w1-w0)*t;
 				vert3.color.a = 255;
 				vert3.color.r = Ext::LinearLerp(vert0->color.r, vert1->color.r, t);
 				vert3.color.g = Ext::LinearLerp(vert0->color.g, vert1->color.g, t);
 				vert3.color.b = Ext::LinearLerp(vert0->color.b, vert1->color.b, t);
+#if USE_PERSPEC_CORRECT == 1
+				vert3.uv.x = Ext::LinearLerp(vert0->uv.x*w0, vert1->uv.x*w1, t) / vert3.pos.w;
+				vert3.uv.y = Ext::LinearLerp(vert0->uv.y*w0, vert1->uv.y*w1, t) / vert3.pos.w;
+#else
 				vert3.uv.x = Ext::LinearLerp(vert0->uv.x, vert1->uv.x, t);
 				vert3.uv.y = Ext::LinearLerp(vert0->uv.y, vert1->uv.y, t);
-
+#endif
 				DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, bTextured, context, scanLineData);
 				DrawTopTri_Scanline_V2(&vert3, vert1, vert2, bTextured, context, scanLineData);
 			}
@@ -747,17 +757,22 @@ namespace SR
 		if(vert1->pos.x > vert2->pos.x)
 			Ext::Swap(vert1, vert2);
 
-		const VEC3 p0(vert0->pos.x, vert0->pos.y, vert0->pos.z);
-		const VEC3 p1(vert1->pos.x, vert1->pos.y, vert1->pos.z);
-		const VEC3 p2(vert2->pos.x, vert2->pos.y, vert2->pos.z);
-
-		const SColor& c0 = vert0->color;
-		const SColor& c1 = vert1->color;
-		const SColor& c2 = vert2->color;
-
+		const VEC4& p0 = vert0->pos;
+		const VEC4& p1 = vert1->pos;
+		const VEC4& p2 = vert2->pos;
+#if USE_PERSPEC_CORRECT == 1
+		const VEC2 uv0(vert0->uv.x*p0.w, vert0->uv.y*p0.w);
+		const VEC2 uv1(vert1->uv.x*p1.w, vert1->uv.y*p1.w);
+		const VEC2 uv2(vert2->uv.x*p2.w, vert2->uv.y*p2.w);
+#else
 		const VEC2 uv0(vert0->uv.x, vert0->uv.y);
 		const VEC2 uv1(vert1->uv.x, vert1->uv.y);
 		const VEC2 uv2(vert2->uv.x, vert2->uv.y);
+#endif
+		//NB: 顶点颜色理论上也应该进行透视校正,这里偷个懒不做了
+		const SColor& c0 = vert0->color;
+		const SColor& c1 = vert1->color;
+		const SColor& c2 = vert2->color;
 
 		assert(Ext::Floor32_Fast(p1.y) == Ext::Floor32_Fast(p2.y));
 
@@ -765,10 +780,10 @@ namespace SR
 		//位置坐标及增量
 		scanLineData.y0 = p0.y;
 		float inv_dy = 1.0f / (p1.y - p0.y);
-		scanLineData.curP_L.Set(p0.x, p0.z);
-		scanLineData.curP_R.Set(p0.x, p0.z);
-		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy);
-		scanLineData.dp_R.Set((p2.x-p0.x)*inv_dy, (p2.z-p0.z)*inv_dy);
+		scanLineData.curP_L.Set(p0.x, p0.z, p0.w);
+		scanLineData.curP_R.Set(p0.x, p0.z, p0.w);
+		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy, (p1.w-p0.w)*inv_dy);
+		scanLineData.dp_R.Set((p2.x-p0.x)*inv_dy, (p2.z-p0.z)*inv_dy, (p2.w-p0.w)*inv_dy);
 		//左上填充规则:上
 		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
 		//当前两端点颜色分量及增量
@@ -783,6 +798,8 @@ namespace SR
 		scanLineData.duv_R.Set((uv2.x-uv0.x)*inv_dy, (uv2.y-uv0.y)*inv_dy);
 
 		DrawScanLines(scanLineData, bTextured, context);
+
+		++g_env.renderer->m_frameStatics.nRenderedFace;
 	}
 
 	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData )
@@ -791,17 +808,22 @@ namespace SR
 		if(vert0->pos.x > vert2->pos.x)
 			Ext::Swap(vert0, vert2);
 
-		const VEC3 p0(vert0->pos.x, vert0->pos.y, vert0->pos.z);
-		const VEC3 p1(vert1->pos.x, vert1->pos.y, vert1->pos.z);
-		const VEC3 p2(vert2->pos.x, vert2->pos.y, vert2->pos.z);
-		
-		const SColor& c0 = vert0->color;
-		const SColor& c1 = vert1->color;
-		const SColor& c2 = vert2->color;
-
+		const VEC4& p0 = vert0->pos;
+		const VEC4& p1 = vert1->pos;
+		const VEC4& p2 = vert2->pos;
+#if USE_PERSPEC_CORRECT == 1
+		const VEC2 uv0(vert0->uv.x*p0.w, vert0->uv.y*p0.w);
+		const VEC2 uv1(vert1->uv.x*p1.w, vert1->uv.y*p1.w);
+		const VEC2 uv2(vert2->uv.x*p2.w, vert2->uv.y*p2.w);
+#else
 		const VEC2 uv0(vert0->uv.x, vert0->uv.y);
 		const VEC2 uv1(vert1->uv.x, vert1->uv.y);
 		const VEC2 uv2(vert2->uv.x, vert2->uv.y);
+#endif
+		//NB: 顶点颜色理论上也应该进行透视校正,这里偷个懒不做了
+		const SColor& c0 = vert0->color;
+		const SColor& c1 = vert1->color;
+		const SColor& c2 = vert2->color;
 
 		assert(Ext::Floor32_Fast(p0.y) == Ext::Floor32_Fast(p2.y));
 
@@ -809,10 +831,10 @@ namespace SR
 		//位置坐标及增量
 		scanLineData.y0 = p0.y;
 		float inv_dy = 1.0f / (p1.y - p0.y);
-		scanLineData.curP_L.Set(p0.x, p0.z);
-		scanLineData.curP_R.Set(p2.x, p2.z);
-		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy);
-		scanLineData.dp_R.Set((p1.x-p2.x)*inv_dy, (p1.z-p2.z)*inv_dy);
+		scanLineData.curP_L.Set(p0.x, p0.z, p0.w);
+		scanLineData.curP_R.Set(p2.x, p2.z, p2.w);
+		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy, (p1.w-p0.w)*inv_dy);
+		scanLineData.dp_R.Set((p1.x-p2.x)*inv_dy, (p1.z-p2.z)*inv_dy, (p1.w-p2.w)*inv_dy);
 		//左上填充规则:上
 		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
 		//当前两端点颜色分量及增量
@@ -827,8 +849,11 @@ namespace SR
 		scanLineData.duv_R.Set((uv1.x-uv2.x)*inv_dy, (uv1.y-uv2.y)*inv_dy);
 
 		DrawScanLines(scanLineData, bTextured, context);
+
+		++g_env.renderer->m_frameStatics.nRenderedFace;
 	}
 
+	const static float INV_COLOR	=	1.0f / 255.0f;
 
 	void RenderUtil::DrawScanLines( RasGouraud::SScanLineData& scanLineData, bool bTextured, const SRenderContext& context )
 	{
@@ -837,8 +862,8 @@ namespace SR
 		{
 			float dy = min_clip_y - scanLineData.y0;
 			scanLineData.curY = min_clip_y;
-			Common::Add_Vec2_By_Vec2(scanLineData.curP_L, scanLineData.curP_L, Common::Multiply_Vec2_By_K(scanLineData.dp_L, dy));
-			Common::Add_Vec2_By_Vec2(scanLineData.curP_R, scanLineData.curP_R, Common::Multiply_Vec2_By_K(scanLineData.dp_R, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, Common::Multiply_Vec3_By_K(scanLineData.dp_L, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, Common::Multiply_Vec3_By_K(scanLineData.dp_R, dy));
 			Common::Add_Vec3_By_Vec3(scanLineData.clr_L, scanLineData.clr_L, Common::Multiply_Vec3_By_K(scanLineData.dclr_L, dy));
 			Common::Add_Vec3_By_Vec3(scanLineData.clr_R, scanLineData.clr_R, Common::Multiply_Vec3_By_K(scanLineData.dclr_R, dy));
 			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, Common::Multiply_Vec2_By_K(scanLineData.duv_L, dy));
@@ -855,7 +880,6 @@ namespace SR
 		DWORD* destBuffer = vb_start + scanLineData.curY * lpitch;
 		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + scanLineData.curY * lpitch;
 		SColor pixelColor;
-		float inv_texel = 1.0f/255;
 		VEC2 uv;
 
 		while (scanLineData.curY <= scanLineData.endY)
@@ -873,10 +897,12 @@ namespace SR
 				float du = (scanLineData.curUV_R.x - scanLineData.curUV_L.x) * invdx;
 				float dv = (scanLineData.curUV_R.y - scanLineData.curUV_L.y) * invdx;
 				float dz = (scanLineData.curP_R.y - scanLineData.curP_L.y) * invdx;
+				float dw = (scanLineData.curP_R.z - scanLineData.curP_L.z) * invdx;
 
 				float r = scanLineData.clr_L.x, g = scanLineData.clr_L.y, b = scanLineData.clr_L.z;
 				float u = scanLineData.curUV_L.x, v = scanLineData.curUV_L.y;
 				float z = scanLineData.curP_L.y;
+				float w = scanLineData.curP_L.z;
 
 				//裁剪区域裁剪x
 				if(lineX0 < min_clip_x)
@@ -889,6 +915,7 @@ namespace SR
 					v += dx*dv;
 					lineX0 = min_clip_x;
 					z += dx*dz;
+					w += dx*dw;
 				}
 				if(lineX1 > max_clip_x)
 				{
@@ -903,11 +930,15 @@ namespace SR
 					{
 						if(bTextured && context.pMaterial->pTexture)
 						{
+#if USE_PERSPEC_CORRECT == 1
+							uv.Set(u/w, v/w);
+#else
 							uv.Set(u, v);
+#endif			
 							pixelColor = context.pMaterial->pTexture->Tex2D_Point(uv);
-							pixelColor.r = Ext::Ftoi32_Fast(pixelColor.r * r * inv_texel);
-							pixelColor.g = Ext::Ftoi32_Fast(pixelColor.g * g * inv_texel);
-							pixelColor.b = Ext::Ftoi32_Fast(pixelColor.b * b * inv_texel);
+							pixelColor.r = Ext::Ftoi32_Fast(pixelColor.r * r * INV_COLOR);
+							pixelColor.g = Ext::Ftoi32_Fast(pixelColor.g * g * INV_COLOR);
+							pixelColor.b = Ext::Ftoi32_Fast(pixelColor.b * b * INV_COLOR);
 						}
 						else
 						{
@@ -926,12 +957,13 @@ namespace SR
 					u += du;
 					v += dv;
 					z += dz;
+					w += dw;
 				}
 			}
 
 			++scanLineData.curY;
-			Common::Add_Vec2_By_Vec2(scanLineData.curP_L, scanLineData.curP_L, scanLineData.dp_L);
-			Common::Add_Vec2_By_Vec2(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, scanLineData.dp_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
 			Common::Add_Vec3_By_Vec3(scanLineData.clr_L, scanLineData.clr_L, scanLineData.dclr_L);
 			Common::Add_Vec3_By_Vec3(scanLineData.clr_R, scanLineData.clr_R, scanLineData.dclr_R);
 			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
