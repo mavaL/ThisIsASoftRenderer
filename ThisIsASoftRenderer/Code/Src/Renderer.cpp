@@ -387,12 +387,11 @@ namespace SR
 				//直线参数化方程求t
 				const VEC4 line1 = Common::Sub_Vec4_By_Vec4(p1->pos, p0->pos);
 				float t1 = (-n - p0->pos.z)/(line1.z);
+				//交点1
 				float newX1 = p0->pos.x + line1.x * t1;
 				float newY1 = p0->pos.y + line1.y * t1;
-				//覆盖原来的p1
-				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
 
-				//另一个交点得创建新的顶点和切割新的面
+				//交点2得创建新的顶点和切割新的面
 				const VEC4 line2 = Common::Sub_Vec4_By_Vec4(p1->pos, p2->pos);
 				float t2 = (-n - p2->pos.z)/(line2.z);
 				float newX2 = p2->pos.x + line2.x * t2;
@@ -414,12 +413,15 @@ namespace SR
 				//是否需要计算新的uv
 				if (m_curRas->GetType() == eRasterizeType_TexturedGouraud)
 				{
-					p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
-					p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
-
 					newVert.uv.x = p2->uv.x + (p1->uv.x - p2->uv.x) * t2;
 					newVert.uv.y = p2->uv.y + (p1->uv.y - p2->uv.y) * t2;
+
+					p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
+					p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
 				}
+
+				//交点1覆盖原来的p1
+				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
 
 				//NB: 最后进行插入操作,不然会使指向元素的指针无效化
 				VB.push_back(newVert);

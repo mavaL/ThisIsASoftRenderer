@@ -72,7 +72,7 @@ namespace Common
 		Merge( Common::Transform_Vec3_By_Mat44(currentCorner, matrix, true) ); 
 
 		//更新外接球球径
-		m_boundingRadius = Common::Vec3_Distance(currentCorner, m_maxCorner) / 2;
+		m_boundingRadius = Common::Vec3_Distance(m_minCorner, m_maxCorner) / 2;
 	}
 
 }

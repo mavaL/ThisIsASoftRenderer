@@ -490,12 +490,12 @@ namespace SR
 
 	bool RenderUtil::PreDrawTriangle( const SVertex*& vert0, const SVertex*& vert1, const SVertex*& vert2, eTriangleShape& retType )
 	{
-		int x0 = Ext::Floor32_Fast(vert0->pos.x);
-		int x1 = Ext::Floor32_Fast(vert1->pos.x);
-		int x2 = Ext::Floor32_Fast(vert2->pos.x);
-		int y0 = Ext::Floor32_Fast(vert0->pos.y);
-		int y1 = Ext::Floor32_Fast(vert1->pos.y);
-		int y2 = Ext::Floor32_Fast(vert2->pos.y);
+		int x0 = Ext::Ceil32_Fast(vert0->pos.x);
+		int x1 = Ext::Ceil32_Fast(vert1->pos.x);
+		int x2 = Ext::Ceil32_Fast(vert2->pos.x);
+		int y0 = Ext::Ceil32_Fast(vert0->pos.y);
+		int y1 = Ext::Ceil32_Fast(vert1->pos.y);
+		int y2 = Ext::Ceil32_Fast(vert2->pos.y);
 
 		//该三角面不在裁剪区域内,不绘制
 		if(	(x0 < min_clip_x && x1 < min_clip_x && x2 < min_clip_x) ||
@@ -774,7 +774,7 @@ namespace SR
 		const SColor& c1 = vert1->color;
 		const SColor& c2 = vert2->color;
 
-		assert(Ext::Floor32_Fast(p1.y) == Ext::Floor32_Fast(p2.y));
+		assert(Ext::Ceil32_Fast(p1.y) == Ext::Ceil32_Fast(p2.y));
 
 		///填充光栅化结构
 		//位置坐标及增量
@@ -825,7 +825,7 @@ namespace SR
 		const SColor& c1 = vert1->color;
 		const SColor& c2 = vert2->color;
 
-		assert(Ext::Floor32_Fast(p0.y) == Ext::Floor32_Fast(p2.y));
+		assert(Ext::Ceil32_Fast(p0.y) == Ext::Ceil32_Fast(p2.y));
 
 		///填充光栅化结构
 		//位置坐标及增量
