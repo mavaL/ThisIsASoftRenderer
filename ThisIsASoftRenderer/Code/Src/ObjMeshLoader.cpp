@@ -257,6 +257,22 @@ namespace Ext
 				pNewMaterial->pTexture = new SR::STexture;
 				pNewMaterial->pTexture->LoadTexture(GetResPath(texName));
 			}
+			else if (strcmp(command.c_str(), "Ka") == 0)
+			{
+				file >> pNewMaterial->ambient.x >> pNewMaterial->ambient.y >> pNewMaterial->ambient.z;
+			}
+			else if (strcmp(command.c_str(), "Kd") == 0)
+			{
+				file >> pNewMaterial->diffuse.x >> pNewMaterial->diffuse.y >> pNewMaterial->diffuse.z;
+			}
+			else if (strcmp(command.c_str(), "Ks") == 0)
+			{
+				file >> pNewMaterial->specular.x >> pNewMaterial->specular.y >> pNewMaterial->specular.z;
+			}
+			else if (strcmp(command.c_str(), "Ns") == 0)
+			{
+				file >> pNewMaterial->shiness;
+			}
 
 			//¶ÁÏÂÒ»ÐÐ
 			file.ignore(1000, '\n');

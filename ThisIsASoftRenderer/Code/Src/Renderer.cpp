@@ -9,6 +9,7 @@ namespace SR
 {
 	Renderer::Renderer()
 	:m_curRas(nullptr)
+	,m_ambientColor(255,40,40,40)
 	{
 		
 	}
@@ -20,6 +21,7 @@ namespace SR
 		m_rasLib.insert(std::make_pair(eRasterizeType_Flat, new RasFlat));
 		m_rasLib.insert(std::make_pair(eRasterizeType_Gouraud, new RasGouraud));
 		m_rasLib.insert(std::make_pair(eRasterizeType_TexturedGouraud, new RasTexturedGouraud));
+		m_rasLib.insert(std::make_pair(eRasterizeType_BlinnPhong, new RasBlinnPhong));
 
 		//创建后备缓冲
 		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
@@ -481,7 +483,8 @@ namespace SR
 		case SR::eRasterizeType_Wireframe:			SetRasterizeType(SR::eRasterizeType_Flat); break;
 		case SR::eRasterizeType_Flat:				SetRasterizeType(SR::eRasterizeType_Gouraud); break;
 		case SR::eRasterizeType_Gouraud:			SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
-		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_Wireframe); break;
+		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_BlinnPhong); break;
+		case SR::eRasterizeType_BlinnPhong:			SetRasterizeType(SR::eRasterizeType_Wireframe); break;
 		default: assert(0);
 		}
 	}

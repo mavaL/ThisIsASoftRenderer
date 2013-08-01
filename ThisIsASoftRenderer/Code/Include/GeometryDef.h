@@ -35,7 +35,7 @@ namespace SR
 		explicit SColor(int c):color(c) {}
 		SColor(BYTE _a, BYTE _r, BYTE _g, BYTE _b):a(_a),r(_r),g(_g),b(_b) {}
 
-		inline SColor operator* (float k) const
+		SColor operator* (float k) const
 		{ 
 			SColor ret;
 			ret.a = Ext::Ftoi32_Fast(a * k); 
@@ -46,12 +46,39 @@ namespace SR
 			return ret;
 		}
 
-		inline SColor operator*= (float k)
+		SColor operator*= (float k)
 		{
 			a = Ext::Ftoi32_Fast(a * k); 
 			r = Ext::Ftoi32_Fast(r * k); 
 			g = Ext::Ftoi32_Fast(g * k); 
 			b = Ext::Ftoi32_Fast(b * k);
+			return *this;
+		}
+
+		SColor operator* (const VEC3& v) const
+		{
+			SColor ret;
+
+			ret.r = Ext::Ftoi32_Fast(r * v.x); 
+			ret.g = Ext::Ftoi32_Fast(g * v.y); 
+			ret.b = Ext::Ftoi32_Fast(b * v.z);
+
+			return ret;
+		}
+
+		SColor operator+= (const SColor& rhs)
+		{
+			//NB: Ð¡ÐÄÒç³ö£¡
+			int tmp_a = a + rhs.a;
+			int tmp_r = r + rhs.r;
+			int tmp_g = g + rhs.g;
+			int tmp_b = b + rhs.b;
+
+			a = tmp_a > 255 ? 255 : tmp_a; 
+			r = tmp_r > 255 ? 255 : tmp_r;  
+			g = tmp_g > 255 ? 255 : tmp_g;  
+			b = tmp_b > 255 ? 255 : tmp_b;  
+
 			return *this;
 		}
 
@@ -118,10 +145,11 @@ namespace SR
 	///////////////////////////////////////////////////
 	struct SMaterial 
 	{
-		SMaterial():ambient(VEC3::ZERO),diffuse(VEC3::ZERO),specular(VEC3::ZERO),pTexture(nullptr) {}
+		SMaterial():ambient(1,1,1),diffuse(1,1,1),specular(1,1,1),pTexture(nullptr),shiness(20) {}
 		~SMaterial() { SAFE_DELETE(pTexture); }
 
 		VEC3		ambient, diffuse, specular;
+		float		shiness;
 		STexture*	pTexture;
 	};
 

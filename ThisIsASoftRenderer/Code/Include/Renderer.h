@@ -57,6 +57,7 @@ namespace SR
 		SFrameStatics	m_frameStatics;
 		Camera			m_camera;
 		SDirectionLight	m_testLight;	//≤‚ ‘∑ΩœÚπ‚
+		SColor			m_ambientColor;	
 
 	public:
 		void	Init();

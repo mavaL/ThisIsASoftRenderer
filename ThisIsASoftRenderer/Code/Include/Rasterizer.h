@@ -18,7 +18,8 @@ namespace SR
 		eRasterizeType_Wireframe,
 		eRasterizeType_Flat,
 		eRasterizeType_Gouraud,
-		eRasterizeType_TexturedGouraud
+		eRasterizeType_TexturedGouraud,
+		eRasterizeType_BlinnPhong
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -86,6 +87,15 @@ namespace SR
 	public:
 		virtual void	RasterizeTriangleList(SRenderContext& context);
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_TexturedGouraud; }
+	};
+
+	/////////////////////////////////////////////////////////////
+	//////// Blinn-Phongπ‚’’
+	class RasBlinnPhong : public RasTexturedGouraud
+	{
+	public:
+		virtual void	DoLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj, const SDirectionLight& light);
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_BlinnPhong; }
 	};
 }
 
