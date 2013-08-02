@@ -681,7 +681,7 @@ namespace SR
 	void RenderUtil::SortTris_PainterAlgorithm( const VertexBuffer& verts, FaceList& faces )
 	{
 		//用画家算法对所有面进行排序(根据三角面3个顶点的平均z值)
-		//NB: 该算法在某些面重叠的情况下是不正确的,见<<3D编程大师技巧>>
+		//NB: 该算法在某些面重叠的情况下是不正确的,见截图Compare.jpg
 		std::sort(faces.begin(), faces.end(), [&](const SFace& face1, const SFace& face2)->bool
 		{
 			const Index idx1 = face1.index1;
@@ -928,14 +928,14 @@ namespace SR
 					//深度测试
 					if(z < zBuffer[curX])
 					{
-						if(bTextured && context.pMaterial->pTexture)
+						if(bTextured && context.pMaterial->pDiffuseMap)
 						{
 #if USE_PERSPEC_CORRECT == 1
 							uv.Set(u/w, v/w);
 #else
 							uv.Set(u, v);
 #endif			
-							pixelColor = context.pMaterial->pTexture->Tex2D_Point(uv);
+							pixelColor = context.pMaterial->pDiffuseMap->Tex2D_Point(uv);
 							pixelColor.r = Ext::Ftoi32_Fast(pixelColor.r * r * INV_COLOR);
 							pixelColor.g = Ext::Ftoi32_Fast(pixelColor.g * g * INV_COLOR);
 							pixelColor.b = Ext::Ftoi32_Fast(pixelColor.b * b * INV_COLOR);

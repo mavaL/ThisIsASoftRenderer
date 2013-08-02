@@ -254,8 +254,15 @@ namespace Ext
 			{
 				STRING texName;
 				file >> texName;
-				pNewMaterial->pTexture = new SR::STexture;
-				pNewMaterial->pTexture->LoadTexture(GetResPath(texName));
+				pNewMaterial->pDiffuseMap = new SR::STexture;
+				pNewMaterial->pDiffuseMap->LoadTexture(GetResPath(texName));
+			}
+			else if (strcmp(command.c_str(), "bump") == 0)
+			{
+				STRING texName;
+				file >> texName;
+				pNewMaterial->pNormalMap = new SR::STexture;
+				pNewMaterial->pNormalMap->LoadTexture(GetResPath(texName));
 			}
 			else if (strcmp(command.c_str(), "Ka") == 0)
 			{

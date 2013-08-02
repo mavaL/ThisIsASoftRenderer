@@ -37,7 +37,7 @@ namespace SR
 		m_zBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
 
 		//测试方向光
-		m_testLight.dir = VEC3(0.3f,-1,-1);
+		m_testLight.dir = VEC3(-0.3f,-1,-1);
 		m_testLight.dir.Normalize();
 		m_testLight.color = SColor::WHITE;
 	}
@@ -412,15 +412,12 @@ namespace SR
 				newFace.index2 = idxp1;
 				newFace.index3 = VB.size();
 
-				//是否需要计算新的uv
-				if (m_curRas->GetType() == eRasterizeType_TexturedGouraud)
-				{
-					newVert.uv.x = p2->uv.x + (p1->uv.x - p2->uv.x) * t2;
-					newVert.uv.y = p2->uv.y + (p1->uv.y - p2->uv.y) * t2;
+				//计算新的uv
+				newVert.uv.x = p2->uv.x + (p1->uv.x - p2->uv.x) * t2;
+				newVert.uv.y = p2->uv.y + (p1->uv.y - p2->uv.y) * t2;
 
-					p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
-					p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
-				}
+				p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
+				p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
 
 				//交点1覆盖原来的p1
 				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
@@ -463,15 +460,12 @@ namespace SR
 				//覆盖原来的p2
 				p2->pos.x = newX2; p2->pos.y = newY2; p2->pos.z = -n;
 
-				//是否需要计算新的uv
-				if (m_curRas->GetType() == eRasterizeType_TexturedGouraud)
-				{
-					p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
-					p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
+				//计算新的uv
+				p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
+				p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
 
-					p2->uv.x = p0->uv.x + (p2->uv.x - p0->uv.x) * t2;
-					p2->uv.y = p0->uv.y + (p2->uv.y - p0->uv.y) * t2;
-				}
+				p2->uv.x = p0->uv.x + (p2->uv.x - p0->uv.x) * t2;
+				p2->uv.y = p0->uv.y + (p2->uv.y - p0->uv.y) * t2;
 			}
 		}
 	}

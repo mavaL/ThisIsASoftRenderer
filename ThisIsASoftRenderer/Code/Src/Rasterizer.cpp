@@ -91,10 +91,19 @@ namespace SR
 			worldNormal.Normalize();
 			float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
 
-			face.color = SColor::BLACK;
-			if(nl > 0)
+			//use half-lambert?
+			if(obj.m_pMaterial->bUseHalfLambert)
 			{
-				face.color = tmpDiffuse * nl ;
+				nl = pow(nl * 0.5f + 0.5f, 2);
+				face.color = tmpDiffuse * nl;
+			}
+			else
+			{
+				face.color = SColor::BLACK;
+				if(nl > 0)
+				{
+					face.color = tmpDiffuse * nl;
+				}
 			}
 
 			//环境光
@@ -151,10 +160,19 @@ namespace SR
 			worldNormal.Normalize();
 			float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
 
-			vert.color = SColor::BLACK;
-			if(nl > 0)
+			//use half-lambert?
+			if(obj.m_pMaterial->bUseHalfLambert)
 			{
+				nl = pow(nl * 0.5f + 0.5f, 2);
 				vert.color = tmpDiffuse * nl;
+			}
+			else
+			{
+				vert.color = SColor::BLACK;
+				if(nl > 0)
+				{
+					vert.color = tmpDiffuse * nl;
+				}
 			}
 
 			//环境光
@@ -212,11 +230,19 @@ namespace SR
 			worldNormal.Normalize();
 			float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
 
-			vert.color = SColor::BLACK;
-			if(nl > 0)
+			//use half-lambert?
+			if(obj.m_pMaterial->bUseHalfLambert)
 			{
-				//散射光
+				nl = pow(nl * 0.5f + 0.5f, 2);
 				vert.color = tmpDiffuse * nl;
+			}
+			else
+			{
+				vert.color = SColor::BLACK;
+				if(nl > 0)
+				{
+					vert.color = tmpDiffuse * nl;
+				}
 			}
 
 			//环境光

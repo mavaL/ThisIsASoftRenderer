@@ -145,12 +145,15 @@ namespace SR
 	///////////////////////////////////////////////////
 	struct SMaterial 
 	{
-		SMaterial():ambient(1,1,1),diffuse(1,1,1),specular(1,1,1),pTexture(nullptr),shiness(20) {}
-		~SMaterial() { SAFE_DELETE(pTexture); }
+		SMaterial():ambient(1,1,1),diffuse(1,1,1),specular(1,1,1),pDiffuseMap(nullptr),pNormalMap(nullptr)
+			,shiness(20),bUseHalfLambert(false) {}
+		~SMaterial() { SAFE_DELETE(pDiffuseMap); SAFE_DELETE(pNormalMap); }
 
 		VEC3		ambient, diffuse, specular;
 		float		shiness;
-		STexture*	pTexture;
+		STexture*	pDiffuseMap;
+		STexture*	pNormalMap;
+		bool		bUseHalfLambert;	//See: https://developer.valvesoftware.com/wiki/Half_Lambert
 	};
 
 	///////////////////////////////////////////////////
