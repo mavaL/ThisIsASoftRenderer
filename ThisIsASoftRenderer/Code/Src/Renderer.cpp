@@ -86,7 +86,7 @@ namespace SR
 	{
 		/////////////////////////////////////////////////
 		///////// Ë¢ÐÂºó±¸»º³å
-		_Clear(SColor::BLUE, 1.0f);
+		_Clear(SColor::BLACK, 1.0f);
 
 		//for each object
 		for (size_t iObj=0; iObj<m_renderList.size(); ++iObj)

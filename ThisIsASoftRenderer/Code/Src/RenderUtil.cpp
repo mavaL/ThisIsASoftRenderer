@@ -777,25 +777,25 @@ namespace SR
 		assert(Ext::Ceil32_Fast(p1.y) == Ext::Ceil32_Fast(p2.y));
 
 		///填充光栅化结构
-		//位置坐标及增量
-		scanLineData.y0 = p0.y;
-		float inv_dy = 1.0f / (p1.y - p0.y);
-		scanLineData.curP_L.Set(p0.x, p0.z, p0.w);
-		scanLineData.curP_R.Set(p0.x, p0.z, p0.w);
-		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy, (p1.w-p0.w)*inv_dy);
-		scanLineData.dp_R.Set((p2.x-p0.x)*inv_dy, (p2.z-p0.z)*inv_dy, (p2.w-p0.w)*inv_dy);
 		//左上填充规则:上
 		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
+		//位置坐标及增量
+		float inv_dy_L = 1.0f / (p1.y - p0.y);
+		float inv_dy_R = 1.0f / (p2.y - p0.y);
+		scanLineData.curP_L.Set(p0.x, p0.z, p0.w);
+		scanLineData.curP_R.Set(p0.x, p0.z, p0.w);
+		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy_L, (p1.z-p0.z)*inv_dy_L, (p1.w-p0.w)*inv_dy_L);
+		scanLineData.dp_R.Set((p2.x-p0.x)*inv_dy_R, (p2.z-p0.z)*inv_dy_R, (p2.w-p0.w)*inv_dy_R);
 		//当前两端点颜色分量及增量
 		scanLineData.clr_L.Set(c0.r, c0.g, c0.b);
 		scanLineData.clr_R.Set(c0.r, c0.g, c0.b);
-		scanLineData.dclr_L.Set((c1.r-c0.r)*inv_dy, (c1.g-c0.g)*inv_dy, (c1.b-c0.b)*inv_dy);
-		scanLineData.dclr_R.Set((c2.r-c0.r)*inv_dy, (c2.g-c0.g)*inv_dy, (c2.b-c0.b)*inv_dy);
+		scanLineData.dclr_L.Set((c1.r-c0.r)*inv_dy_L, (c1.g-c0.g)*inv_dy_L, (c1.b-c0.b)*inv_dy_L);
+		scanLineData.dclr_R.Set((c2.r-c0.r)*inv_dy_R, (c2.g-c0.g)*inv_dy_R, (c2.b-c0.b)*inv_dy_R);
 		//当前两端点uv分量及增量
 		scanLineData.curUV_L = uv0;
 		scanLineData.curUV_R = uv0;
-		scanLineData.duv_L.Set((uv1.x-uv0.x)*inv_dy, (uv1.y-uv0.y)*inv_dy);
-		scanLineData.duv_R.Set((uv2.x-uv0.x)*inv_dy, (uv2.y-uv0.y)*inv_dy);
+		scanLineData.duv_L.Set((uv1.x-uv0.x)*inv_dy_L, (uv1.y-uv0.y)*inv_dy_L);
+		scanLineData.duv_R.Set((uv2.x-uv0.x)*inv_dy_R, (uv2.y-uv0.y)*inv_dy_R);
 
 		DrawScanLines(scanLineData, bTextured, context);
 
@@ -828,25 +828,25 @@ namespace SR
 		assert(Ext::Ceil32_Fast(p0.y) == Ext::Ceil32_Fast(p2.y));
 
 		///填充光栅化结构
-		//位置坐标及增量
-		scanLineData.y0 = p0.y;
-		float inv_dy = 1.0f / (p1.y - p0.y);
-		scanLineData.curP_L.Set(p0.x, p0.z, p0.w);
-		scanLineData.curP_R.Set(p2.x, p2.z, p2.w);
-		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy, (p1.z-p0.z)*inv_dy, (p1.w-p0.w)*inv_dy);
-		scanLineData.dp_R.Set((p1.x-p2.x)*inv_dy, (p1.z-p2.z)*inv_dy, (p1.w-p2.w)*inv_dy);
 		//左上填充规则:上
 		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
+		//位置坐标及增量
+		float inv_dy_L = 1.0f / (p1.y - p0.y);
+		float inv_dy_R = 1.0f / (p1.y - p2.y);
+		scanLineData.curP_L.Set(p0.x, p0.z, p0.w);
+		scanLineData.curP_R.Set(p2.x, p2.z, p2.w);
+		scanLineData.dp_L.Set((p1.x-p0.x)*inv_dy_L, (p1.z-p0.z)*inv_dy_L, (p1.w-p0.w)*inv_dy_L);
+		scanLineData.dp_R.Set((p1.x-p2.x)*inv_dy_R, (p1.z-p2.z)*inv_dy_R, (p1.w-p2.w)*inv_dy_R);	
 		//当前两端点颜色分量及增量
 		scanLineData.clr_L.Set(c0.r, c0.g, c0.b);
 		scanLineData.clr_R.Set(c2.r, c2.g, c2.b);
-		scanLineData.dclr_L.Set((c1.r-c0.r)*inv_dy, (c1.g-c0.g)*inv_dy, (c1.b-c0.b)*inv_dy);
-		scanLineData.dclr_R.Set((c1.r-c2.r)*inv_dy, (c1.g-c2.g)*inv_dy, (c1.b-c2.b)*inv_dy);
+		scanLineData.dclr_L.Set((c1.r-c0.r)*inv_dy_L, (c1.g-c0.g)*inv_dy_L, (c1.b-c0.b)*inv_dy_L);
+		scanLineData.dclr_R.Set((c1.r-c2.r)*inv_dy_R, (c1.g-c2.g)*inv_dy_R, (c1.b-c2.b)*inv_dy_R);
 		//当前两端点uv分量及增量
 		scanLineData.curUV_L = uv0;
 		scanLineData.curUV_R = uv2;
-		scanLineData.duv_L.Set((uv1.x-uv0.x)*inv_dy, (uv1.y-uv0.y)*inv_dy);
-		scanLineData.duv_R.Set((uv1.x-uv2.x)*inv_dy, (uv1.y-uv2.y)*inv_dy);
+		scanLineData.duv_L.Set((uv1.x-uv0.x)*inv_dy_L, (uv1.y-uv0.y)*inv_dy_L);
+		scanLineData.duv_R.Set((uv1.x-uv2.x)*inv_dy_R, (uv1.y-uv2.y)*inv_dy_R);
 
 		DrawScanLines(scanLineData, bTextured, context);
 
@@ -860,7 +860,7 @@ namespace SR
 		//裁剪区域裁剪y
 		if(scanLineData.curY < min_clip_y)
 		{
-			float dy = min_clip_y - scanLineData.y0;
+			float dy = min_clip_y - scanLineData.curY;
 			scanLineData.curY = min_clip_y;
 			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, Common::Multiply_Vec3_By_K(scanLineData.dp_L, dy));
 			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, Common::Multiply_Vec3_By_K(scanLineData.dp_R, dy));
@@ -886,11 +886,11 @@ namespace SR
 		{
 			//左上填充规则:左
 			int lineX0 = Ext::Ceil32_Fast(scanLineData.curP_L.x);
-			int lineX1 = Ext::Ceil32_Fast(scanLineData.curP_R.x) - 1;
+			int lineX1 = Ext::Ceil32_Fast(scanLineData.curP_R.x);
 
 			if(lineX1 - lineX0 >= 0)
 			{
-				float invdx = 1 / (scanLineData.curP_R.x - scanLineData.curP_L.x);
+				float invdx = 1.0f / (lineX1 - lineX0);
 				float dr = (scanLineData.clr_R.x - scanLineData.clr_L.x) * invdx;
 				float dg = (scanLineData.clr_R.y - scanLineData.clr_L.y) * invdx;
 				float db = (scanLineData.clr_R.z - scanLineData.clr_L.z) * invdx;
@@ -935,7 +935,14 @@ namespace SR
 #else
 							uv.Set(u, v);
 #endif			
-							pixelColor = context.pMaterial->pDiffuseMap->Tex2D_Point(uv);
+							if(context.pMaterial->bUseBilinearSampler)
+							{
+								context.pMaterial->pDiffuseMap->Tex2D_Bilinear(uv, pixelColor);
+							}
+							else
+							{
+								context.pMaterial->pDiffuseMap->Tex2D_Point(uv, pixelColor);
+							}
 							pixelColor.r = Ext::Ftoi32_Fast(pixelColor.r * r * INV_COLOR);
 							pixelColor.g = Ext::Ftoi32_Fast(pixelColor.g * g * INV_COLOR);
 							pixelColor.b = Ext::Ftoi32_Fast(pixelColor.b * b * INV_COLOR);

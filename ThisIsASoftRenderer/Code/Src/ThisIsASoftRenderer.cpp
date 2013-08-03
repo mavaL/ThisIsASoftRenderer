@@ -189,9 +189,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, SW_SHOWNORMAL);
    UpdateWindow(hWnd);
 
-   float a = 3.3f;
-   BYTE b = static_cast<BYTE>(a);
-
    /////////////////////////////////////////////////////////
    /////////////// Init here
    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
@@ -292,34 +289,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //// Test case 3: marine.mesh
    {
-	   try
-	   {
-		   if(!g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"), true))
-			   throw std::logic_error("Error, Load .mesh file failed!");
-
-		   SR::SMaterial* mat = new SR::SMaterial;
-		   mat->pDiffuseMap = new SR::STexture;
-		   mat->pDiffuseMap->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
-		   mat->bUseHalfLambert = true;
-		   g_renderer.AddMaterial("MatMarine", mat);
-		   g_meshLoader.m_objs[0].m_pMaterial = mat;
-	   }
-	   catch (std::exception& e)
-	   {
-		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
-		   return FALSE;
-	   }
-
-	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
-	   g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
-   }
-  
-   //// Test case 4: sponza.obj
-   {
 // 	   try
 // 	   {
-// 		   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
-// 			   throw std::logic_error("Error, Load .obj file failed!");
+// 		   if(!g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"), true))
+// 			   throw std::logic_error("Error, Load .mesh file failed!");
+// 
+// 		   SR::SMaterial* mat = new SR::SMaterial;
+// 		   mat->pDiffuseMap = new SR::STexture;
+// 		   mat->pDiffuseMap->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+// 		   mat->bUseHalfLambert = true;
+// 		   mat->bUseBilinearSampler = false;
+// 		   g_renderer.AddMaterial("MatMarine", mat);
+// 		   g_meshLoader.m_objs[0].m_pMaterial = mat;
 // 	   }
 // 	   catch (std::exception& e)
 // 	   {
@@ -327,8 +308,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 		   return FALSE;
 // 	   }
 // 
-// 	   g_env.renderer->AddRenderObjs(g_objLoader.m_objs);
-// 	   g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
+// 	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
+// 	   g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
+   }
+  
+   //// Test case 4: sponza.obj
+   {
+	   try
+	   {
+		   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
+			   throw std::logic_error("Error, Load .obj file failed!");
+	   }
+	   catch (std::exception& e)
+	   {
+		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
+		   return FALSE;
+	   }
+
+	   g_env.renderer->AddRenderObjs(g_objLoader.m_objs);
+	   g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
    }
 
    

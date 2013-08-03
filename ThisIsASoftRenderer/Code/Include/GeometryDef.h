@@ -135,8 +135,10 @@ namespace SR
 		STexture& operator= (const STexture& rhs);
 
 		void		LoadTexture(const STRING& filename);
-		//点采样
-		SColor		Tex2D_Point(VEC2& uv) const;
+		//临近点采样
+		void		Tex2D_Point(VEC2& uv, SColor& ret) const;
+		//双线性插值采样
+		void		Tex2D_Bilinear(VEC2& uv, SColor& ret) const;
 
 		STRING		texName;		
 		Common::PixelBox*	pData;
@@ -146,14 +148,15 @@ namespace SR
 	struct SMaterial 
 	{
 		SMaterial():ambient(1,1,1),diffuse(1,1,1),specular(1,1,1),pDiffuseMap(nullptr),pNormalMap(nullptr)
-			,shiness(20),bUseHalfLambert(false) {}
+			,shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false) {}
 		~SMaterial() { SAFE_DELETE(pDiffuseMap); SAFE_DELETE(pNormalMap); }
 
 		VEC3		ambient, diffuse, specular;
 		float		shiness;
 		STexture*	pDiffuseMap;
 		STexture*	pNormalMap;
-		bool		bUseHalfLambert;	//See: https://developer.valvesoftware.com/wiki/Half_Lambert
+		bool		bUseHalfLambert;		//See: https://developer.valvesoftware.com/wiki/Half_Lambert
+		bool		bUseBilinearSampler;	//使用纹理双线性插值
 	};
 
 	///////////////////////////////////////////////////
