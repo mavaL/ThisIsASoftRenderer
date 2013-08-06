@@ -46,10 +46,19 @@ namespace Ext
 			return val;
 	}
 
+	//线性插值
 	template<class T>
-	inline T LinearLerp(const T& s, const T& e, float t)
+	inline void LinearLerp(T& result, const T& s, const T& e, float t)
 	{
-		return T(s + (e - s) * t);
+		result = s + (e - s) * t;
+	}
+	//双曲型插值(Hyperbolic Interpolation),用于透视校正
+	template<class T>
+	inline void HyperLerp(T& result, const T& s, const T& e, float t, float ws, float we)
+	{
+		T tmp_s = s * ws;
+		T tmp_e = e * we;
+		result = tmp_s + (tmp_e - tmp_s) * t;
 	}
 
 	__forceinline int Ceil32_Fast(float x)

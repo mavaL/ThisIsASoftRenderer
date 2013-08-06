@@ -120,11 +120,11 @@ namespace SR
 		static void	DrawTopTri_Scanline(float x0, float y0, float x1, float y1, float x2, float y2, SColor color);
 		///////	根据画家算法对三角面列表进行排序
 		static void	SortTris_PainterAlgorithm(const VertexBuffer& verts, FaceList& faces);
-		///////	绘制三角形的第二个版本.Gouraud插值顶点颜色和纹理着色
-		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
-		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
-		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
-		static void DrawScanLines(RasGouraud::SScanLineData& scanLineData, bool bTextured, const SRenderContext& context);
+		///////	绘制三角形的第二个版本.线性插值所需的attribute
+		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context);
+		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
+		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
+		static void DrawScanLines(RasGouraud::SScanLineData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context);
 	};
 }
 

@@ -298,7 +298,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 		   mat->pDiffuseMap = new SR::STexture;
 // 		   mat->pDiffuseMap->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
 // 		   mat->bUseHalfLambert = true;
-// 		   mat->bUseBilinearSampler = false;
+// 		   mat->bUseBilinearSampler = true;
+// 		   mat->ambient.Set(0.3f, 0.3f, 0.3f);
+// 		   mat->diffuse.Set(0.5f, 0.5f, 0.5f);
+// 		   mat->specular.Set(0.3f, 0.3f, 0.3f);
 // 		   g_renderer.AddMaterial("MatMarine", mat);
 // 		   g_meshLoader.m_objs[0].m_pMaterial = mat;
 // 	   }
@@ -311,8 +314,33 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // 	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
 // 	   g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
    }
+
+   //// Test case 4: teapot.mesh + PhongÄ£ÐÍ
+   {
+// 	   try
+// 	   {
+// 		   if(!g_meshLoader.LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+// 			   throw std::logic_error("Error, Load .mesh file failed!");
+// 
+// 		   SR::SMaterial* mat = new SR::SMaterial;
+// 		   mat->ambient.Set(0.3f, 0.3f, 0.3f);
+// 		   mat->diffuse.Set(0.5f, 0.5f, 0.5f);
+// 		   mat->specular.Set(0.3f, 0.3f, 0.3f);
+// 		   mat->shiness = 50;
+// 		   g_renderer.AddMaterial("MatTeapot", mat);
+// 		   g_meshLoader.m_objs[0].m_pMaterial = mat;
+// 	   }
+// 	   catch (std::exception& e)
+// 	   {
+// 		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
+// 		   return FALSE;
+// 	   }
+// 
+// 	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
+// 	   g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
+   }
   
-   //// Test case 4: sponza.obj
+   //// Test case 5: sponza.obj
    {
 	   try
 	   {

@@ -74,11 +74,15 @@ namespace Common
 		Vector4(float _x, float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) {}
 
 		inline void		Set(float _x, float _y, float _z, float _w) { x=_x; y=_y; z=_z; w=_w; }
-		inline Vector3	GetVec3() const	{ return std::move(Vector3(x,y,z)); }
+		inline const Vector3& GetVec3() const	{ return vec3; }
 		//求负
 		inline void	Neg() { x = -x; y = -y; z = -z; w = -w; }
 
-		float x, y, z, w;
+		union
+		{
+			struct { Vector3 vec3; float w; };
+			struct { float x, y, z, w; };
+		};
 
 		static Vector4		ZERO;
 	};
@@ -234,6 +238,53 @@ namespace Common
 	{
 		float dx = v1.x - v2.x, dy = v1.y - v2.y, dz = v1.z - v2.z;
 		return sqrt(dx * dx + dy * dy + dz * dz);
+	}
+}
+
+namespace Ext
+{
+	//特化Vector2
+	template<> inline void LinearLerp(VEC2& result, const VEC2& s, const VEC2& e, float t)
+	{
+		LinearLerp(result.x, s.x, e.x, t);
+		LinearLerp(result.y, s.y, e.y, t);
+	}
+	//特化Vector3
+	template<> inline void LinearLerp(VEC3& result, const VEC3& s, const VEC3& e, float t)
+	{
+		LinearLerp(result.x, s.x, e.x, t);
+		LinearLerp(result.y, s.y, e.y, t);
+		LinearLerp(result.z, s.z, e.z, t);
+	}
+	//特化Vector4
+	template<> inline void LinearLerp(VEC4& result, const VEC4& s, const VEC4& e, float t)
+	{
+		LinearLerp(result.x, s.x, e.x, t);
+		LinearLerp(result.y, s.y, e.y, t);
+		LinearLerp(result.z, s.z, e.z, t);
+		LinearLerp(result.w, s.w, e.w, t);
+	}
+
+	//特化Vector2
+	template<> inline void HyperLerp(VEC2& result, const VEC2& s, const VEC2& e, float t, float ws, float we)
+	{
+		HyperLerp(result.x, s.x, e.x, t, ws, we);
+		HyperLerp(result.y, s.y, e.y, t, ws, we);
+	}
+	//特化Vector3
+	template<> inline void HyperLerp(VEC3& result, const VEC3& s, const VEC3& e, float t, float ws, float we)
+	{
+		HyperLerp(result.x, s.x, e.x, t, ws, we);
+		HyperLerp(result.y, s.y, e.y, t, ws, we);
+		HyperLerp(result.z, s.z, e.z, t, ws, we);
+	}
+	//特化Vector4
+	template<> inline void HyperLerp(VEC4& result, const VEC4& s, const VEC4& e, float t, float ws, float we)
+	{
+		HyperLerp(result.x, s.x, e.x, t, ws, we);
+		HyperLerp(result.y, s.y, e.y, t, ws, we);
+		HyperLerp(result.z, s.z, e.z, t, ws, we);
+		HyperLerp(result.w, s.w, e.w, t, ws, we);
 	}
 }
 

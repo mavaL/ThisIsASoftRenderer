@@ -22,6 +22,7 @@ namespace SR
 		m_rasLib.insert(std::make_pair(eRasterizeType_Gouraud, new RasGouraud));
 		m_rasLib.insert(std::make_pair(eRasterizeType_TexturedGouraud, new RasTexturedGouraud));
 		m_rasLib.insert(std::make_pair(eRasterizeType_BlinnPhong, new RasBlinnPhong));
+		m_rasLib.insert(std::make_pair(eRasterizeType_NormalMap, new RasNormalMap));
 
 		//创建后备缓冲
 		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
@@ -109,20 +110,27 @@ namespace SR
 			VertexBuffer workingVB = _DoBackfaceCulling(workingFaces, obj);
 
 			/////////////////////////////////////////////////
-			///////// 世界空间进行光照
-			m_curRas->DoLighting(workingVB, workingFaces, obj, m_testLight);
+			///////// 世界空间逐顶点光照
+			m_curRas->DoPerVertexLighting(workingVB, workingFaces, obj);
 
 			//transform each vertex
 			for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
 			{
-				if(!workingVB[iVert].bActive)
+				SVertex& vert = workingVB[iVert];
+
+				if(!vert.bActive)
 					continue;
 
-				VEC4& vertPos = workingVB[iVert].pos;
+				VEC4& vertPos = vert.pos;
 
 				/////////////////////////////////////////////////
 				///////// 世界变换
 				Common::Transform_Vec4_By_Mat44(vertPos, vertPos, obj.m_matWorld);
+
+				//保存世界坐标
+				vert.worldPos = vertPos;
+				//保存世界法线
+				vert.worldNormal = Common::Transform_Vec3_By_Mat44(vert.normal, obj.m_matWorldIT, false).GetVec3();
 
 				/////////////////////////////////////////////////
 				///////// 相机变换
@@ -138,10 +146,12 @@ namespace SR
 			//继续顶点变换流水线..
 			for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
 			{
-				if(!workingVB[iVert].bActive)
+				SVertex& vert = workingVB[iVert];
+
+				if(!vert.bActive)
 					continue;
 
-				VEC4& vertPos = workingVB[iVert].pos;
+				VEC4& vertPos = vert.pos;
 
 				/////////////////////////////////////////////////
 				///////// 透视投影变换
@@ -478,7 +488,8 @@ namespace SR
 		case SR::eRasterizeType_Flat:				SetRasterizeType(SR::eRasterizeType_Gouraud); break;
 		case SR::eRasterizeType_Gouraud:			SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
 		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_BlinnPhong); break;
-		case SR::eRasterizeType_BlinnPhong:			SetRasterizeType(SR::eRasterizeType_Wireframe); break;
+		case SR::eRasterizeType_BlinnPhong:			SetRasterizeType(SR::eRasterizeType_NormalMap); break;
+		case SR::eRasterizeType_NormalMap:			SetRasterizeType(SR::eRasterizeType_Wireframe); break;
 		default: assert(0);
 		}
 	}

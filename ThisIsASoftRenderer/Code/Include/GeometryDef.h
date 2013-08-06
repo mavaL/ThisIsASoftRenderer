@@ -99,9 +99,11 @@ namespace SR
 	///////////////////////////////////////////////////
 	struct SVertex 
 	{
-		SVertex():normal(VEC3::ZERO),bActive(false),color(0),uv(-1,-1) {}
+		SVertex():normal(VEC3::ZERO),worldNormal(VEC3::ZERO),bActive(false),color(0),uv(-1,-1) {}
 
+		VEC4	worldPos;	
 		VEC4	pos;
+		VEC3	worldNormal;
 		VEC3	normal;
 		VEC2	uv;
 		bool	bActive;
@@ -169,5 +171,22 @@ namespace SR
 	};
 }
 
+namespace Ext
+{
+	//ÌØ»¯SColor
+	template<> inline void LinearLerp(SR::SColor& result, const SR::SColor& s, const SR::SColor& e, float t)
+	{
+		float a,r,g,b;
+		LinearLerp(a, (float)s.a, (float)e.a, t);
+		LinearLerp(r, (float)s.r, (float)e.r, t);
+		LinearLerp(g, (float)s.g, (float)e.g, t);
+		LinearLerp(b, (float)s.b, (float)e.b, t);
+
+		result.a = Ext::Ftoi32_Fast(a);
+		result.r = Ext::Ftoi32_Fast(r);
+		result.g = Ext::Ftoi32_Fast(g);
+		result.b = Ext::Ftoi32_Fast(b);
+	}
+}
 
 #endif // GeometryDef_h__
