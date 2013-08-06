@@ -249,7 +249,6 @@ namespace Ext
 
 				file >> matName;
 				pNewMaterial = new SR::SMaterial;
-				pNewMaterial->bUseBilinearSampler = true;
 			}
 			else if (strcmp(command.c_str(), "map_Kd") == 0)
 			{

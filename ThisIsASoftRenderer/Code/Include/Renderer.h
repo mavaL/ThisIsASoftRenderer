@@ -13,8 +13,6 @@
 #include "MathDef.h"
 #include "Rasterizer.h"
 #include "GeometryDef.h"
-#include "Utility.h"
-#include "RenderObject.h"
 
 extern const int	SCREEN_WIDTH;
 extern const int	SCREEN_HEIGHT;
@@ -65,19 +63,22 @@ namespace SR
 		void	OnFrameMove();
 		//切换渲染模式(wireframe, flat, gouraud, phong)
 		void	ToggleShadingMode();
+		//获取当前渲染模式名字
+		const char*	GetCurShadingModeName() const;
+		//切换测试场景
+		void	ToggleScene();
 		//渲染管线
 		void	RenderOneFrame();
 		//交换前后缓冲
 		void	Present();
-		//添加渲染对象
-		void	AddRenderable(const RenderObject& obj);
-		void	AddRenderObjs(const RenderList& objs);
 		//添加材质
 		void	AddMaterial(const STRING& name, const SMaterial* mat);
 		//获取材质
 		SMaterial*	GetMaterial(const STRING& name);
 
 	private:
+		void	_InitAllScene();
+		//清除帧缓存,z-buffer
 		void	_Clear(const SColor& color, float depth);
 		//背面拣选.同时对被剔除的顶点做上标记,它们是不需要参与接下来的T&L的.
 		VertexBuffer	_DoBackfaceCulling(FaceList& workingFaces, RenderObject& obj);
@@ -94,7 +95,8 @@ namespace SR
 
 		std::unordered_map<STRING, SMaterial*>	m_matLib;				//材质库
 
-		RenderList							m_renderList;				//渲染列表
+		std::vector<Scene*>					m_scenes;					//所有测试场景
+		size_t								m_curScene;					//当前场景索引
 	};
 
 	class RenderUtil

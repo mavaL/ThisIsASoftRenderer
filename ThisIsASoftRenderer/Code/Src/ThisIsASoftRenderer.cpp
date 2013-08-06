@@ -7,7 +7,6 @@
 #include "OgreMeshLoader.h"
 #include "ObjMeshLoader.h"
 #include "Utility.h"
-#include "RenderObject.h"
 
 #define MAX_LOADSTRING 100
 const int		SCREEN_WIDTH	=	800;
@@ -79,8 +78,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			{
 				const VEC4& pos = g_renderer.m_camera.GetPos();
 				char szText[128];
-				sprintf_s(szText, ARRAYSIZE(szText), "lastFPS : %d, CamPos : (%f, %f, %f)", 
-					g_renderer.m_frameStatics.lastFPS, pos.x, pos.y, pos.z);
+				sprintf_s(szText, ARRAYSIZE(szText), "lastFPS : %d, CamPos : (%f, %f, %f), Current Shade Mode : %s", 
+					g_renderer.m_frameStatics.lastFPS, pos.x, pos.y, pos.z, g_renderer.GetCurShadingModeName());
 
 				SR::RenderUtil::DrawText(10, 10, szText, RGB(0,255,0));
 			}
@@ -202,162 +201,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //init renderer
    g_env.renderer->Init();
-   g_env.renderer->SetRasterizeType(SR::eRasterizeType_TexturedGouraud);
-
-   //// Test case 1: Simple one triangle
-   {
-// 	   SR::RenderObject obj;
-// 
-// 	   SR::SVertex v1, v2, v3;
-// 	   v1.pos = VEC4(-20, -15, 0, 1);
-// 	   v2.pos = VEC4(20, -15, 0, 1);
-// 	   v3.pos = VEC4(0, 15, 0, 1);
-// 
-// 	   v1.normal = VEC3::UNIT_Z;
-// 	   v2.normal = VEC3::UNIT_Z;
-// 	   v3.normal = VEC3::UNIT_Z;
-// 
-// 	   v1.uv = VEC2(0.0f, 1.0f);
-// 	   v2.uv = VEC2(1.0f, 1.0f);
-// 	   v3.uv = VEC2(0.5f, 0.0f);
-// 
-// 	   obj.m_verts.push_back(v1);
-// 	   obj.m_verts.push_back(v2);
-// 	   obj.m_verts.push_back(v3);
-// 
-// 	   SR::SFace face(0,1,2);
-// 	   face.faceNormal = VEC3::UNIT_Z; 
-// 	   obj.m_faces.push_back(face);
-// 	  
-// 	   SR::SMaterial* mat = new SR::SMaterial;
-// 	   mat->pDiffuseMap = new SR::STexture;
-// 	   mat->pDiffuseMap->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
-// 	   g_renderer.AddMaterial("MatMarine", mat);
-// 	   obj.m_pMaterial = mat;
-// 
-// 	   SR::RenderUtil::ComputeAABB(obj);
-// 
-// 	   g_env.renderer->AddRenderable(obj);
-// 	   g_renderer.m_camera.SetPosition(VEC3(0,0,200));
-   }
-
-   //// Test case 2: 透视校正纹理映射
-   {
-// 	   SR::RenderObject obj;
-// 
-// 	   SR::SVertex v1, v2, v3 ,v4;
-// 	   v1.pos = VEC4(-500, 0, -500, 1);
-// 	   v2.pos = VEC4(500, 0, -500, 1);
-// 	   v3.pos = VEC4(-500, 0, 500, 1);
-// 	   v4.pos = VEC4(500, 0, 500, 1);
-// 
-// 	   v1.normal = VEC3::UNIT_Y;
-// 	   v2.normal = VEC3::UNIT_Y;
-// 	   v3.normal = VEC3::UNIT_Y;
-// 	   v4.normal = VEC3::UNIT_Y;
-// 
-// 	   v1.uv = VEC2(0, 0);
-// 	   v2.uv = VEC2(10, 0);
-// 	   v3.uv = VEC2(0, 10);
-// 	   v4.uv = VEC2(10, 10);
-// 
-// 	   obj.m_verts.push_back(v1);
-// 	   obj.m_verts.push_back(v2);
-// 	   obj.m_verts.push_back(v3);
-// 	   obj.m_verts.push_back(v4);
-// 
-// 	   SR::SFace face1(0,2,1);
-// 	   SR::SFace face2(1,2,3);
-// 	   face1.faceNormal = VEC3::UNIT_Y; 
-// 	   face2.faceNormal = VEC3::UNIT_Y; 
-// 	   obj.m_faces.push_back(face1);
-// 	   obj.m_faces.push_back(face2);
-// 
-// 	   SR::SMaterial* mat = new SR::SMaterial;
-// 	   mat->pDiffuseMap = new SR::STexture;
-// 	   mat->pDiffuseMap->LoadTexture(GetResPath("ChesePanel.bmp"));
-// 	   g_renderer.AddMaterial("Chese", mat);
-// 	   obj.m_pMaterial = mat;
-// 
-// 	   SR::RenderUtil::ComputeAABB(obj);
-// 
-// 	   g_renderer.AddRenderable(obj);
-// 
-// 	   g_renderer.m_camera.SetFarClip(10000);
-// 	   g_renderer.m_camera.SetPosition(VEC3(-20,706,1706));
-   }
-
-   //// Test case 3: marine.mesh
-   {
-// 	   try
-// 	   {
-// 		   if(!g_meshLoader.LoadMeshFile(GetResPath("marine.mesh.xml"), true))
-// 			   throw std::logic_error("Error, Load .mesh file failed!");
-// 
-// 		   SR::SMaterial* mat = new SR::SMaterial;
-// 		   mat->pDiffuseMap = new SR::STexture;
-// 		   mat->pDiffuseMap->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
-// 		   mat->bUseHalfLambert = true;
-// 		   mat->bUseBilinearSampler = true;
-// 		   mat->ambient.Set(0.3f, 0.3f, 0.3f);
-// 		   mat->diffuse.Set(0.5f, 0.5f, 0.5f);
-// 		   mat->specular.Set(0.3f, 0.3f, 0.3f);
-// 		   g_renderer.AddMaterial("MatMarine", mat);
-// 		   g_meshLoader.m_objs[0].m_pMaterial = mat;
-// 	   }
-// 	   catch (std::exception& e)
-// 	   {
-// 		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
-// 		   return FALSE;
-// 	   }
-// 
-// 	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
-// 	   g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
-   }
-
-   //// Test case 4: teapot.mesh + Phong模型
-   {
-// 	   try
-// 	   {
-// 		   if(!g_meshLoader.LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
-// 			   throw std::logic_error("Error, Load .mesh file failed!");
-// 
-// 		   SR::SMaterial* mat = new SR::SMaterial;
-// 		   mat->ambient.Set(0.3f, 0.3f, 0.3f);
-// 		   mat->diffuse.Set(0.5f, 0.5f, 0.5f);
-// 		   mat->specular.Set(0.3f, 0.3f, 0.3f);
-// 		   mat->shiness = 50;
-// 		   g_renderer.AddMaterial("MatTeapot", mat);
-// 		   g_meshLoader.m_objs[0].m_pMaterial = mat;
-// 	   }
-// 	   catch (std::exception& e)
-// 	   {
-// 		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
-// 		   return FALSE;
-// 	   }
-// 
-// 	   g_env.renderer->AddRenderObjs(g_meshLoader.m_objs);
-// 	   g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
-   }
-  
-   //// Test case 5: sponza.obj
-   {
-	   try
-	   {
-		   if(!g_objLoader.LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
-			   throw std::logic_error("Error, Load .obj file failed!");
-	   }
-	   catch (std::exception& e)
-	   {
-		   MessageBoxA(hWnd, e.what(), "Error", MB_ICONERROR);
-		   return FALSE;
-	   }
-
-	   g_env.renderer->AddRenderObjs(g_objLoader.m_objs);
-	   g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
-   }
-
-   
 
    return TRUE;
 }
@@ -436,6 +279,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if(wParam == 'r')
 			{
 				g_env.renderer->ToggleShadingMode();
+				return 0;
+			}
+			else if(wParam == 't')
+			{
+				g_env.renderer->ToggleScene();
 				return 0;
 			}
 		}

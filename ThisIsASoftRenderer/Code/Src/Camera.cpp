@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Camera.h"
 #include "Renderer.h"
+#include "RenderObject.h"
 
 namespace SR
 {

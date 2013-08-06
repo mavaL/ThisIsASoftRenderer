@@ -102,6 +102,7 @@
     <ClInclude Include="Code\Include\Rasterizer.h" />
     <ClInclude Include="Code\Include\Renderer.h" />
     <ClInclude Include="Code\Include\RenderObject.h" />
+    <ClInclude Include="Code\Include\Scene.h" />
     <ClInclude Include="Code\Include\stdafx.h" />
     <ClInclude Include="Code\Include\Utility.h" />
     <ClInclude Include="Code\tinyxml\tinystr.h" />
@@ -122,10 +123,12 @@
     <ClCompile Include="Code\Src\Renderer.cpp" />
     <ClCompile Include="Code\Src\RenderObject.cpp" />
     <ClCompile Include="Code\Src\RenderUtil.cpp" />
+    <ClCompile Include="Code\Src\Scene.cpp" />
     <ClCompile Include="Code\Src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Code\Src\TestScene.cpp" />
     <ClCompile Include="Code\Src\ThisIsASoftRenderer.cpp" />
     <ClCompile Include="Code\Src\Utility.cpp" />
     <ClCompile Include="Code\tinyxml\tinystr.cpp">

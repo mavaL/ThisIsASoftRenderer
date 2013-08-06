@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Renderer.h"
 #include "PixelBox.h"
+#include "Scene.h"
 
 //像素模式(字节数). NB:只支持32位模式,不要更改
 const int PIXEL_MODE	=	4;
@@ -10,6 +11,7 @@ namespace SR
 	Renderer::Renderer()
 	:m_curRas(nullptr)
 	,m_ambientColor(255,40,40,40)
+	,m_curScene(-1)
 	{
 		
 	}
@@ -41,10 +43,16 @@ namespace SR
 		m_testLight.dir = VEC3(-0.3f,-1,-1);
 		m_testLight.dir.Normalize();
 		m_testLight.color = SColor::WHITE;
+
+		_InitAllScene();
+
+		ToggleScene();
 	}
 
 	Renderer::~Renderer()
 	{
+		std::for_each(m_scenes.begin(), m_scenes.end(), std::default_delete<Scene>());
+
 		for(auto iter=m_rasLib.begin(); iter!=m_rasLib.end(); ++iter)
 			delete iter->second;
 		m_rasLib.clear();
@@ -90,9 +98,9 @@ namespace SR
 		_Clear(SColor::BLACK, 1.0f);
 
 		//for each object
-		for (size_t iObj=0; iObj<m_renderList.size(); ++iObj)
+		for (size_t iObj=0; iObj<m_scenes[m_curScene]->m_renderList.size(); ++iObj)
 		{
-			RenderObject& obj = m_renderList[iObj];
+			RenderObject& obj = m_scenes[m_curScene]->m_renderList[iObj];
 			obj.OnFrameMove();
 
 			/////////////////////////////////////////////////
@@ -241,16 +249,6 @@ namespace SR
 				rep stosd 
 			}
 		}
-	}
-
-	void Renderer::AddRenderable(const RenderObject& obj)
-	{
-		m_renderList.push_back(obj);
-	}
-
-	void Renderer::AddRenderObjs( const RenderList& objs )
-	{
-		m_renderList.insert(m_renderList.end(), objs.begin(), objs.end());
 	}
 
 	VertexBuffer Renderer::_DoBackfaceCulling( FaceList& workingFaces, RenderObject& obj )
@@ -524,4 +522,26 @@ namespace SR
 		return iter->second;
 	}
 
+	const char* Renderer::GetCurShadingModeName() const
+	{
+		switch (m_curRas->GetType())
+		{
+		case eRasterizeType_Flat:			return "Flat"; break;
+		case eRasterizeType_Wireframe:		return "Wireframe"; break;
+		case eRasterizeType_Gouraud:		return "Gouraud"; break;
+		case eRasterizeType_TexturedGouraud: return "TexturedGouraud"; break;
+		case eRasterizeType_BlinnPhong:		return "BlinnPhong"; break;
+		case eRasterizeType_NormalMap:		return "PhongWithNormalMap"; break;
+		default: assert(0);					return nullptr;
+		}
+	}
+
+	void Renderer::ToggleScene()
+	{
+		++m_curScene;
+		if(m_curScene == m_scenes.size())
+			m_curScene = 0;
+
+		m_scenes[m_curScene]->Enter();
+	}
 }

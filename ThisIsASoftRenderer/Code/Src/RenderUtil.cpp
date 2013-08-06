@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Renderer.h"
 #include "PixelBox.h"
+#include "RenderObject.h"
 
 // clipping rectangle 
 const int	min_clip_x = 0;                          
@@ -613,7 +614,7 @@ namespace SR
 			Ext::Swap(y1, y2);
 		}
 
-		assert(Ext::Floor32_Fast(y1) == Ext::Floor32_Fast(y2));
+		assert(Ext::Ceil32_Fast(y1) == Ext::Ceil32_Fast(y2));
 
 		//左上填充规则
 		int curY = Ext::Ceil32_Fast(y0);
@@ -650,7 +651,7 @@ namespace SR
 			Ext::Swap(y0, y2);
 		}
 
-		assert(Ext::Floor32_Fast(y0) == Ext::Floor32_Fast(y2));
+		assert(Ext::Ceil32_Fast(y0) == Ext::Ceil32_Fast(y2));
 
 		//左上填充规则
 		int curY = Ext::Ceil32_Fast(y0);
@@ -1026,7 +1027,7 @@ namespace SR
 					//深度测试
 					if(z < zBuffer[curX])
 					{
-						if(bTextured && context.pMaterial->pDiffuseMap)
+						if(bTextured)
 						{
 #if USE_PERSPEC_CORRECT == 1
 							//双曲插值最后一步
@@ -1039,13 +1040,17 @@ namespace SR
 							finalPW = curPW;
 							finalN = curN;
 #endif			
-							if(context.pMaterial->bUseBilinearSampler)
+							if(context.pMaterial->pDiffuseMap && context.pMaterial->bUseBilinearSampler)
 							{
 								context.pMaterial->pDiffuseMap->Tex2D_Bilinear(finalUV, pixelColor);
 							}
-							else
+							else if(context.pMaterial->pDiffuseMap)
 							{
 								context.pMaterial->pDiffuseMap->Tex2D_Point(finalUV, pixelColor);
+							}
+							else
+							{
+								pixelColor = SColor::WHITE;
 							}
 
 							if(bPerPixel)

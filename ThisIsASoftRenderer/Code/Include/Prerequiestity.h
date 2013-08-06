@@ -33,6 +33,7 @@ typedef Common::AxisAlignBBox	AABB;
 namespace SR
 {
 	class Renderer;
+	class Scene;
 	class Camera;
 	class RenderObject;
 	class Rasterizer;

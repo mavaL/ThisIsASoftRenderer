@@ -2,6 +2,7 @@
 #include "Rasterizer.h"
 #include "MathDef.h"
 #include "Renderer.h"
+#include "RenderObject.h"
 
 namespace SR
 {
@@ -112,7 +113,7 @@ namespace SR
 	///////////////////////////////////////////////////////////////////////////////////////////
 	void RasGouraud::_RasterizeTriangle( const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context )
 	{
-		RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, false, true, context);
+		RenderUtil::DrawTriangle_Scanline_V2(&vert0, &vert1, &vert2, false, false, context);
 	}
 
 	void RasGouraud::DoPerVertexLighting( VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj )

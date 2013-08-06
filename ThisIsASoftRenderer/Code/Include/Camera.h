@@ -27,6 +27,7 @@ namespace SR
 		void	SetPosition(const VEC3& pos);
 		void	SetDirection(const VEC3& dir);
 		void	Yaw(float angle);
+		void	SetMoveSpeed(float fSpeed) { m_moveSpeed = fSpeed; }
 		void	AddMoveSpeed(float delta);
 		float	GetMoveSpeed()	{ return m_moveSpeed; }
 
