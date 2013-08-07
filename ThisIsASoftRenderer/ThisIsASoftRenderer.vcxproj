@@ -92,6 +92,7 @@
   <ItemGroup>
     <ClInclude Include="Code\Include\AABB.h" />
     <ClInclude Include="Code\Include\Camera.h" />
+    <ClInclude Include="Code\Include\Color.h" />
     <ClInclude Include="Code\Include\GeometryDef.h" />
     <ClInclude Include="Code\Include\MathDef.h" />
     <ClInclude Include="Code\Include\MeshLoaderBase.h" />

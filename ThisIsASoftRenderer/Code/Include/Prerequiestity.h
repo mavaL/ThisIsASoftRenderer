@@ -9,6 +9,7 @@
 #ifndef Prerequiestity_h__
 #define Prerequiestity_h__
 
+#define USE_32BIT_INDEX			0			//是否使用32位顶点索引
 #define USE_PERSPEC_CORRECT		1			//是否使用透视修正
 #define USE_OPENMP				0			//使用OpenMP编译指令进行多核并行
 

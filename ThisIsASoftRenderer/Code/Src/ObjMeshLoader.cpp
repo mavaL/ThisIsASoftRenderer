@@ -266,15 +266,15 @@ namespace Ext
 			}
 			else if (strcmp(command.c_str(), "Ka") == 0)
 			{
-				file >> pNewMaterial->ambient.x >> pNewMaterial->ambient.y >> pNewMaterial->ambient.z;
+				file >> pNewMaterial->ambient.r >> pNewMaterial->ambient.g >> pNewMaterial->ambient.b;
 			}
 			else if (strcmp(command.c_str(), "Kd") == 0)
 			{
-				file >> pNewMaterial->diffuse.x >> pNewMaterial->diffuse.y >> pNewMaterial->diffuse.z;
+				file >> pNewMaterial->diffuse.r >> pNewMaterial->diffuse.g >> pNewMaterial->diffuse.b;
 			}
 			else if (strcmp(command.c_str(), "Ks") == 0)
 			{
-				file >> pNewMaterial->specular.x >> pNewMaterial->specular.y >> pNewMaterial->specular.z;
+				file >> pNewMaterial->specular.r >> pNewMaterial->specular.g >> pNewMaterial->specular.b;
 			}
 			else if (strcmp(command.c_str(), "Ns") == 0)
 			{

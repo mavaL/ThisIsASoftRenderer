@@ -16,6 +16,8 @@ namespace SR
 		int cxs, cys,
 			cxe, cye;
 
+		color.Saturate();
+
 		// clip and draw each line
 		cxs = x0;
 		cys = y0;
@@ -85,7 +87,7 @@ namespace SR
 			for (index=0; index <= dx; index++)
 			{
 				// set the pixel
-				*(DWORD*)vb_start = color.color;
+				*(DWORD*)vb_start = color.GetAsInt();
 
 				// test if error has overflowed
 				if (error >= 0) 
@@ -115,7 +117,7 @@ namespace SR
 			for (index=0; index <= dy; index++)
 			{
 				// set the pixel
-				*(DWORD*)vb_start = color.color;
+				*(DWORD*)vb_start = color.GetAsInt();
 
 				// test if error overflowed
 				if (error >= 0)
@@ -140,6 +142,8 @@ namespace SR
 
 	void RenderUtil::DrawLine_DDA( int x0, int y0, int x1,int y1, SColor color, bool bClip )
 	{
+		color.Saturate();
+
 		int cxs, cys,
 			cxe, cye;
 
@@ -184,12 +188,12 @@ namespace SR
 		y_inc *= k;
 		float y=0;
 		int x=0;
-		*(DWORD*)vb_start = color.color;
+		*(DWORD*)vb_start = color.GetAsInt();
 		for (int index=1; index<dx; ++index)
 		{
 			y += y_inc;
 			x += (int)x_inc;
-			*(DWORD*)(vb_start+(int)y*lpitch+x) = color.color;
+			*(DWORD*)(vb_start+(int)y*lpitch+x) = color.GetAsInt();
 		}
 	}
 
@@ -703,6 +707,31 @@ namespace SR
 		});
 	}
 
+	void RenderUtil::DoLambertLighting( SColor& result, const VEC3& wNormal, const SMaterial* pMaterial )
+	{
+		float nl = Common::DotProduct_Vec3_By_Vec3(wNormal, g_env.renderer->m_testLight.neg_dir);
+
+		//use half-lambert?
+		if(pMaterial->bUseHalfLambert)
+		{
+			nl = nl * 0.5f + 0.5f;
+			//square
+			nl *= nl;
+			result = pMaterial->diffuse * nl;
+		}
+		else
+		{
+			result = SColor::BLACK;
+			if(nl > 0)
+			{
+				result = pMaterial->diffuse * nl;
+			}
+		}
+
+		//环境光
+		result += pMaterial->ambient;
+	}
+
 	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context )
 	{
 		eTriangleShape triType;
@@ -734,7 +763,6 @@ namespace SR
 				Ext::LinearLerp(vert3.pos, vert0->pos, vert1->pos, t);
 				vert3.pos.y = y2;
 				Ext::LinearLerp(vert3.color, vert0->color, vert1->color, t);
-				vert3.color.a = 255;
 
 #if USE_PERSPEC_CORRECT == 1
 				Ext::HyperLerp(vert3.uv, vert0->uv, vert1->uv, t, w0, w1);
@@ -816,7 +844,7 @@ namespace SR
 
 		assert(Ext::Ceil32_Fast(p1.y) == Ext::Ceil32_Fast(p2.y));
 
-		///填充光栅化结构
+		/// triangle setup
 		//左上填充规则:上
 		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
 		//位置坐标及增量
@@ -901,7 +929,7 @@ namespace SR
 
 		assert(Ext::Ceil32_Fast(p0.y) == Ext::Ceil32_Fast(p2.y));
 
-		///填充光栅化结构
+		/// triangle setup
 		//左上填充规则:上
 		scanLineData.curY = Ext::Ceil32_Fast(p0.y), scanLineData.endY = Ext::Ceil32_Fast(p1.y) - 1;
 		//屏幕坐标及增量
@@ -943,8 +971,6 @@ namespace SR
 
 		++g_env.renderer->m_frameStatics.nRenderedFace;
 	}
-
-	const static float INV_COLOR	=	1.0f / 255.0f;
 
 	void RenderUtil::DrawScanLines( RasGouraud::SScanLineData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context )
 	{
@@ -1056,27 +1082,23 @@ namespace SR
 							if(bPerPixel)
 							{
 								g_env.renderer->m_curRas->DoPerPixelLighting(curPixelClr, finalPW, finalN, context.pMaterial);
-								pixelColor.r = Ext::Ftoi32_Fast(pixelColor.r * curPixelClr.r * INV_COLOR);
-								pixelColor.g = Ext::Ftoi32_Fast(pixelColor.g * curPixelClr.g * INV_COLOR);
-								pixelColor.b = Ext::Ftoi32_Fast(pixelColor.b * curPixelClr.b * INV_COLOR);
+								pixelColor *= curPixelClr;
 							}
 							else
 							{
-								pixelColor.r = Ext::Ftoi32_Fast(pixelColor.r * curClr.x * INV_COLOR);
-								pixelColor.g = Ext::Ftoi32_Fast(pixelColor.g * curClr.y * INV_COLOR);
-								pixelColor.b = Ext::Ftoi32_Fast(pixelColor.b * curClr.z * INV_COLOR);
+								pixelColor *= curClr;
 							}
 						}
 						else
 						{
-							pixelColor.r = Ext::Ftoi32_Fast(curClr.x);
-							pixelColor.g = Ext::Ftoi32_Fast(curClr.y); 
-							pixelColor.b = Ext::Ftoi32_Fast(curClr.z);
+							pixelColor.Set(curClr.x, curClr.y, curClr.z);
 						}
 
 						// FIXME：OpenMP并行同步问题 [8/5/2013 mavaL]
 						zBuffer[curX] = z;
-						destBuffer[curX] = pixelColor.color;
+
+						pixelColor.Saturate();
+						destBuffer[curX] = pixelColor.GetAsInt();
 					}
 
 					Common::Add_Vec3_By_Vec3(curClr, curClr, deltaClr);

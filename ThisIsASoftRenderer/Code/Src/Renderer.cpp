@@ -10,7 +10,7 @@ namespace SR
 {
 	Renderer::Renderer()
 	:m_curRas(nullptr)
-	,m_ambientColor(255,40,40,40)
+	,m_ambientColor(0.4f, 0.4f, 0.4f)
 	,m_curScene(-1)
 	{
 		
@@ -42,6 +42,8 @@ namespace SR
 		//测试方向光
 		m_testLight.dir = VEC3(-0.3f,-1,-1);
 		m_testLight.dir.Normalize();
+		m_testLight.neg_dir = m_testLight.dir;
+		m_testLight.neg_dir.Neg();
 		m_testLight.color = SColor::WHITE;
 
 		_InitAllScene();
@@ -225,7 +227,7 @@ namespace SR
 		{
 			DWORD nBuffer = m_backBuffer->GetWidth() * m_backBuffer->GetHeight();
 			void* dst = m_backBuffer->GetDataPointer();
-			int clr = color.color;
+			DWORD clr = color.GetAsInt();
 
 			_asm
 			{
@@ -420,12 +422,16 @@ namespace SR
 				newFace.index2 = idxp1;
 				newFace.index3 = VB.size();
 
-				//计算新的uv
-				newVert.uv.x = p2->uv.x + (p1->uv.x - p2->uv.x) * t2;
-				newVert.uv.y = p2->uv.y + (p1->uv.y - p2->uv.y) * t2;
+				//需要重新插值的属性
+				Ext::LinearLerp(newVert.uv, p2->uv, p1->uv, t2);
+				Ext::LinearLerp(newVert.worldPos, p2->worldPos, p1->worldPos, t2);
+				Ext::LinearLerp(newVert.worldNormal, p2->worldNormal, p1->worldNormal, t2);
+				Ext::LinearLerp(newVert.color, p2->color, p1->color, t2);				
 
-				p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
-				p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
+				Ext::LinearLerp(p1->uv, p0->uv, p1->uv, t1);
+				Ext::LinearLerp(p1->worldPos, p0->worldPos, p1->worldPos, t1);
+				Ext::LinearLerp(p1->worldNormal, p0->worldNormal, p1->worldNormal, t1);
+				Ext::LinearLerp(p1->color, p0->color, p1->color, t1);				
 
 				//交点1覆盖原来的p1
 				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
@@ -468,12 +474,16 @@ namespace SR
 				//覆盖原来的p2
 				p2->pos.x = newX2; p2->pos.y = newY2; p2->pos.z = -n;
 
-				//计算新的uv
-				p1->uv.x = p0->uv.x + (p1->uv.x - p0->uv.x) * t1;
-				p1->uv.y = p0->uv.y + (p1->uv.y - p0->uv.y) * t1;
+				//需要重新插值的属性
+				Ext::LinearLerp(p2->uv, p0->uv, p2->uv, t2);
+				Ext::LinearLerp(p2->worldPos, p0->worldPos, p2->worldPos, t2);
+				Ext::LinearLerp(p2->worldNormal, p0->worldNormal, p2->worldNormal, t2);
+				Ext::LinearLerp(p2->color, p0->color, p2->color, t2);				
 
-				p2->uv.x = p0->uv.x + (p2->uv.x - p0->uv.x) * t2;
-				p2->uv.y = p0->uv.y + (p2->uv.y - p0->uv.y) * t2;
+				Ext::LinearLerp(p1->uv, p0->uv, p1->uv, t1);
+				Ext::LinearLerp(p1->worldPos, p0->worldPos, p1->worldPos, t1);
+				Ext::LinearLerp(p1->worldNormal, p0->worldNormal, p1->worldNormal, t1);
+				Ext::LinearLerp(p1->color, p0->color, p1->color, t1);
 			}
 		}
 	}
@@ -492,7 +502,7 @@ namespace SR
 		}
 	}
 
-	void Renderer::AddMaterial( const STRING& name, const SMaterial* mat )
+	void Renderer::AddMaterial( const STRING& name, SMaterial* mat )
 	{
 		auto iter = m_matLib.find(name);
 		if(iter != m_matLib.end())
@@ -503,6 +513,11 @@ namespace SR
 			throw std::logic_error(errMsg);
 			return;
 		}
+
+		//预计算加速
+		mat->ambient *= m_ambientColor;
+		mat->diffuse *= m_testLight.color;
+		mat->specular *= m_testLight.color;
 
 		m_matLib.insert(std::make_pair(name, const_cast<SMaterial*>(mat)));
 	}

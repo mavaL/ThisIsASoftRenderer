@@ -87,6 +87,9 @@
     <ClInclude Include="Code\Include\Scene.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Include\Color.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Renderer.cpp">

@@ -3,9 +3,10 @@
 
 namespace SR
 {
-	SColor SColor::WHITE	=	SColor(0xffffffff);
-	SColor SColor::BLACK	=	SColor(0);
-	SColor SColor::BLUE		=	SColor(0xff0000ff);
+	SColor SColor::WHITE	=	SColor(1.0f, 1.0f, 1.0f);
+	SColor SColor::BLACK	=	SColor(0.0f, 0.0f, 0.0f);
+	SColor SColor::BLUE		=	SColor(0.0f, 0.0f, 1.0f);
+	SColor SColor::RED		=	SColor(1.0f, 0.0f, 0.0f);
 
 	STexture::STexture( const STexture& rhs )
 		:texName("")
@@ -52,7 +53,7 @@ namespace SR
 		int x = Ext::Ftoi32_Fast(uv.x * w);
 		int y = Ext::Ftoi32_Fast(uv.y * h);
 
-		ret.color = pTexData[y * pData->GetWidth() + x];
+		ret.SetAsInt(pTexData[y * pData->GetWidth() + x]);
 	}
 
 	void STexture::Tex2D_Bilinear( VEC2& uv, SColor& ret ) const
@@ -72,10 +73,10 @@ namespace SR
 		int v_b = Ext::Ceil32_Fast(intV);
 
 		static SColor color[4];
-		color[0].color = pTexData[v_t * pData->GetWidth() + u_l];
-		color[1].color = pTexData[v_t * pData->GetWidth() + u_r];
-		color[2].color = pTexData[v_b * pData->GetWidth() + u_l];
-		color[3].color = pTexData[v_b * pData->GetWidth() + u_r];
+		color[0].SetAsInt(pTexData[v_t * pData->GetWidth() + u_l]);
+		color[1].SetAsInt(pTexData[v_t * pData->GetWidth() + u_r]);
+		color[2].SetAsInt(pTexData[v_b * pData->GetWidth() + u_l]);
+		color[3].SetAsInt(pTexData[v_b * pData->GetWidth() + u_r]);
 
 		float frac_u = intU - u_l;
 		float frac_v = intV - v_t;
@@ -88,13 +89,15 @@ namespace SR
 
 		ret = SColor::BLACK;
 		//blend the four neighbour colors
-		for (int i=0; i<4; ++i)
-		{
-			ret.a += Ext::Ftoi32_Fast(weight[i] * color[i].a);
-			ret.r += Ext::Ftoi32_Fast(weight[i] * color[i].r);
-			ret.g += Ext::Ftoi32_Fast(weight[i] * color[i].g);
-			ret.b += Ext::Ftoi32_Fast(weight[i] * color[i].b);
-		}
+		color[0] *= weight[0];
+		color[1] *= weight[1];
+		color[2] *= weight[2];
+		color[3] *= weight[3];
+
+		ret += color[0];
+		ret += color[1];
+		ret += color[2];
+		ret += color[3];
 	}
 
 }

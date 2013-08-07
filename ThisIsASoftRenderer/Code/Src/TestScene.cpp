@@ -92,7 +92,7 @@ namespace SR
 		SR::SMaterial* mat = new SR::SMaterial;
 		mat->pDiffuseMap = new SR::STexture;
 		mat->pDiffuseMap->LoadTexture(GetResPath("ChesePanel.bmp"));
-		g_env.renderer->AddMaterial("Chese", mat);
+		g_env.renderer->AddMaterial("MatChese", mat);
 		obj.m_pMaterial = mat;
 
 		SR::RenderUtil::ComputeAABB(obj);
@@ -171,7 +171,7 @@ namespace SR
 	void EnterTestScene4()
 	{
 		g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
-		g_env.renderer->m_camera.SetMoveSpeed(1.0f);
+		g_env.renderer->m_camera.SetMoveSpeed(3.0f);
 		g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
 		g_env.renderer->SetRasterizeType(eRasterizeType_BlinnPhong);
 	}

@@ -72,7 +72,7 @@ namespace SR
 		//交换前后缓冲
 		void	Present();
 		//添加材质
-		void	AddMaterial(const STRING& name, const SMaterial* mat);
+		void	AddMaterial(const STRING& name, SMaterial* mat);
 		//获取材质
 		SMaterial*	GetMaterial(const STRING& name);
 
@@ -127,6 +127,8 @@ namespace SR
 		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
 		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData);
 		static void DrawScanLines(RasGouraud::SScanLineData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context);
+		///////	进行Lambert光照,假定法线已归一化
+		static void DoLambertLighting(SColor& result, const VEC3& wNormal, const SMaterial* pMaterial);
 	};
 }
 

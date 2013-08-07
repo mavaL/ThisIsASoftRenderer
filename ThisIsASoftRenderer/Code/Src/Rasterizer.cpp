@@ -72,12 +72,6 @@ namespace SR
 	void RasFlat::DoPerVertexLighting( VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj )
 	{
 		///Flat shade基于面法线
-		VEC3 lightDir = g_env.renderer->m_testLight.dir;
-		lightDir.Neg();
-
-		const SColor ambientColor = g_env.renderer->m_ambientColor * obj.m_pMaterial->ambient;
-		const SColor tmpDiffuse = g_env.renderer->m_testLight.color * obj.m_pMaterial->diffuse;
-
 		for (size_t iFace=0; iFace<workingFaces.size(); ++iFace)
 		{
 			SFace& face = workingFaces[iFace];
@@ -88,25 +82,8 @@ namespace SR
 			//在世界空间进行光照
 			VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.m_matWorldIT, false).GetVec3();
 			worldNormal.Normalize();
-			float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
 
-			//use half-lambert?
-			if(obj.m_pMaterial->bUseHalfLambert)
-			{
-				nl = pow(nl * 0.5f + 0.5f, 2);
-				face.color = tmpDiffuse * nl;
-			}
-			else
-			{
-				face.color = SColor::BLACK;
-				if(nl > 0)
-				{
-					face.color = tmpDiffuse * nl;
-				}
-			}
-
-			//环境光
-			face.color += ambientColor;
+			RenderUtil::DoLambertLighting(face.color, worldNormal, obj.m_pMaterial);
 		}
 	}
 
@@ -119,12 +96,6 @@ namespace SR
 	void RasGouraud::DoPerVertexLighting( VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj )
 	{
 		///Gouraud shade基于逐顶点法线
-		VEC3 lightDir = g_env.renderer->m_testLight.dir;
-		lightDir.Neg();
-
-		const SColor ambientColor = g_env.renderer->m_ambientColor * obj.m_pMaterial->ambient;
-		const SColor tmpDiffuse = g_env.renderer->m_testLight.color * obj.m_pMaterial->diffuse;
-
 		for (size_t iVert=0; iVert<workingVB.size(); ++iVert)
 		{
 			SVertex& vert = workingVB[iVert];
@@ -135,25 +106,8 @@ namespace SR
 			//在世界空间进行光照
 			VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(vert.normal, obj.m_matWorldIT, false).GetVec3();
 			worldNormal.Normalize();
-			float nl = Common::DotProduct_Vec3_By_Vec3(worldNormal, lightDir);
 
-			//use half-lambert?
-			if(obj.m_pMaterial->bUseHalfLambert)
-			{
-				nl = pow(nl * 0.5f + 0.5f, 2);
-				vert.color = tmpDiffuse * nl;
-			}
-			else
-			{
-				vert.color = SColor::BLACK;
-				if(nl > 0)
-				{
-					vert.color = tmpDiffuse * nl;
-				}
-			}
-
-			//环境光
-			vert.color += ambientColor;
+			RenderUtil::DoLambertLighting(vert.color, worldNormal, obj.m_pMaterial);
 		}
 	}
 
@@ -171,45 +125,20 @@ namespace SR
 
 	void RasBlinnPhong::DoPerPixelLighting(SColor& result, const VEC3& worldPos, const VEC3& worldNormal, const SMaterial* pMaterial)
 	{
-		VEC3 lightDir = g_env.renderer->m_testLight.dir;
-		lightDir.Neg();
-
-		const SColor ambientColor = g_env.renderer->m_ambientColor * pMaterial->ambient;
-		const SColor tmpDiffuse = g_env.renderer->m_testLight.color * pMaterial->diffuse;
-		const SColor tmpSpec = g_env.renderer->m_testLight.color * pMaterial->specular;
-
-		//在世界空间进行光照
 		VEC3 N = worldNormal;
 		N.Normalize();
-		float nl = Common::DotProduct_Vec3_By_Vec3(N, lightDir);
 
-		//use half-lambert?
-		if(pMaterial->bUseHalfLambert)
-		{
-			nl = pow(nl * 0.5f + 0.5f, 2);
-			result = tmpDiffuse * nl;
-		}
-		else
-		{
-			result = SColor::BLACK;
-			if(nl > 0)
-			{
-				result = tmpDiffuse * nl;
-			}
-		}
-
-		//环境光
-		result += ambientColor;
+		RenderUtil::DoLambertLighting(result, N, pMaterial);
 
 		//高光
 		const VEC3& camPos = g_env.renderer->m_camera.GetPos().GetVec3();
 		VEC3 V = Common::Sub_Vec3_By_Vec3(camPos, worldPos);
 		V.Normalize();
-		VEC3 H = Common::Add_Vec3_By_Vec3(V, lightDir);
+		VEC3 H = Common::Add_Vec3_By_Vec3(V, g_env.renderer->m_testLight.neg_dir);
 		H.Normalize();
 
 		float spec = pow(max(Common::DotProduct_Vec3_By_Vec3(N, H), 0), pMaterial->shiness);
-		result += tmpSpec * spec;
+		result += pMaterial->specular * spec;
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
