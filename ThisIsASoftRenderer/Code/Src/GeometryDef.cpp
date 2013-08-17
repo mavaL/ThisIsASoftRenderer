@@ -72,7 +72,7 @@ namespace SR
 		int v_t = Ext::Floor32_Fast(intV);
 		int v_b = Ext::Ceil32_Fast(intV);
 
-		static SColor color[4];
+		SColor color[4];
 		color[0].SetAsInt(pTexData[v_t * pData->GetWidth() + u_l]);
 		color[1].SetAsInt(pTexData[v_t * pData->GetWidth() + u_r]);
 		color[2].SetAsInt(pTexData[v_b * pData->GetWidth() + u_l]);

@@ -1,13 +1,16 @@
 #include "stdafx.h"
+#include "RenderUtil.h"
 #include "Renderer.h"
 #include "PixelBox.h"
 #include "RenderObject.h"
+#include "Profiler.h"
+#include "ThreadPool/MyJob.h"
 
 // clipping rectangle 
-const int	min_clip_x = 0;                          
-const int	max_clip_x = (SCREEN_WIDTH-1);
-const int	min_clip_y = 0;
-const int	max_clip_y = (SCREEN_HEIGHT-1);
+static const int	min_clip_x = 0;                          
+static const int	max_clip_x = (SCREEN_WIDTH-1);
+static const int	min_clip_y = 0;
+static const int	max_clip_y = (SCREEN_HEIGHT-1);
 
 namespace SR
 {
@@ -464,35 +467,6 @@ namespace SR
 		return(1);
 	}
 
-	void RenderUtil::DrawText( float x, float y, const STRING& text, const Gdiplus::Color& color )
-	{
-		Gdiplus::Graphics g(g_env.renderer->m_bmBackBuffer.get());
-		g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHighQuality);
-		Gdiplus::Font font(L"Arial", 11);
-		Gdiplus::PointF origin(x, y);
-		Gdiplus::SolidBrush bru(Gdiplus::Color(255,0,255,0));
-		Gdiplus::StringFormat format;
-		format.SetAlignment(Gdiplus::StringAlignmentNear);
-
-		std::wstring wstr = Ext::AnsiToUnicode(text.c_str());
-		g.DrawString(wstr.c_str(), -1, &font, origin, &format, &bru);
-	}
-
-	void RenderUtil::ComputeAABB( RenderObject& obj )
-	{
-		AABB& aabb = obj.m_localAABB;
-		const VertexBuffer& verts = obj.m_verts;
-
-		//AABB start with the first pos
-		aabb.m_minCorner = verts[0].pos.GetVec3();
-		aabb.m_maxCorner = verts[0].pos.GetVec3();
-
-		for (size_t i=1; i<verts.size(); ++i)
-		{
-			aabb.Merge(verts[i].pos);
-		}
-	}
-
 	bool RenderUtil::PreDrawTriangle( const SVertex*& vert0, const SVertex*& vert1, const SVertex*& vert2, eTriangleShape& retType )
 	{
 		int x0 = Ext::Ceil32_Fast(vert0->pos.x);
@@ -643,7 +617,9 @@ namespace SR
 			curRX += right_incX;
 		}
 
-		++g_env.renderer->m_frameStatics.nRenderedFace;
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedFace();
+#endif
 	}
 
 	void RenderUtil::DrawTopTri_Scanline( float x0, float y0, float x1, float y1, float x2, float y2, SColor color )
@@ -680,56 +656,9 @@ namespace SR
 			curRX += right_incX;
 		}
 
-		++g_env.renderer->m_frameStatics.nRenderedFace;
-	}
-
-	void RenderUtil::SortTris_PainterAlgorithm( const VertexBuffer& verts, FaceList& faces )
-	{
-		//用画家算法对所有面进行排序(根据三角面3个顶点的平均z值)
-		//NB: 该算法在某些面重叠的情况下是不正确的,见截图Compare.jpg
-		std::sort(faces.begin(), faces.end(), [&](const SFace& face1, const SFace& face2)->bool
-		{
-			const Index idx1 = face1.index1;
-			const Index idx2 = face1.index2;
-			const Index idx3 = face1.index3;
-
-			float z1 = verts[idx1].pos.z + verts[idx2].pos.z + verts[idx3].pos.z;
-			z1 *= 0.33333f;
-
-			const Index idx4 = face2.index1;
-			const Index idx5 = face2.index2;
-			const Index idx6 = face2.index3;
-
-			float z2 = verts[idx4].pos.z + verts[idx5].pos.z + verts[idx6].pos.z;
-			z2 *= 0.33333f;
-
-			return z1 > z2;
-		});
-	}
-
-	void RenderUtil::DoLambertLighting( SColor& result, const VEC3& wNormal, const SMaterial* pMaterial )
-	{
-		float nl = Common::DotProduct_Vec3_By_Vec3(wNormal, g_env.renderer->m_testLight.neg_dir);
-
-		//use half-lambert?
-		if(pMaterial->bUseHalfLambert)
-		{
-			nl = nl * 0.5f + 0.5f;
-			//square
-			nl *= nl;
-			result = pMaterial->diffuse * nl;
-		}
-		else
-		{
-			result = SColor::BLACK;
-			if(nl > 0)
-			{
-				result = pMaterial->diffuse * nl;
-			}
-		}
-
-		//环境光
-		result += pMaterial->ambient;
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedFace();
+#endif
 	}
 
 	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context )
@@ -738,12 +667,36 @@ namespace SR
 		if(!PreDrawTriangle(vert0, vert1, vert2, triType))
 			return;
 
-		RasGouraud::SScanLineData scanLineData;
+		bool bSponza = g_env.renderer->IsCurSponzaScene();
 
 		switch (triType)
 		{
-		case eTriangleShape_Bottom: DrawBottomTri_Scanline_V2(vert0, vert1, vert2, bTextured, bPerPixel, context, scanLineData); break;
-		case eTriangleShape_Top: DrawTopTri_Scanline_V2(vert0, vert1, vert2, bTextured, bPerPixel, context, scanLineData); break;
+		case eTriangleShape_Bottom: 
+			{
+				if (bSponza)
+				{
+					DrawTri_Scanline_V3(vert0, vert1, vert2, context, false);
+				} 
+				else
+				{
+					DrawBottomTri_Scanline_V2(vert0, vert1, vert2, bTextured, bPerPixel, context);
+				}
+			}
+			break;
+
+		case eTriangleShape_Top: 
+			{
+				if (bSponza)
+				{
+					DrawTri_Scanline_V3(vert0, vert1, vert2, context, true);
+				} 
+				else
+				{
+					DrawTopTri_Scanline_V2(vert0, vert1, vert2, bTextured, bPerPixel, context);
+				}
+			}
+			break;
+
 		case eTriangleShape_General:	
 			{
 				//创建切割生成的新顶点
@@ -792,16 +745,27 @@ namespace SR
 					Ext::LinearLerp(vert3.worldNormal, vert0->worldNormal, vert1->worldNormal, t);
 				}
 #endif
-				DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, bTextured, bPerPixel, context, scanLineData);
-				DrawTopTri_Scanline_V2(&vert3, vert1, vert2, bTextured, bPerPixel, context, scanLineData);
+
+				if (bSponza)
+				{
+					DrawTri_Scanline_V3(vert0, &vert3, vert2, context, false);
+					DrawTri_Scanline_V3(&vert3, vert1, vert2, context, true);
+				} 
+				else
+				{
+					DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, bTextured, bPerPixel, context);
+					DrawTopTri_Scanline_V2(&vert3, vert1, vert2, bTextured, bPerPixel, context);
+				}
 			}
 			break;
 		default: assert(0);
 		}
 	}
 
-	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData )
+	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context )
 	{
+		SScanLineData scanLineData;
+
 		//NB: 为了正确插值和填充规则,要保持x坐标有序
 		if(vert1->pos.x > vert2->pos.x)
 			Ext::Swap(vert1, vert2);
@@ -884,11 +848,15 @@ namespace SR
 
 		DrawScanLines(scanLineData, bTextured, bPerPixel, context);
 
-		++g_env.renderer->m_frameStatics.nRenderedFace;
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedFace();
+#endif
 	}
 
-	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context, RasGouraud::SScanLineData& scanLineData )
+	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context )
 	{
+		SScanLineData scanLineData;
+
 		//NB: 为了正确插值和填充规则,要保持x坐标有序
 		if(vert0->pos.x > vert2->pos.x)
 			Ext::Swap(vert0, vert2);
@@ -969,10 +937,12 @@ namespace SR
 
 		DrawScanLines(scanLineData, bTextured, bPerPixel, context);
 
-		++g_env.renderer->m_frameStatics.nRenderedFace;
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedFace();
+#endif
 	}
 
-	void RenderUtil::DrawScanLines( RasGouraud::SScanLineData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context )
+	void RenderUtil::DrawScanLines( SScanLineData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context )
 	{
 		//裁剪区域裁剪y
 		if(scanLineData.curY < min_clip_y)
@@ -1050,63 +1020,72 @@ namespace SR
 				//画水平直线
 				for (int curX=lineX0; curX<=lineX1; ++curX)
 				{
-					//深度测试
-					if(z < zBuffer[curX])
+#if USE_OPENMP == 1
+					//最瓶颈的这一段内循环需要加锁,导致不能并行,用了OpenMP基本等于没用
+					#pragma omp critical
+#endif
 					{
-						if(bTextured)
+						//深度测试
+						if(z < zBuffer[curX])
 						{
+							if(bTextured)
+							{
 #if USE_PERSPEC_CORRECT == 1
-							//双曲插值最后一步
-							float inv_w = 1 / w;
-							finalUV.Set(curUV.x*inv_w, curUV.y*inv_w);
- 							finalPW.Set(curPW.x*inv_w, curPW.y*inv_w, curPW.z*inv_w);
- 							finalN.Set(curN.x*inv_w, curN.y*inv_w, curN.z*inv_w);
+								//双曲插值最后一步
+								float inv_w = 1 / w;
+								finalUV.Set(curUV.x*inv_w, curUV.y*inv_w);
+								finalPW.Set(curPW.x*inv_w, curPW.y*inv_w, curPW.z*inv_w);
+								finalN.Set(curN.x*inv_w, curN.y*inv_w, curN.z*inv_w);
 #else
-							finalUV = curUV;
-							finalPW = curPW;
-							finalN = curN;
+								finalUV = curUV;
+								finalPW = curPW;
+								finalN = curN;
 #endif			
-							if(context.pMaterial->pDiffuseMap && context.pMaterial->bUseBilinearSampler)
-							{
-								context.pMaterial->pDiffuseMap->Tex2D_Bilinear(finalUV, pixelColor);
-							}
-							else if(context.pMaterial->pDiffuseMap)
-							{
-								context.pMaterial->pDiffuseMap->Tex2D_Point(finalUV, pixelColor);
+								if(context.pMaterial->pDiffuseMap && context.pMaterial->bUseBilinearSampler)
+								{
+									context.pMaterial->pDiffuseMap->Tex2D_Bilinear(finalUV, pixelColor);
+								}
+								else if(context.pMaterial->pDiffuseMap)
+								{
+									context.pMaterial->pDiffuseMap->Tex2D_Point(finalUV, pixelColor);
+								}
+								else
+								{
+									pixelColor = SColor::WHITE;
+								}
+
+								if(bPerPixel)
+								{
+									g_env.renderer->m_curRas->DoPerPixelLighting(curPixelClr, finalPW, finalN, context.pMaterial);
+									pixelColor *= curPixelClr;
+								}
+								else
+								{
+									pixelColor *= curClr;
+								}
 							}
 							else
 							{
-								pixelColor = SColor::WHITE;
+								pixelColor.Set(curClr.x, curClr.y, curClr.z);
 							}
 
-							if(bPerPixel)
-							{
-								g_env.renderer->m_curRas->DoPerPixelLighting(curPixelClr, finalPW, finalN, context.pMaterial);
-								pixelColor *= curPixelClr;
-							}
-							else
-							{
-								pixelColor *= curClr;
-							}
-						}
-						else
-						{
-							pixelColor.Set(curClr.x, curClr.y, curClr.z);
+							//NB: 这三句在并行中应与if(z < zBuffer[curX])这句达成原子性
+							zBuffer[curX] = z;
+							pixelColor.Saturate();
+							destBuffer[curX] = pixelColor.GetAsInt();
+
+#if USE_PROFILER == 1
+							g_env.profiler->AddRenderedPixel();
+#endif
 						}
 
-						// FIXME：OpenMP并行同步问题 [8/5/2013 mavaL]
-						zBuffer[curX] = z;
-
-						pixelColor.Saturate();
-						destBuffer[curX] = pixelColor.GetAsInt();
+						Common::Add_Vec3_By_Vec3(curClr, curClr, deltaClr);
+						Common::Add_Vec2_By_Vec2(curUV, curUV, deltaUV);
+						Common::Add_Vec3_By_Vec3(curPW, curPW, deltaPW);
+						Common::Add_Vec3_By_Vec3(curN, curN, deltaN);
+						z += dz;
+						w += dw;
 					}
-
-					Common::Add_Vec3_By_Vec3(curClr, curClr, deltaClr);
-					Common::Add_Vec2_By_Vec2(curUV, curUV, deltaUV);
-					Common::Add_Vec3_By_Vec3(curPW, curPW, deltaPW);
-					Common::Add_Vec3_By_Vec3(curN, curN, deltaN);
-					z += dz;
-					w += dw;
 				}
 			}
 
@@ -1125,5 +1104,286 @@ namespace SR
 			destBuffer += lpitch;
 			zBuffer += lpitch;
 		}
+	}
+
+	void RenderUtil::DrawTri_Scanline_V3(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context, bool bTopTir)
+	{
+		if(bTopTir)
+		{
+			if(vert0->pos.x > vert2->pos.x)
+				Ext::Swap(vert0, vert2);
+
+			assert(Ext::Ceil32_Fast(vert0->pos.y) == Ext::Ceil32_Fast(vert2->pos.y));
+		}
+		else
+		{
+			if(vert1->pos.x > vert2->pos.x)
+				Ext::Swap(vert1, vert2);
+
+			assert(Ext::Ceil32_Fast(vert1->pos.y) == Ext::Ceil32_Fast(vert2->pos.y));
+		}
+
+		JobParamRS* param = new JobParamRS;
+		param->bTopTri = bTopTir;
+		param->pMaterial = context.pMaterial;
+		param->v0 = *vert0;
+		param->v1 = *vert1;
+		param->v2 = *vert2;
+
+		JobRS* job = new JobRS(param);
+		g_env.jobMgr->SubmitJob(job, nullptr);
+	}
+
+	void RenderUtil::RasTriSetup(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTopTri, SScanLineData& rasData)
+	{
+		const VEC4& p0 = vert0->pos;
+		const VEC4& p1 = vert1->pos;
+		const VEC4& p2 = vert2->pos;
+#if USE_PERSPEC_CORRECT == 1
+		const VEC2 uv0(vert0->uv.x*p0.w, vert0->uv.y*p0.w);
+		const VEC2 uv1(vert1->uv.x*p1.w, vert1->uv.y*p1.w);
+		const VEC2 uv2(vert2->uv.x*p2.w, vert2->uv.y*p2.w);
+
+		const VEC3 wp0(vert0->worldPos.x*p0.w, vert0->worldPos.y*p0.w, vert0->worldPos.z*p0.w);
+		const VEC3 wp1(vert1->worldPos.x*p1.w, vert1->worldPos.y*p1.w, vert1->worldPos.z*p1.w);
+		const VEC3 wp2(vert2->worldPos.x*p2.w, vert2->worldPos.y*p2.w, vert2->worldPos.z*p2.w);
+
+		const VEC3 wn0(vert0->worldNormal.x*p0.w, vert0->worldNormal.y*p0.w, vert0->worldNormal.z*p0.w);
+		const VEC3 wn1(vert1->worldNormal.x*p1.w, vert1->worldNormal.y*p1.w, vert1->worldNormal.z*p1.w);
+		const VEC3 wn2(vert2->worldNormal.x*p2.w, vert2->worldNormal.y*p2.w, vert2->worldNormal.z*p2.w);
+#else
+		const VEC2 uv0(vert0->uv.x, vert0->uv.y);
+		const VEC2 uv1(vert1->uv.x, vert1->uv.y);
+		const VEC2 uv2(vert2->uv.x, vert2->uv.y);
+
+		const VEC3& wp0 = vert0->worldPos.GetVec3();
+		const VEC3& wp1 = vert1->worldPos.GetVec3();
+		const VEC3& wp2 = vert2->worldPos.GetVec3();
+
+		const VEC3& wn0 = vert0->worldNormal;
+		const VEC3& wn1 = vert1->worldNormal;
+		const VEC3& wn2 = vert2->worldNormal;
+#endif
+
+		if(bTopTri)
+		{
+			//左上填充规则:上
+			rasData.curY = Ext::Ceil32_Fast(p0.y), rasData.endY = Ext::Ceil32_Fast(p1.y) - 1;
+			//屏幕坐标
+			float inv_dy_L = 1.0f / (p1.y - p0.y);
+			float inv_dy_R = 1.0f / (p1.y - p2.y);
+			rasData.curP_L.Set(p0.x, p0.z, p0.w);
+			rasData.curP_R.Set(p2.x, p2.z, p2.w);
+			//uv分量
+			rasData.curUV_L = uv0;
+			rasData.curUV_R = uv2;
+			//世界坐标
+			rasData.curPW_L = wp0;
+			rasData.curPW_R = wp2;
+			//世界法线
+			rasData.curN_L = wn0;
+			rasData.curN_R = wn2;
+			//屏幕坐标增量
+			rasData.dp_L.Set((p1.x-p0.x)*inv_dy_L, (p1.z-p0.z)*inv_dy_L, (p1.w-p0.w)*inv_dy_L);
+			rasData.dp_R.Set((p1.x-p2.x)*inv_dy_R, (p1.z-p2.z)*inv_dy_R, (p1.w-p2.w)*inv_dy_R);
+			//uv增量
+			rasData.duv_L.Set((uv1.x-uv0.x)*inv_dy_L, (uv1.y-uv0.y)*inv_dy_L);
+			rasData.duv_R.Set((uv1.x-uv2.x)*inv_dy_R, (uv1.y-uv2.y)*inv_dy_R);
+			//世界坐标增量
+			rasData.dpw_L.Set((wp1.x-wp0.x)*inv_dy_L, (wp1.y-wp0.y)*inv_dy_L, (wp1.z-wp0.z)*inv_dy_L);
+			rasData.dpw_R.Set((wp1.x-wp2.x)*inv_dy_R, (wp1.y-wp2.y)*inv_dy_R, (wp1.z-wp2.z)*inv_dy_R);
+			//世界法线增量
+			rasData.dn_L.Set((wn1.x-wn0.x)*inv_dy_L, (wn1.y-wn0.y)*inv_dy_L, (wn1.z-wn0.z)*inv_dy_L);
+			rasData.dn_R.Set((wn1.x-wn2.x)*inv_dy_R, (wn1.y-wn2.y)*inv_dy_R, (wn1.z-wn2.z)*inv_dy_R);
+		}
+		else
+		{
+			//左上填充规则:上
+			rasData.curY = Ext::Ceil32_Fast(p0.y), rasData.endY = Ext::Ceil32_Fast(p1.y) - 1;
+			//屏幕坐标
+			float inv_dy_L = 1.0f / (p1.y - p0.y);
+			float inv_dy_R = 1.0f / (p2.y - p0.y);
+			rasData.curP_L.Set(p0.x, p0.z, p0.w);
+			rasData.curP_R.Set(p0.x, p0.z, p0.w);
+			//uv分量
+			rasData.curUV_L = uv0;
+			rasData.curUV_R = uv0;
+			//世界坐标
+			rasData.curPW_L = wp0;
+			rasData.curPW_R = wp0;
+			//世界法线
+			rasData.curN_L = wn0;
+			rasData.curN_R = wn0;
+			//屏幕坐标增量
+			rasData.dp_L.Set((p1.x-p0.x)*inv_dy_L, (p1.z-p0.z)*inv_dy_L, (p1.w-p0.w)*inv_dy_L);
+			rasData.dp_R.Set((p2.x-p0.x)*inv_dy_R, (p2.z-p0.z)*inv_dy_R, (p2.w-p0.w)*inv_dy_R);
+			//uv增量
+			rasData.duv_L.Set((uv1.x-uv0.x)*inv_dy_L, (uv1.y-uv0.y)*inv_dy_L);
+			rasData.duv_R.Set((uv2.x-uv0.x)*inv_dy_R, (uv2.y-uv0.y)*inv_dy_R);
+			//世界坐标增量
+			rasData.dpw_L.Set((wp1.x-wp0.x)*inv_dy_L, (wp1.y-wp0.y)*inv_dy_L, (wp1.z-wp0.z)*inv_dy_L);
+			rasData.dpw_R.Set((wp2.x-wp0.x)*inv_dy_R, (wp2.y-wp0.y)*inv_dy_R, (wp2.z-wp0.z)*inv_dy_R);
+			//世界法线增量
+			rasData.dn_L.Set((wn1.x-wn0.x)*inv_dy_L, (wn1.y-wn0.y)*inv_dy_L, (wn1.z-wn0.z)*inv_dy_L);
+			rasData.dn_R.Set((wn2.x-wn0.x)*inv_dy_R, (wn2.y-wn0.y)*inv_dy_R, (wn2.z-wn0.z)*inv_dy_R);	
+		}
+	}
+
+	CFCriticalSection	m_cs;
+
+	void RenderUtil::RasterizeTriangle(SScanLineData& scanLineData, const SMaterial* pMaterial)
+	{
+		//裁剪区域裁剪y
+		if(scanLineData.curY < min_clip_y)
+		{
+			float dy = min_clip_y - scanLineData.curY;
+			scanLineData.curY = min_clip_y;
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, Common::Multiply_Vec3_By_K(scanLineData.dp_L, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, Common::Multiply_Vec3_By_K(scanLineData.dp_R, dy));
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, Common::Multiply_Vec2_By_K(scanLineData.duv_L, dy));
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, Common::Multiply_Vec2_By_K(scanLineData.duv_R, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.curPW_L, scanLineData.curPW_L, Common::Multiply_Vec3_By_K(scanLineData.dpw_L, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.curPW_R, scanLineData.curPW_R, Common::Multiply_Vec3_By_K(scanLineData.dpw_R, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.curN_L, scanLineData.curN_L, Common::Multiply_Vec3_By_K(scanLineData.dn_L, dy));
+			Common::Add_Vec3_By_Vec3(scanLineData.curN_R, scanLineData.curN_R, Common::Multiply_Vec3_By_K(scanLineData.dn_R, dy));
+
+		}
+		if(scanLineData.endY > max_clip_y)
+		{
+			scanLineData.endY = max_clip_y;
+		}
+
+		//定位输出位置
+		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
+
+		DWORD* destBuffer = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer() + scanLineData.curY * lpitch;
+		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + scanLineData.curY * SCREEN_WIDTH;
+		SFragment* fragBuf = g_env.renderer->m_fragmentBuffer + scanLineData.curY * SCREEN_WIDTH;
+
+		VEC3 curPW, curN;
+		VEC3 deltaPW, deltaN;
+		VEC2 curUV;
+		VEC2 deltaUV;
+
+		while (scanLineData.curY <= scanLineData.endY)
+		{
+			//左上填充规则:左
+			int lineX0 = Ext::Ceil32_Fast(scanLineData.curP_L.x);
+			int lineX1 = Ext::Ceil32_Fast(scanLineData.curP_R.x);
+
+			if(lineX1 - lineX0 >= 0)
+			{
+				float invdx = 1.0f / (lineX1 - lineX0);
+				deltaUV.Set((scanLineData.curUV_R.x-scanLineData.curUV_L.x)*invdx, (scanLineData.curUV_R.y-scanLineData.curUV_L.y)*invdx);
+				deltaPW.Set((scanLineData.curPW_R.x-scanLineData.curPW_L.x)*invdx, (scanLineData.curPW_R.y-scanLineData.curPW_L.y)*invdx, (scanLineData.curPW_R.z-scanLineData.curPW_L.z)*invdx);
+				deltaN.Set((scanLineData.curN_R.x-scanLineData.curN_L.x)*invdx, (scanLineData.curN_R.y-scanLineData.curN_L.y)*invdx, (scanLineData.curN_R.z-scanLineData.curN_L.z)*invdx);
+				float dz = (scanLineData.curP_R.y - scanLineData.curP_L.y) * invdx;
+				float dw = (scanLineData.curP_R.z - scanLineData.curP_L.z) * invdx;
+
+				curUV = scanLineData.curUV_L;
+				curPW = scanLineData.curPW_L;
+				curN = scanLineData.curN_L;
+				float z = scanLineData.curP_L.y;
+				float w = scanLineData.curP_L.z;
+
+				//裁剪区域裁剪x
+				if(lineX0 < min_clip_x)
+				{
+					const float dx = min_clip_x-lineX0;
+					Common::Add_Vec2_By_Vec2(curUV, curUV, Common::Multiply_Vec2_By_K(deltaUV, dx));
+					Common::Add_Vec3_By_Vec3(curPW, curPW, Common::Multiply_Vec3_By_K(deltaPW, dx));
+					Common::Add_Vec3_By_Vec3(curN, curN, Common::Multiply_Vec3_By_K(deltaN, dx));
+					lineX0 = min_clip_x;
+					z += dx*dz;
+					w += dx*dw;
+				}
+				if(lineX1 > max_clip_x)
+				{
+					lineX1 = max_clip_x;
+				}
+				
+				//画水平直线
+				for (int curX=lineX0; curX<=lineX1; ++curX)
+				{
+					//m_cs.Lock();
+
+					//深度测试
+					if(z < zBuffer[curX])
+					{
+						zBuffer[curX] = z;
+
+						//m_cs.UnLock();
+
+						SFragment& frag = fragBuf[curX];
+						frag.bActive = true;
+						frag.pMaterial = (SMaterial*)pMaterial;
+						frag.finalColor = destBuffer + curX;
+
+#if USE_PERSPEC_CORRECT == 1
+						//双曲插值最后一步
+						float inv_w = 1 / w;
+						frag.uv.Set(curUV.x*inv_w, curUV.y*inv_w);
+						frag.worldPos.Set(curPW.x*inv_w, curPW.y*inv_w, curPW.z*inv_w);
+						frag.normal.Set(curN.x*inv_w, curN.y*inv_w, curN.z*inv_w);
+#else
+						frag.uv			= curUV;
+						frag.worldPos	= curPW;
+						frag.normal		= curN;
+#endif			
+					}
+					else
+					{
+						//m_cs.UnLock();
+					}
+
+					Common::Add_Vec2_By_Vec2(curUV, curUV, deltaUV);
+					Common::Add_Vec3_By_Vec3(curPW, curPW, deltaPW);
+					Common::Add_Vec3_By_Vec3(curN, curN, deltaN);
+					z += dz;
+					w += dw;
+				}
+			}
+
+			++scanLineData.curY;
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, scanLineData.dp_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
+			Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, scanLineData.duv_R);
+			Common::Add_Vec3_By_Vec3(scanLineData.curPW_L, scanLineData.curPW_L, scanLineData.dpw_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.curPW_R, scanLineData.curPW_R, scanLineData.dpw_R);
+			Common::Add_Vec3_By_Vec3(scanLineData.curN_L, scanLineData.curN_L, scanLineData.dn_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.curN_R, scanLineData.curN_R, scanLineData.dn_R);
+			destBuffer += lpitch;
+			zBuffer += SCREEN_WIDTH;
+			fragBuf += SCREEN_WIDTH;
+		}
+
+		g_env.profiler->AddRenderedFace();
+	}
+
+	void RenderUtil::DrawFragment(SFragment& frag)
+	{
+ 		assert(frag.bActive);
+
+		SColor texColor, lightColor(SColor::WHITE);
+		SMaterial* pMaterial = frag.pMaterial;
+
+		if(pMaterial->bUseBilinearSampler)
+		{
+			pMaterial->pDiffuseMap->Tex2D_Bilinear(frag.uv, texColor);
+		}
+		else
+		{
+			pMaterial->pDiffuseMap->Tex2D_Point(frag.uv, texColor);
+		}
+
+
+		g_env.renderer->m_curRas->DoPerPixelLighting(lightColor, frag.worldPos, frag.normal, pMaterial);
+		texColor *= lightColor;
+
+		texColor.Saturate();
+		*frag.finalColor = texColor.GetAsInt();
+
+		g_env.profiler->AddRenderedPixel();
 	}
 }

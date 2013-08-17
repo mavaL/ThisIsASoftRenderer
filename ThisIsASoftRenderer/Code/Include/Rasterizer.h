@@ -68,26 +68,26 @@ namespace SR
 
 	/////////////////////////////////////////////////////////////
 	//////// Gouraud
+	struct SScanLineData 
+	{
+		VEC3	curP_L, curP_R;		//屏幕坐标的x,z,w分量
+		VEC3	dp_L, dp_R;			//屏幕坐标的x,z,w增量
+		VEC3	curPW_L, curPW_R;	//世界坐标
+		VEC3	dpw_L, dpw_R;		//世界坐标增量
+		VEC3	curN_L, curN_R;		//世界法线
+		VEC3	dn_L, dn_R;			//世界法线增量
+		int		curY, endY;
+		VEC3	clr_L, clr_R;
+		VEC3	dclr_L, dclr_R;
+		VEC2	curUV_L, curUV_R;
+		VEC2	duv_L, duv_R;
+	};
+
 	class RasGouraud : public Rasterizer
 	{
 	public:
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Gouraud; }
 		virtual void	DoPerVertexLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj);
-
-		struct SScanLineData 
-		{
-			VEC3	curP_L, curP_R;		//屏幕坐标的x,z,w分量
-			VEC3	dp_L, dp_R;			//屏幕坐标的x,z,w增量
-			VEC3	curPW_L, curPW_R;	//世界坐标
-			VEC3	dpw_L, dpw_R;		//世界坐标增量
-			VEC3	curN_L, curN_R;		//世界法线
-			VEC3	dn_L, dn_R;			//世界法线增量
-			int		curY, endY;
-			VEC3	clr_L, clr_R;
-			VEC3	dclr_L, dclr_R;
-			VEC2	curUV_L, curUV_R;
-			VEC2	duv_L, duv_R;
-		};
 
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);

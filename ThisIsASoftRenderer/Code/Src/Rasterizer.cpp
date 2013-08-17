@@ -2,23 +2,25 @@
 #include "Rasterizer.h"
 #include "MathDef.h"
 #include "Renderer.h"
+#include "RenderUtil.h"
 #include "RenderObject.h"
+#include "Profiler.h"
+
+extern std::unordered_map<DWORD, DWORD>	g_map;
+extern DWORD nTotal;
+extern bool bTest;
 
 namespace SR
 {
 	void Rasterizer::RasterizeTriangleList( SRenderContext& context )
 	{
-		FaceList& faces = *context.faces;
-		VertexBuffer& verts = *context.verts;
+		FaceList& faces = context.faces;
+		VertexBuffer& verts = context.verts;
 
 		//each triangle
-		int nFace = (int)faces.size();
+		size_t nFace = faces.size();
 
-#if USE_OPENMP == 1
-#pragma omp parallel for
-#endif
-
-		for (int iFace=0; iFace<nFace; ++iFace)
+		for (size_t iFace=0; iFace<nFace; ++iFace)
 		{
 			const SFace& face = faces[iFace];
 			if(face.IsBackface || face.bCulled)
@@ -35,8 +37,6 @@ namespace SR
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
 			_RasterizeTriangle(vert0, vert1, vert2, face, context);
-
-			++g_env.renderer->m_frameStatics.nRenderedFace;
 		}
 	}
 
@@ -51,13 +51,17 @@ namespace SR
 		RenderUtil::DrawLine_Bresenahams(Ext::Floor32_Fast(p0.x), Ext::Floor32_Fast(p0.y), Ext::Floor32_Fast(p1.x), Ext::Floor32_Fast(p1.y), SColor::WHITE, true);
 		RenderUtil::DrawLine_Bresenahams(Ext::Floor32_Fast(p1.x), Ext::Floor32_Fast(p1.y), Ext::Floor32_Fast(p2.x), Ext::Floor32_Fast(p2.y), SColor::WHITE, true);
 		RenderUtil::DrawLine_Bresenahams(Ext::Floor32_Fast(p0.x), Ext::Floor32_Fast(p0.y), Ext::Floor32_Fast(p2.x), Ext::Floor32_Fast(p2.y), SColor::WHITE, true);
+
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedFace();
+#endif
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 	void RasFlat::RasterizeTriangleList( SRenderContext& context )
 	{
-		FaceList& faces = *context.faces;
-		VertexBuffer& verts = *context.verts;
+		FaceList& faces = context.faces;
+		VertexBuffer& verts = context.verts;
 
 		RenderUtil::SortTris_PainterAlgorithm(verts, faces);
 

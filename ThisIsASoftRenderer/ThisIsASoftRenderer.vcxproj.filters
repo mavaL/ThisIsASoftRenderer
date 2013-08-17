@@ -15,6 +15,9 @@
     <Filter Include="Src\tinyxml">
       <UniqueIdentifier>{ecc28c9c-8bd9-495b-9ac5-3c50fd5a119a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThreadPool">
+      <UniqueIdentifier>{dde22d79-c645-4605-877d-c8187ed1d67c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="small.ico">
@@ -90,6 +93,27 @@
     <ClInclude Include="Code\Include\Color.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Include\Profiler.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Include\RenderUtil.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\ThreadPool\ftlFake.h">
+      <Filter>ThreadPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\ThreadPool\ftlThread.h">
+      <Filter>ThreadPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\ThreadPool\ftlThreadPool.h">
+      <Filter>ThreadPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\ThreadPool\ftlThreadPool.hpp">
+      <Filter>ThreadPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\ThreadPool\MyJob.h">
+      <Filter>ThreadPool</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Renderer.cpp">
@@ -111,9 +135,6 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Code\Src\Rasterizer.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\Src\RenderUtil.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Code\Src\OgreMeshLoader.cpp">
@@ -154,6 +175,21 @@
     </ClCompile>
     <ClCompile Include="Code\Src\TestScene.cpp">
       <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Profiler.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\RenderUtil_Common.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\RenderUtil_Rasterize.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\ThreadPool\ftlThread.cpp">
+      <Filter>ThreadPool</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\ThreadPool\MyJob.cpp">
+      <Filter>ThreadPool</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

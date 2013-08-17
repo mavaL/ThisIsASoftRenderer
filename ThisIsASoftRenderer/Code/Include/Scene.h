@@ -16,13 +16,15 @@ namespace SR
 	class Scene
 	{
 	public:
-		typedef std::function<void(Scene*)>	SetupFunc;
-		typedef std::function<void()>		EnterFunc;
+		typedef std::function<void(Scene*)>	StrategyFunc;
 
 	public:
-		Scene(SetupFunc& setupFunc, EnterFunc& enterFunc)
-		:m_bSetup(false),m_setupFunc(setupFunc),m_enterFunc(enterFunc) {}
+		Scene(StrategyFunc& setupFunc, StrategyFunc& enterFunc)
+		:m_bSetup(false),m_setupFunc(setupFunc),m_enterFunc(enterFunc),m_bIsSponzaScene(false) {}
 
+		~Scene();
+
+		bool		m_bIsSponzaScene;
 		RenderList	m_renderList;	//场景中所有渲染物体
 
 	public:
@@ -33,12 +35,15 @@ namespace SR
 				m_setupFunc(this);
 				m_bSetup = true;
 			}
-			m_enterFunc();
+			m_bIsSponzaScene = false;
+			m_enterFunc(this);
 		}
 
+		void	AddRenderObject(RenderObject* obj);
+
 	private:
-		SetupFunc	m_setupFunc;
-		EnterFunc	m_enterFunc;
+		StrategyFunc	m_setupFunc;
+		StrategyFunc	m_enterFunc;
 		bool		m_bSetup;
 	};
 }

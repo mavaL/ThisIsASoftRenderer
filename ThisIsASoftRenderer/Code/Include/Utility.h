@@ -108,6 +108,9 @@ namespace Ext
 
 	std::wstring	AnsiToUnicode(const char* src);
 	STRING			UnicodeToEngine(const WCHAR* src);
+
+	//获取逻辑CPU个数
+	DWORD			GetLogicalCpuCount();
 }
 
 #endif // Utility_h__

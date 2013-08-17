@@ -14,8 +14,8 @@ namespace Ext
 		}
 
 		m_objs.clear();
-		m_objs.push_back(SR::RenderObject());
-		SR::RenderObject& obj = m_objs.back();
+		SR::RenderObject* obj = new SR::RenderObject;
+		m_objs.push_back(obj);
 
 		TiXmlElement* submeshNode = doc.FirstChildElement("mesh")->FirstChildElement("submeshes")->FirstChildElement("submesh");
 
@@ -25,7 +25,7 @@ namespace Ext
 			int nFace = 0;
 			facesNode->Attribute("count", &nFace);
 
-			obj.m_faces.resize(nFace);
+			obj->m_faces.resize(nFace);
 
 			int idx = 0;
 			TiXmlElement* faceNode = facesNode->FirstChildElement("face");
@@ -37,7 +37,7 @@ namespace Ext
 				faceNode->Attribute("v3", &v3);
 
 				SR::SFace face(v1, v2, v3);
-				obj.m_faces[idx++] = std::move(face);
+				obj->m_faces[idx++] = std::move(face);
 
 				faceNode = faceNode->NextSiblingElement("face");
 			}
@@ -49,7 +49,7 @@ namespace Ext
 			int nVert = 0;
 			geometryNode->Attribute("vertexcount", &nVert);
 
-			obj.m_verts.resize(nVert);
+			obj->m_verts.resize(nVert);
 
 			TiXmlElement* vbNode = geometryNode->FirstChildElement("vertexbuffer");
 			//check what we have..
@@ -100,7 +100,7 @@ namespace Ext
 				vert.normal.Normalize();
 				if(uvNode)
 					vert.uv = VEC2(texu, texv);
-				obj.m_verts[idx++] = std::move(vert);
+				obj->m_verts[idx++] = std::move(vert);
 
 				vertNode = vertNode->NextSiblingElement("vertex");
 			}

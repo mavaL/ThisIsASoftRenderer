@@ -27,6 +27,8 @@
 //STL
 #include <string>
 #include <vector>
+#include <map>
+#include <deque>
 #include <unordered_map>
 #include <algorithm>
 #include <functional>

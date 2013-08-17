@@ -12,15 +12,9 @@ namespace Ext
 		//each object
 		for (size_t iObj=0; iObj<m_objs.size(); ++iObj)
 		{
-			SR::RenderObject& obj = m_objs[iObj];
+			SR::RenderObject& obj = *m_objs[iObj];
 
-			SR::RenderUtil::ComputeAABB(obj);
-
-			if(bStatic)
-			{
-				obj.m_worldAABB = obj.m_localAABB;
-				obj.m_worldAABB.Transform(obj.m_matWorld);
-			}
+			obj.m_bStatic = bStatic;
 
 			//计算面法线
 			for (size_t i=0; i<obj.m_faces.size(); ++i)

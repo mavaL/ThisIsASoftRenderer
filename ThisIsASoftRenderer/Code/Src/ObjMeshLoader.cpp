@@ -26,8 +26,8 @@ namespace Ext
 			if(file.eof())
 				break;
 
-			m_objs.push_back(SR::RenderObject());
-			SR::RenderObject& obj = m_objs.back();
+			SR::RenderObject* obj = new SR::RenderObject;
+			m_objs.push_back(obj);
 
 			//获取数据量,避免反复分配存储空间
 			DWORD nPos, nUv, nNormal, nFace;
@@ -38,8 +38,8 @@ namespace Ext
 			vector<VEC2> vecUv(nUv);
 			vector<VEC3> vecNormal(nNormal);
 
-			obj.m_verts.reserve(nFace*3);
-			obj.m_faces.resize(nFace);
+			obj->m_verts.reserve(nFace*3);
+			obj->m_faces.resize(nFace);
 			m_vecComp.clear();
 			m_vecComp.reserve(nFace*3);
 
@@ -111,10 +111,10 @@ namespace Ext
 
 						SVertCompare comp = { idxPos[i], idxUv[i], idxNormal[i] };
 
-						_DefineVertex(vertex, comp, obj, idxVert[i]);
+						_DefineVertex(vertex, comp, *obj, idxVert[i]);
 					}
 
-					SR::SFace& face = obj.m_faces[curFace++];
+					SR::SFace& face = obj->m_faces[curFace++];
 					face.index1 = idxVert[0]; face.index2 = idxVert[1]; face.index3 = idxVert[2];
 				}
 				else if (strcmp(command.c_str(), "g") == 0)
@@ -135,7 +135,7 @@ namespace Ext
 					STRING matName;
 					file >> matName;
 
-					obj.m_pMaterial = g_env.renderer->GetMaterial(matName);
+					obj->m_pMaterial = g_env.renderer->GetMaterial(matName);
 				}
 
 				//读下一行

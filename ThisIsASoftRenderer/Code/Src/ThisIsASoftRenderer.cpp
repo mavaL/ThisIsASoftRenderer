@@ -2,15 +2,17 @@
 //
 
 #include "stdafx.h"
+#include "Prerequiestity.h"
 #include "../../Resource.h"
 #include "Renderer.h"
 #include "OgreMeshLoader.h"
 #include "ObjMeshLoader.h"
 #include "Utility.h"
+#include "Profiler.h"
+#include "ThreadPool/ftlFake.h"
+#include "ThreadPool/ftlThreadPool.h"
 
 #define MAX_LOADSTRING 100
-const int		SCREEN_WIDTH	=	800;
-const int		SCREEN_HEIGHT	=	600;
 
 // 全局变量:
 HINSTANCE hInst;								// 当前实例
@@ -21,6 +23,8 @@ ULONG_PTR			g_gdiplusToken;
 SR::Renderer		g_renderer;			
 Ext::OgreMeshLoader	g_meshLoader;		
 Ext::ObjMeshLoader	g_objLoader;
+Ext::Profiler		g_profiler;
+SR::CFThreadPool<void*>	g_jobMgr;
 SGlobalEnv			g_env;
 
 // 此代码模块中包含的函数的前向声明:
@@ -36,6 +40,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	DWORD d1, d2;
+	BOOL bb;
+	GetSystemTimeAdjustment(&d1, &d2, &bb);
 
  	// TODO: 在此放置代码。
 	MSG msg;
@@ -73,34 +81,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			/////////////// main game processing goes here
 			g_renderer.OnFrameMove();
 			g_renderer.RenderOneFrame();
-
-			//显示一些辅助信息
-			{
-				const VEC4& pos = g_renderer.m_camera.GetPos();
-				char szText[128];
-				sprintf_s(szText, ARRAYSIZE(szText), "lastFPS : %d, CamPos : (%f, %f, %f), Current Shade Mode : %s", 
-					g_renderer.m_frameStatics.lastFPS, pos.x, pos.y, pos.z, g_renderer.GetCurShadingModeName());
-
-				SR::RenderUtil::DrawText(10, 10, szText, RGB(0,255,0));
-			}
-
-			{
-				char szText[128];
-				sprintf_s(szText, ARRAYSIZE(szText), "RenderedTris : %d, Culled Object : %d, Backface : %d, Culled Face : %d", 
-					g_renderer.m_frameStatics.nRenderedFace, g_renderer.m_frameStatics.nObjCulled, g_renderer.m_frameStatics.nBackFace, g_renderer.m_frameStatics.nFaceCulled);
-
-				SR::RenderUtil::DrawText(10, 35, szText, RGB(0,255,0));
-			}
-
-			{
-				const float speed = g_renderer.m_camera.GetMoveSpeed();
-				char szText[128];
-				sprintf_s(szText, ARRAYSIZE(szText), 
-					"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed. Press R to toggle shade mode!", speed);
-
-				SR::RenderUtil::DrawText(10, 60, szText, RGB(0,255,0));
-			}
-
+			g_profiler.DisplayHelpInfo();
 			//swap!!
 			g_renderer.Present();
 		}
@@ -194,13 +175,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, NULL);
 
    //init globals
-   g_env.hwnd = hWnd;
-   g_env.renderer = &g_renderer;
+   g_env.hwnd		= hWnd;
+   g_env.renderer	= &g_renderer;
    g_env.meshLoader = &g_meshLoader;
-   g_env.objLoader = &g_objLoader;
+   g_env.objLoader	= &g_objLoader;
+   g_env.profiler	= &g_profiler;
+   g_env.jobMgr		= &g_jobMgr;
 
-   //init renderer
    g_env.renderer->Init();
+#if USE_MULTI_THREAD == 1
+   DWORD nThreadCount = Ext::GetLogicalCpuCount() - 1;
+   g_env.jobMgr->Start(nThreadCount, nThreadCount);
+#endif
 
    return TRUE;
 }
@@ -290,8 +276,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:
-		PostQuitMessage(0);
+		{
+			g_jobMgr.Stop();
+			PostQuitMessage(0);
+		}
 		break;
+
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}

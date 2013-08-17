@@ -33,7 +33,7 @@ namespace SR
 		bool			m_bStatic;			//该物体在场景中完全固定
 	};
 
-	typedef std::vector<RenderObject>		RenderList;
+	typedef std::vector<RenderObject*>		RenderList;
 }
 
 #endif // RenderObject_h__

@@ -106,6 +106,17 @@ namespace SR
 		VEC3	neg_dir;	//反方向
 		SColor	color;
 	};
+
+	///////////////////////////////////////////////////
+	struct SFragment 
+	{
+		bool		bActive;
+		DWORD*		finalColor;	//最终颜色输出
+		VEC3		worldPos;	//世界坐标
+		VEC2		uv;			//纹理坐标
+		VEC3		normal;		//世界法线
+		SMaterial*	pMaterial;	//材质
+	};
 }
 
 #endif // GeometryDef_h__
