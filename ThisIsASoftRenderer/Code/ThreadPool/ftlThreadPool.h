@@ -17,24 +17,10 @@
 #endif
 
 #include "ftlThread.h"
-#include <set>
-#include <map>
 #include <atlstr.h>
-//#include "ftlSharePtr.h"
-//#include "ftlFunctional.h"
 
 namespace SR
-{
-    //1. Can adjust running thread number automatic between min and max number according to the number of tasks
-    //2. Can cancel any task at any time, even it's running(all the other Implemention can NOT do this, 
-    //   WaitForThreadpoolWorkCallbacks can cancel the task that are waiting)
-    //3. Can pause/resume/stop the whole thread pool; 
-    //4. Support feedback notification(such as error, progress) by callback interface;
-    //5. Implement by template, so you can translate params very easily 
-    //6. Support task priority when submit a new task(not support adjust it dynamic);
-    //7. Use the basic API,so can run under WinXP/Vista/WIn7, etc(CreateThreadpoolWork can use after Vista)
-    //8. Support multi-instance(QueueUserWorkItem is single-instance) 
-    //9. There is no manager thread, so the cost is low(QueueUserWorkItem has a manager thread)  
+{ 
 	template <typename T> class CFThreadPool;  
 
 	template <typename T>
@@ -90,7 +76,6 @@ namespace SR
 		LONG		m_nJobIndex;
 		DWORD		m_dwErrorStatus;	//GetLastError
 		CAtlString	m_strFormatErrorInfo;		
-		HANDLE		m_hEventJobStop;
 		//FJobStatus	m_JobStatus;
 		CFThreadPool<T>* m_pThreadPool;
 	};
@@ -148,12 +133,6 @@ namespace SR
 		//! NOTE:this just set StopEvent, need Job to handle it according to GetJobWaitType result
 		FTLINLINE BOOL Stop();
 
-        //! wait all the job thread exit
-        FTLINLINE BOOL Wait(DWORD dwTimeOut = FTL_MAX_THREAD_DEADLINE_CHECK);
-
-        //! Stop and wait all the job thread exit
-		FTLINLINE BOOL StopAndWait(DWORD dwTimeOut = FTL_MAX_THREAD_DEADLINE_CHECK);
-
 		//! clear the works that still waiting
 		FTLINLINE BOOL ClearUndoWork();
 
@@ -162,11 +141,6 @@ namespace SR
         //! @param [in] pJob, the work job
         //! @param [out] pOutJobIndex, the job index, can CancelJob by it later
 		FTLINLINE BOOL SubmitJob(CFJobBase<T>* pJob, LONG* pOutJobIndex);
-
-		//! Cancel special job
-		FTLINLINE BOOL CancelJob(LONG nJobIndex);
-		//FTLINLINE BOOL PauseJob(LONG nJobIndex);
-		//FTLINLINE BOOL ResumeJob(LONG nJobIndex);
 
 		//! Request pause thread pool
 		FTLINLINE BOOL Pause();
@@ -185,8 +159,7 @@ namespace SR
 		FTLINLINE BOOL _AddJobThread(LONG nThreadNum);
 		FTLINLINE void _DestroyPool();
 		FTLINLINE void _DoJobs();
-
-		FTLINLINE GetJobType _GetJob(CFJobBase<T>** ppJob);
+		FTLINLINE bool _DoJob();
 
 		FTLINLINE void _NotifyJobBegin(CFJobBase<T>* pJob);
 		FTLINLINE void _NotifyJobEnd(CFJobBase<T>* pJob);
@@ -207,24 +180,13 @@ namespace SR
         typedef std::map<DWORD, HANDLE>   TaskThreadContrainer;     //!maintain thread, thread id -> handle
         TaskThreadContrainer m_TaskThreads;
 
-		//HANDLE	m_hMgrThread;					//! Manager thread handle
-
-		//! maintain all the waiting jobs, will order by priority -> jobIndex
-		typedef typename UnreferenceLess< CFJobBase<T> * >	JobBaseUnreferenceLess;
-		typedef std::set<CFJobBase<T>*, JobBaseUnreferenceLess > WaitingJobContainer;
+		typedef std::deque<CFJobBase<T>*> WaitingJobContainer;
 		WaitingJobContainer		m_WaitingJobs;
 
-		//! maintain all the running jobs
-		typedef std::map<LONG, CFJobBase<T>* >	DoingJobContainer;
-		DoingJobContainer		m_DoingJobs;
-
 		HANDLE m_hEventStop;                    //! Stop pool event
-		HANDLE m_hEventAllThreadComplete;		//! all thread exit will fire this event
 		HANDLE m_hEventContinue;				//! The pool continue running event
-		HANDLE m_hSemaphoreJobToDo;             //! Semaphore for waiting job number
-        HANDLE m_hSemaphoreSubtractThread;      //! Semaphore for subtract thread, the initial value is 0
+		HANDLE m_hEventFlushJobs;
 
-		CFCriticalSection m_lockDoingJobs;		//! access for m_DoingJobs
 		CFCriticalSection m_lockWaitingJobs;    //! access for m_WaitingJobs
 		CFCriticalSection m_lockThreads;        //! access for m_TaskThreads
 

@@ -189,7 +189,7 @@ void SetupTestScene5(SR::Scene* scene)
 
 	std::for_each(g_env.objLoader->m_objs.begin(), g_env.objLoader->m_objs.end(), [&](SR::RenderObject* obj)
 	{
-		//obj->m_pMaterial->bUseBilinearSampler = true;
+		obj->m_pMaterial->bUseBilinearSampler = true;
 		scene->AddRenderObject(obj);
 	});
 }

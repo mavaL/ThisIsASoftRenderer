@@ -175,7 +175,7 @@ namespace SR
 				++curFrag;
 			}
 
-			g_env.jobMgr->Flush();			
+			g_env.jobMgr->Flush();
 		}
 	}
 

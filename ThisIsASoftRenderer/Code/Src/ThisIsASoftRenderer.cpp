@@ -183,6 +183,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    g_env.jobMgr		= &g_jobMgr;
 
    g_env.renderer->Init();
+
 #if USE_MULTI_THREAD == 1
    DWORD nThreadCount = Ext::GetLogicalCpuCount() - 1;
    g_env.jobMgr->Start(nThreadCount, nThreadCount);

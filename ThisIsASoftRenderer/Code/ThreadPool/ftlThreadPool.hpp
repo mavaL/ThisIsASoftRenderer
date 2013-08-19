@@ -16,7 +16,6 @@ namespace SR
 		m_nJobPriority = 0;
 		m_nJobIndex = 0;
 		m_pThreadPool = NULL;
-		m_hEventJobStop = NULL;
 		m_dwErrorStatus = ERROR_SUCCESS;
 	}
 	template <typename T>
@@ -26,7 +25,6 @@ namespace SR
 		m_nJobPriority = 0;
 		m_nJobIndex = 0;
 		m_pThreadPool = NULL;
-		m_hEventJobStop = NULL;
 		m_dwErrorStatus = ERROR_SUCCESS;
 	}
 
@@ -116,7 +114,6 @@ namespace SR
 	template <typename T>
 	BOOL CFJobBase<T>::OnInitialize()
 	{
-		FTLASSERT(NULL == m_hEventJobStop);
 		BOOL bRet = TRUE;
 		return bRet;
 	}
@@ -128,7 +125,6 @@ namespace SR
 		FTLThreadWaitType waitType = ftwtError;
 		HANDLE waitEvent[] = 
 		{
-			m_hEventJobStop,
 			m_pThreadPool->m_hEventStop,
 			m_pThreadPool->m_hEventContinue
 		};
@@ -136,12 +132,9 @@ namespace SR
 		switch (dwResult)
 		{
 		case WAIT_OBJECT_0:
-			waitType = ftwtStop;		//Job Stop Event
-			break;
-		case WAIT_OBJECT_0 + 1:
 			waitType = ftwtStop;		//Thread Pool Stop Event
 			break;
-		case WAIT_OBJECT_0 + 2:
+		case WAIT_OBJECT_0 + 1:
 			waitType = ftwtContinue;	//Thread Pool Continue Event
 			break;
 		case WAIT_TIMEOUT:
@@ -172,29 +165,21 @@ namespace SR
 		m_hEventStop = CreateEvent(NULL, TRUE, FALSE, NULL);
 		FTLASSERT(NULL != m_hEventStop);
 
-		m_hEventAllThreadComplete = ::CreateEvent(NULL, TRUE, TRUE, NULL);
-		FTLASSERT(NULL != m_hEventAllThreadComplete);
-
 		m_hEventContinue = ::CreateEvent(NULL, TRUE, TRUE, NULL);
 		FTLASSERT(NULL != m_hEventContinue);
 
-		m_hSemaphoreJobToDo = ::CreateSemaphore(NULL, 0, MAXLONG, NULL);
-		FTLASSERT(NULL != m_hSemaphoreJobToDo);
-
-// 		m_hSemaphoreSubtractThread = CreateSemaphore(NULL, 0, MAXLONG, NULL);
-// 		FTLASSERT(NULL != m_hSemaphoreSubtractThread);
+		m_hEventFlushJobs = ::CreateEvent(NULL, TRUE, FALSE, NULL);
+		FTLASSERT(NULL != m_hEventFlushJobs);
 	}
 
 	template <typename T>  
 	CFThreadPool<T>::~CFThreadPool(void)
 	{
 		FUNCTION_BLOCK_TRACE(DEFAULT_BLOCK_TRACE_THRESHOLD);
-		BOOL bRet = FALSE;
-		API_VERIFY(StopAndWait(FTL_MAX_THREAD_DEADLINE_CHECK));
+
 		_DestroyPool();
 
 		FTLASSERT(m_WaitingJobs.empty());
-		FTLASSERT(m_DoingJobs.empty());
 		FTLASSERT(0 == m_nRunningThreadNum);
 	}
 
@@ -211,12 +196,12 @@ namespace SR
 		m_nMaxNumThreads = nMaxNumThreads;
 
 		API_VERIFY(ResetEvent(m_hEventStop));
-		API_VERIFY(ResetEvent(m_hEventAllThreadComplete));
 		API_VERIFY(SetEvent(m_hEventContinue));
 		
 		{
 			CFAutoLock<CFLockObject>   locker(&m_lockThreads);
 			_AddJobThread(m_nMinNumThreads);
+			m_nRunningThreadNum = m_nMinNumThreads;
 		}
 		return bRet;
 	}
@@ -229,58 +214,6 @@ namespace SR
 
 		BOOL bRet = TRUE;
 		API_VERIFY(SetEvent(m_hEventStop));
-		return bRet;
-	}
-
-	template <typename T>  
-	BOOL CFThreadPool<T>::StopAndWait(DWORD dwTimeOut /* = FTL_MAX_THREAD_DEADLINE_CHECK */)
-	{
-		FUNCTION_BLOCK_TRACE(DEFAULT_BLOCK_TRACE_THRESHOLD);
-		BOOL bRet = TRUE;
-		API_VERIFY(Stop());
-		API_VERIFY(Wait(dwTimeOut));
-		return bRet;
-	}
-
-	template <typename T>
-	BOOL CFThreadPool<T>::Wait(DWORD dwTimeOut /* = FTL_MAX_THREAD_DEADLINE_CHECK */)
-	{
-		FUNCTION_BLOCK_TRACE(DEFAULT_BLOCK_TRACE_THRESHOLD);
-		FTLTRACE(TEXT("CFThreadPool::Wait, dwTimeOut=%d\n"), dwTimeOut);
-
-		BOOL bRet = TRUE;
-
-		DWORD dwResult = WaitForSingleObject(m_hEventAllThreadComplete, dwTimeOut);
-		switch (dwResult)
-		{
-		case WAIT_OBJECT_0: 
-            //all thread exit, 
-            //NOTE: if m_hEventAllThreadComplete is fired, it means that the last thread WILL exit, 
-            //      although there is little difference with thread really exit, but it is not VERY IMPORTANT for here.
-			bRet = TRUE;
-			break;
-		case WAIT_TIMEOUT:
-			FTLTRACE(TEXT("!!!CFThreadPool::Wait, Not all thread over in %d millisec\n"), dwTimeOut);
-			FTLASSERT(FALSE && TEXT("CFThreadPool::Wait TimeOut"));
-			SetLastError(ERROR_TIMEOUT);
-			bRet = FALSE;
-			break;
-		default:
-			FTLASSERT(FALSE);
-			bRet = FALSE;
-			break;
-		}
-
-		{
-			CFAutoLock<CFLockObject> locker(&m_lockThreads);
-            for (TaskThreadContrainer::iterator iter = m_TaskThreads.begin();
-                iter != m_TaskThreads.end(); ++iter)
-            {
-                CloseHandle(iter->second);
-            }
-            m_TaskThreads.clear();
-		}
-
 		return bRet;
 	}
 
@@ -314,8 +247,8 @@ namespace SR
 			while (!m_WaitingJobs.empty())
 			{
                 //release the corresponding semaphore, to make sure it's same value with m_WaitingJobs
-				DWORD dwResult = WaitForSingleObject(m_hSemaphoreJobToDo, FTL_MAX_THREAD_DEADLINE_CHECK); 
-				API_VERIFY(dwResult == WAIT_OBJECT_0);
+// 				DWORD dwResult = WaitForSingleObject(m_hSemaphoreJobToDo, FTL_MAX_THREAD_DEADLINE_CHECK); 
+// 				API_VERIFY(dwResult == WAIT_OBJECT_0);
 
 				WaitingJobContainer::iterator iterBegin = m_WaitingJobs.begin();
 				CFJobBase<T>* pJob = *iterBegin;
@@ -368,35 +301,20 @@ namespace SR
 		BOOL bRet = FALSE;
 
 		//adds job and wakes up a waiting thread
-		{
-			CFAutoLock<CFLockObject> locker(&m_lockWaitingJobs);
-			m_nJobIndex++;
-			pJob->m_pThreadPool = this;         //access private variable, and assign this
-			pJob->m_nJobIndex = m_nJobIndex;	//access private variable, and set the job index
-
-			if (pOutJobIndex)
-			{
-				*pOutJobIndex = pJob->m_nJobIndex;
-			}
+		m_lockWaitingJobs.Lock();
 			
-			m_WaitingJobs.insert(pJob);
-			API_VERIFY(ReleaseSemaphore(m_hSemaphoreJobToDo, 1L, NULL));
+		m_nJobIndex++;
+		pJob->m_pThreadPool = this;         //access private variable, and assign this
+		pJob->m_nJobIndex = m_nJobIndex;	//access private variable, and set the job index
+
+		if (pOutJobIndex)
+		{
+			*pOutJobIndex = pJob->m_nJobIndex;
 		}
-//		BOOL bb = SwitchToThread();//try to wakes up a waiting thread
-// 		{
-// 			//when all the threads are running and can add thread then add a new thread
-// 			CFAutoLock<CFLockObject> locker(&m_lockThreads);
-//             LONG nCurNumThreads = (LONG)m_TaskThreads.size();
-// 			FTLASSERT(m_nRunningJobNumber <= nCurNumThreads);
-// 			BOOL bNeedMoreThread = (m_nRunningJobNumber == nCurNumThreads) && (nCurNumThreads < m_nMaxNumThreads); 
-// 			if (bNeedMoreThread)
-// 			{
-// 				API_VERIFY(_AddJobThread(1L));
-// 			}
-// 
-// 			FTLTRACE(TEXT("CFThreadPool::SubmitJob, pJob[%d] = %p, m_nRunningJobNumber=%d, m_nCurNumThreads=%d, bNeedMoreThread=%d\n"),
-// 				pJob->m_nJobIndex, pJob, m_nRunningJobNumber, m_TaskThreads.size(), bNeedMoreThread);
-// 		}
+
+		m_WaitingJobs.push_back(pJob);
+
+		m_lockWaitingJobs.UnLock();
 
 		return bRet;	
 	}
@@ -404,89 +322,15 @@ namespace SR
 	template <typename T>  
 	FTLINLINE void CFThreadPool<T>::Flush()
 	{
-		//TODO: 主线程这时应变为消费者,一起处理
-		while (!g_env.jobMgr->IsAllFinished())
+		BOOL bRet = FALSE;
+		PulseEvent(m_hEventFlushJobs);
+
+		//主线程也加入处理任务
+		bool bContinue = true;
+		while (bContinue)
 		{
-			SwitchToThread();
+			bContinue = _DoJob();
 		}
-	}
-
-	template <typename T>  
-	FTLINLINE BOOL CFThreadPool<T>::IsAllFinished()
-	{
-		CFAutoLock<CFLockObject> lock2(&m_lockWaitingJobs);
-		CFAutoLock<CFLockObject> lock1(&m_lockDoingJobs);
-
-		return m_DoingJobs.empty() && m_WaitingJobs.empty(); 
-	}
-
-	template <typename T>  
-	BOOL CFThreadPool<T>::CancelJob(LONG nJobIndex)
-	{
-		FTLTRACE(TEXT("CFThreadPool::CancelJob, JobIndex=%d\n"), nJobIndex);
-
-		if (nJobIndex <= 0 || nJobIndex > m_nJobIndex)
-		{
-			SetLastError(ERROR_INVALID_PARAMETER);
-			return FALSE;
-		}
-
-		BOOL bRet = TRUE;
-		BOOL bFoundWaiting = FALSE;
-		BOOL bFoundDoing = FALSE;
-		{
-			//1.find in waiting jobs container, because does not know the priority value, so iterate all the jobs
-			//TODO: boost::multi_index ?
-			CFAutoLock<CFLockObject> locker(&m_lockWaitingJobs);
-			for (WaitingJobContainer::iterator iterWaiting = m_WaitingJobs.begin();
-				iterWaiting != m_WaitingJobs.end();
-				++iterWaiting)
-			{
-				if ((*iterWaiting)->GetJobIndex() == nJobIndex)
-				{
-					//find it, then cancel the waiting job
-                    bFoundWaiting = TRUE;
-					DWORD dwResult = WaitForSingleObject(m_hSemaphoreJobToDo, INFINITE); //release semaphore to make sure it's same with the job counts
-					FTLASSERT(dwResult == WAIT_OBJECT_0);
-
-					CFJobBase<T>* pJob = *iterWaiting;
-					FTLASSERT(pJob);
-					FTLASSERT(pJob->GetJobIndex() == nJobIndex);
-
-					_NotifyJobCancel(pJob);
-					//pJob->m_JobStatus = jsCancel;
-					pJob->OnCancelJob();
-					
-					m_WaitingJobs.erase(iterWaiting);
-					break;
-				}
-			}
-		}
-
-		if (!bFoundWaiting)
-		{
-			//2. find in running jobs -- NOTE: cannot change order between step 1 and step 2.
-			CFAutoLock<CFLockObject> locker(&m_lockDoingJobs);
-			DoingJobContainer::iterator iterDoing = m_DoingJobs.find(nJobIndex);
-			if (iterDoing != m_DoingJobs.end())
-			{
-				bFoundDoing = TRUE;
-
-				CFJobBase<T>* pJob = iterDoing->second;
-				FTLASSERT(pJob);
-				FTLASSERT(pJob->GetJobIndex() == nJobIndex);
-				
-				//Request Cancel
-				pJob->RequestCancel();
-			}
-		}
-		if (!bFoundWaiting && !bFoundDoing)
-		{
-            //3.cannot find in waiting or doing container, it means that the job has already finished
-			//do nothing here
-		}
-
-		return bRet;
 	}
 
 	template <typename T>  
@@ -511,136 +355,87 @@ namespace SR
 		BOOL bRet = FALSE;
 		API_VERIFY(ClearUndoWork());
 		
-		SAFE_CLOSE_HANDLE(m_hSemaphoreJobToDo,NULL);
-		//SAFE_CLOSE_HANDLE(m_hSemaphoreSubtractThread,NULL);
-		SAFE_CLOSE_HANDLE(m_hEventAllThreadComplete, NULL);
+		SAFE_CLOSE_HANDLE(m_hEventFlushJobs,NULL);
 		SAFE_CLOSE_HANDLE(m_hEventContinue,NULL);
 		SAFE_CLOSE_HANDLE(m_hEventStop,NULL);
 	}
 
 	template <typename T>  
-	GetJobType CFThreadPool<T>::_GetJob(CFJobBase<T>** ppJob)
-	{
-		FUNCTION_BLOCK_TRACE(0);
-		HANDLE hWaitHandles[] = 
-		{
-			m_hEventStop,                 //user stop thread pool
-			m_hSemaphoreJobToDo,          //there are waiting jobs
-			//m_hSemaphoreSubtractThread,   //need subtract thread
-		};
-
-		DWORD dwResult = WaitForMultipleObjects(_countof(hWaitHandles), hWaitHandles, FALSE, INFINITE);
-
-		switch(dwResult)
-		{
-		case WAIT_OBJECT_0:				//m_hEventStop
-			return typeStop;
-		case WAIT_OBJECT_0 + 1:			//m_hSemaphoreJobToDo
-			break;
-// 		case WAIT_OBJECT_0 + 2:			//m_hSemaphoreSubtractThread
-// 			return typeSubtractThread;
-		default:
-			FTLASSERT(FALSE);
-			return typeStop;
-		}
-
-		{
-			//Get a new job from waiting container
-			CFAutoLock<CFLockObject> lockerWating(&m_lockWaitingJobs);
-			FTLASSERT(!m_WaitingJobs.empty());
-			WaitingJobContainer::iterator iterBegin = m_WaitingJobs.begin();
-
-			CFJobBase<T>* pJob = *iterBegin;
-			FTLASSERT(pJob);
-
-			*ppJob = pJob;
-			m_WaitingJobs.erase(iterBegin);
-			{
-				//push it into doing container
-				CFAutoLock<CFLockObject> lockerDoing(&m_lockDoingJobs);
-				m_DoingJobs.insert(DoingJobContainer::value_type(pJob->GetJobIndex(), pJob));			
-			}
-		}
-		return typeGetJob;	
-	}
-
-	template <typename T>  
 	void CFThreadPool<T>::_DoJobs()
 	{
-		BOOL bRet = FALSE;
 		FUNCTION_BLOCK_TRACE(0);
-		CFJobBase<T>* pJob = NULL;
-		GetJobType getJobType = typeStop;
-		while(typeGetJob == (getJobType = _GetJob(&pJob)))
+
+		while (true)
+		{
+			HANDLE hWaitHandles[] = 
+			{
+				m_hEventStop,                 //user stop thread pool
+				m_hEventFlushJobs,          //there are waiting jobs
+			};
+
+			DWORD dwResult = WaitForMultipleObjects(_countof(hWaitHandles), hWaitHandles, FALSE, INFINITE);
+
+			switch(dwResult)
+			{
+			case WAIT_OBJECT_0 + 1:
+				{
+					bool bContine = true;
+					while(bContine)
+					{
+						bContine = _DoJob();
+					}
+				}
+				break;
+
+			default: FTLASSERT(FALSE);
+			}
+		}
+	}
+
+	template <typename T>
+	FTLINLINE bool CFThreadPool<T>::_DoJob()
+	{
+		BOOL bRet = FALSE;
+		//Get a new job from waiting container
+		CFJobBase<T>* pJob = nullptr;
+
+		m_lockWaitingJobs.Lock();
+
+		if(!m_WaitingJobs.empty())
+		{
+			pJob = m_WaitingJobs.front();
+			FTLASSERT(pJob);
+			m_WaitingJobs.pop_front();
+
+			m_lockWaitingJobs.UnLock();
+		}
+		else
+		{
+			m_lockWaitingJobs.UnLock();
+		}
+
+		if (pJob)
 		{
 			InterlockedIncrement(&m_nRunningJobNumber);
 			INT nJobIndex = pJob->GetJobIndex();
 			FTLTRACE(TEXT("CFThreadPool Begin Run Job %d\n"), nJobIndex);
 
-			API_VERIFY(pJob->OnInitialize());
-			if (bRet)
-			{
-				FTLASSERT(NULL == pJob->m_hEventJobStop);
-				pJob->m_hEventJobStop = CreateEvent(NULL, TRUE, FALSE, NULL);
-				//pJob->m_JobStatus = jsDoing;
+			//API_VERIFY(pJob->OnInitialize());
 
-				_NotifyJobBegin(pJob);
-				pJob->Run();
-				_NotifyJobEnd(pJob);
+			//_NotifyJobBegin(pJob);
+			pJob->Run();
+			//_NotifyJobEnd(pJob);
 
-				//if (jsDoing == pJob->m_JobStatus)
-				//{
-				//	pJob->m_JobStatus = jsDone;
-				//}
-				SAFE_CLOSE_HANDLE(pJob->m_hEventJobStop, NULL);
-				pJob->OnFinalize();
-			}
+			pJob->OnFinalize();
+
 			InterlockedDecrement(&m_nRunningJobNumber);
 
 			FTLTRACE(TEXT("CFThreadPool End Run Job %d\n"), nJobIndex);
-			{
-				//Job finished, then remove it doing container
-				CFAutoLock<CFLockObject> lockerDoing(&m_lockDoingJobs);
-				DoingJobContainer::iterator iter = m_DoingJobs.find(nJobIndex);
-				FTLASSERT(m_DoingJobs.end() != iter);
-				if (m_DoingJobs.end() != iter)
-				{
-					m_DoingJobs.erase(iter);
-				}
-			}
 
-			//whether need to subtract a thread
-// 			BOOL bNeedSubtractThread = FALSE;
-// 			{
-// 				CFAutoLock<CFLockObject> lockerWaitingJobs(&m_lockWaitingJobs);
-// 				CFAutoLock<CFLockObject> lockerThreads(&m_lockThreads);
-//                 //when there is no more jobs in waiting container, and current thread count is bigger than minimum thread count, then will reduce a thread
-// 				bNeedSubtractThread = (m_WaitingJobs.empty() && ((LONG)m_TaskThreads.size() > m_nMinNumThreads) && !HadRequestStop());
-// 				if (bNeedSubtractThread)
-// 				{
-// 					ReleaseSemaphore(m_hSemaphoreSubtractThread, 1L, NULL);
-// 				}
-// 			}
+			return true;
 		}
-// 		if (typeSubtractThread == getJobType)  
-// 		{
-//             //Need subtract a thread, then quit self thread
-// 			//FUNCTION_BLOCK_NAME_TRACE(TEXT("typeSubtractThread, will remove self thread"), DEFAULT_BLOCK_TRACE_THRESHOLD);
-// 			CFAutoLock<CFLockObject> locker(&m_lockThreads);
-// 			DWORD dwCurrentThreadId = GetCurrentThreadId();
-// 			{
-// 				HANDLE hOldTemp = m_TaskThreads[dwCurrentThreadId];
-//                 m_TaskThreads.erase(dwCurrentThreadId);
-// 				CloseHandle(hOldTemp);
-// 
-// 				FTLTRACE(TEXT("CFThreadPool Subtract a thread, thread id = %d(0x%x), curThreadNum = %d\n"),
-// 					dwCurrentThreadId, dwCurrentThreadId, m_TaskThreads.size());
-// 			}
-// 		}
-// 		else //typeStop
-// 		{
-// 			//Do Nothing
-// 		}
+
+		return false;
 	}
 
 	template <typename T>  
@@ -697,21 +492,10 @@ namespace SR
 	unsigned int CFThreadPool<T>::JobThreadProc(void *pThis)
 	{
 		FUNCTION_BLOCK_TRACE(0);
- 		CFThreadPool<T>* pThreadPool = (CFThreadPool<T>*)pThis;
-		LONG nRunningNumber = InterlockedIncrement(&pThreadPool->m_nRunningThreadNum);
-		if (1 == nRunningNumber)
-		{
-			ResetEvent(pThreadPool->m_hEventAllThreadComplete);
-		}
+		CFThreadPool<T>* pThreadPool = (CFThreadPool<T>*)pThis;
 
 		pThreadPool->_DoJobs();
 
-		nRunningNumber = InterlockedDecrement(&pThreadPool->m_nRunningThreadNum);
-		if (0 == nRunningNumber)
-		{
-			//if this is the last thread, then fire the complete event
-			SetEvent(pThreadPool->m_hEventAllThreadComplete);
-		}
 		return(0);
 	}
 }

@@ -28,7 +28,7 @@ namespace Ext
 			const float speed = g_env.renderer->m_camera.GetMoveSpeed();
 			char szText[128];
 			sprintf_s(szText, ARRAYSIZE(szText), 
-				"Camera Speed: %f . Press \"+/-\" to increase/decrease camera speed. Press R to toggle shade mode!", speed);
+				"Camera Speed: %f . Press \"+/-\" to change camera speed. Press R to toggle shade mode. Press T to toggle scene !", speed);
 
 			SR::RenderUtil::DrawText(10, 35, szText, 0xff00ff00);
 		}
