@@ -31,7 +31,7 @@ namespace SR
 	template <typename T>
 	CFJobBase<T>::~CFJobBase()
 	{
-		FTLASSERT(NULL == m_hEventJobStop);
+		//FTLASSERT(NULL == m_hEventJobStop);
 	}
 
 	template <typename T>
@@ -65,14 +65,14 @@ namespace SR
 	template <typename T>
 	LPCTSTR CFJobBase<T>::GetErrorInfo() const
 	{
-		return m_strFromatErrorInfo.GetString();
+		//return m_strFromatErrorInfo.GetString();
 	}
 
 	template <typename T>
 	BOOL CFJobBase<T>::RequestCancel()
 	{
 		BOOL bRet = FALSE;
-		API_VERIFY(SetEvent(m_hEventJobStop));
+		//API_VERIFY(SetEvent(m_hEventJobStop));
 		return bRet;
 	}
 
