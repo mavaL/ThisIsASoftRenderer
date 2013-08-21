@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<useCaseModelRoot xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm4="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm5="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/ModelStore" xmlns:dm9="http://schemas.microsoft.com/dsltools/SimpleShapesModel" xmlns:dm10="http://schemas.microsoft.com/dsltools/LogicalClassDesigner" dslVersion="1.0.0.0" Id="974e8eac-27a2-44f4-8dac-d6c0b0395414" name="UseCaseDiagram" linkedPackageId="61f61a31-b918-47dd-9ce6-c81ee7168cc9" xmlns="http://schemas.microsoft.com/dsltools/UseCaseModel">
+  <ownedCommentsInternal>
+    <comment Id="1f524d21-425c-4e19-9cef-c8565e8a439e">
+      <elementDefinition Id="0d48d3f3-0c5f-4db5-9a81-fb03b247ae71" />
+      <body>A basic triangle</body>
+      <annotatedElements>
+        <useCaseMoniker Id="11a8ffcf-5e59-4028-ba30-59536a71d864" LastKnownName="Scene1" />
+      </annotatedElements>
+    </comment>
+    <comment Id="68d9163b-f4e1-4b5e-81a9-03b4051da240">
+      <elementDefinition Id="db9471c5-f133-4173-89d5-8a595760342c" />
+      <body>Perspective-correction texturing</body>
+      <annotatedElements>
+        <useCaseMoniker Id="be43461f-4ed5-4672-b63a-19b1e525b881" LastKnownName="Scene2" />
+      </annotatedElements>
+    </comment>
+    <comment Id="f14c19ec-8f17-4002-8b40-bc42d58c671f">
+      <elementDefinition Id="b30bc254-4357-4aa4-8168-08864547a653" />
+      <body>A textured marine model</body>
+      <annotatedElements>
+        <useCaseMoniker Id="cc636524-a2df-4229-b7fb-99a77b2553ab" LastKnownName="Scene3" />
+      </annotatedElements>
+    </comment>
+    <comment Id="a9f1126f-3635-4b70-b73d-15eb3294b027">
+      <elementDefinition Id="202b3b62-c634-4d57-9606-398860034681" />
+      <body>A teapot with Phong shading</body>
+      <annotatedElements>
+        <useCaseMoniker Id="40bd246c-11dd-4d32-a9f7-cfaaa5738929" LastKnownName="Scene4" />
+      </annotatedElements>
+    </comment>
+    <comment Id="7ae14b4d-b66a-4759-a066-214ab59a97eb">
+      <elementDefinition Id="164505b1-16f3-4f18-9e56-a960f33bfe07" />
+      <body>Huge sponza scene</body>
+      <annotatedElements>
+        <useCaseMoniker Id="137d020d-2b2a-49e8-b3e7-8ea24a9b259c" LastKnownName="Scene5" />
+      </annotatedElements>
+    </comment>
+    <comment Id="3bc2ddf8-52d6-4046-b829-4c2a31b9ac59">
+      <elementDefinition Id="ae0f7748-3eb5-4f06-9126-696ec136a9a2" />
+      <body>Use the mouse and keyboard to wander the scene.</body>
+      <annotatedElements>
+        <useCaseMoniker Id="e460d031-e2b4-4800-b438-ac26537eea5a" LastKnownName="Operate   Camera" />
+      </annotatedElements>
+    </comment>
+    <comment Id="bf4c9f2f-412f-4bec-9ccf-fc9319165fe2">
+      <elementDefinition Id="15eac950-5d0e-4eaa-9fd2-c00161f2c3c7" />
+      <body>Press R to toggle shade mode (Wireframe, Flat, Gauraund, Phong...)</body>
+      <annotatedElements>
+        <useCaseMoniker Id="24d692b9-44a8-4ab6-a8e6-4842fa5671ab" LastKnownName="ToggleShadeMode" />
+      </annotatedElements>
+    </comment>
+  </ownedCommentsInternal>
+  <packagedElements>
+    <useCaseModelRootHasTypes>
+      <actor Id="39bdf0e6-0ba2-43da-a48f-e0cf61cf2c85" name="User" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="f05c0b72-a77e-4469-aede-4bf5fcffafb0" />
+        <targetEnds>
+          <association Id="59369e59-9a3b-401b-9956-39bcf6f91b76" isDerived="false" sourceEndRoleName="User" targetEndRoleName="UseCase1" isLeaf="false" isAbstract="false">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd Id="8238d412-a6d9-4861-b0b1-5cd49791864f" name="User" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false" isNavigableOwned="false">
+                  <elementDefinition Id="907ff345-1d50-467c-b6d4-6f2442d73982" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd Id="6f295a92-8343-4b81-9ca2-ab0dce346211" name="UseCase1" isLeaf="false" isStatic="false" isReadOnly="false" isDerived="false" isDerivedUnion="false" aggregation="None" isComposite="false">
+                  <elementDefinition Id="57e637da-5267-4363-9fbe-425d3161d369" />
+                </memberEnd>
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+            <elementDefinition Id="1ab9a1b6-4709-414b-b2e6-0c1b472faafe" />
+          </association>
+        </targetEnds>
+      </actor>
+    </useCaseModelRootHasTypes>
+    <useCaseModelRootHasTypes>
+      <subsystem Id="15738622-8c00-4fd4-8507-d4a2cc937241" name="SoftRendererApp" isAbstract="false" isLeaf="false" isActiveClass="false">
+        <elementDefinition Id="473d90ff-e997-4594-a684-b172e67652ac" />
+      </subsystem>
+    </useCaseModelRootHasTypes>
+    <packageHasNamedElement>
+      <useCase Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" name="TestScene" isAbstract="false" isLeaf="false">
+        <description>Press T to toggle scene.</description>
+        <elementDefinition Id="f14e915b-7668-4581-8082-88144ea71425" />
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase Id="11a8ffcf-5e59-4028-ba30-59536a71d864" name="Scene1" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="013f648e-a263-4a30-a1cb-ab6d35f3f139" />
+        <generalsInternal>
+          <generalization Id="8c7a059d-5a3e-4123-a6d6-55300bf39d24" isSubstitutable="false">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <elementDefinition Id="b7ae3251-5161-48c8-9c84-dc716294d56d" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase Id="be43461f-4ed5-4672-b63a-19b1e525b881" name="Scene2" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="e36b0d67-7632-4d97-a2a9-50c7d079b36c" />
+        <generalsInternal>
+          <generalization Id="8758cabd-fcf6-40c2-8598-5c71c86cedc9" isSubstitutable="false">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <elementDefinition Id="d949c48a-5640-46ae-9558-e4ebbeab036b" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase Id="cc636524-a2df-4229-b7fb-99a77b2553ab" name="Scene3" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="077bb156-ba04-4044-89e5-37f778f9bda5" />
+        <generalsInternal>
+          <generalization Id="08f2805b-66cf-4fdb-8dc4-67413e6bb148" isSubstitutable="false">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <elementDefinition Id="87f0c5d4-45a8-4802-8635-8e780e171d77" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase Id="40bd246c-11dd-4d32-a9f7-cfaaa5738929" name="Scene4" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="d5305570-2397-412e-b734-96a03381b245" />
+        <generalsInternal>
+          <generalization Id="f8946450-0ca2-458a-a5f0-2712617fec9c" isSubstitutable="false">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <elementDefinition Id="2be0ebb1-aba9-49e5-b124-a6d9ab6ed727" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase Id="137d020d-2b2a-49e8-b3e7-8ea24a9b259c" name="Scene5" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="dd690c99-0743-43a6-8bd9-6dc9ac28914f" />
+        <generalsInternal>
+          <generalization Id="45e35916-89ec-40a1-a2db-eac2f6a81bba" isSubstitutable="false">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <elementDefinition Id="dd46123b-7377-4479-b56a-197c5559d28d" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase Id="e460d031-e2b4-4800-b438-ac26537eea5a" name="Operate   Camera" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="b1629fba-e0a8-4f77-b83c-249eccadf13d" />
+        <extendedCases>
+          <extend Id="6481dbbd-e1b5-4e1b-908d-fc5495fa6397">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <elementDefinition Id="6e30be51-643e-46d8-99db-d9bd8adc9156" />
+          </extend>
+        </extendedCases>
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase Id="24d692b9-44a8-4ab6-a8e6-4842fa5671ab" name="ToggleShadeMode" isAbstract="false" isLeaf="false">
+        <elementDefinition Id="98905ccd-a744-4dbf-82ff-0a46400fcbf5" />
+        <extendedCases>
+          <extend Id="103bbbd0-9983-47b9-9d9e-581d69b55cf8">
+            <useCaseMoniker Id="2f576ea3-06b5-4ee3-8c7c-2fa769fa0586" LastKnownName="TestScene" />
+            <elementDefinition Id="2b68a22d-5994-4eab-9945-82c60cd3792b" />
+          </extend>
+        </extendedCases>
+        <subjects>
+          <subsystemMoniker Id="15738622-8c00-4fd4-8507-d4a2cc937241" LastKnownName="SoftRendererApp" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+  </packagedElements>
+  <package Id="61f61a31-b918-47dd-9ce6-c81ee7168cc9" name="UML">
+    <elementDefinition Id="46063670-8eb3-4a6a-9269-d05d72e45216" />
+    <profileInstances>
+      <packageHasProfileInstances Id="a5a8a0f2-acde-47e5-bedd-ef9e62f925db">
+        <profileInstance Id="24c593bd-005c-4af5-ae05-88487e717a99" name="StandardProfileL2">
+          <elementDefinition Id="e34d544e-0fea-4ed6-ac5e-1b74119ac791" />
+        </profileInstance>
+        <elementDefinition Id="0caec977-1f8c-4ba3-a7db-8cc9ad9cc73b" />
+      </packageHasProfileInstances>
+      <packageHasProfileInstances Id="9f75ef26-90ac-4d1e-86e5-3dab676d249b">
+        <profileInstance Id="517cace3-f1b2-45ae-a188-57afd8dadc1d" name="StandardProfileL3">
+          <elementDefinition Id="532ea607-fb19-44b8-8502-3351b05452be" />
+        </profileInstance>
+        <elementDefinition Id="29349502-908c-4fda-9054-c48619c59ed0" />
+      </packageHasProfileInstances>
+    </profileInstances>
+  </package>
+</useCaseModelRoot>

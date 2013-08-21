@@ -151,7 +151,6 @@ namespace SR
         FTLINLINE BOOL HadRequestPause() const;
 		FTLINLINE BOOL HadRequestStop() const;
 
-		FTLINLINE BOOL IsAllFinished();
 		FTLINLINE void Flush();
 
 	protected:

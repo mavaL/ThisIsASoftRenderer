@@ -67,8 +67,8 @@ namespace SR
 
 	private:
 		std::unique_ptr<Gdiplus::Bitmap>	m_bmBackBuffer;
-		std::unique_ptr<Common::PixelBox>	m_backBuffer;
-		std::unique_ptr<Common::PixelBox>	m_zBuffer;
+		std::unique_ptr<SR::PixelBox>	m_backBuffer;
+		std::unique_ptr<SR::PixelBox>	m_zBuffer;
 
 		std::unordered_map<eRasterizeType, Rasterizer*>	m_rasLib;		//所有可用shader
 		Rasterizer*							m_curRas;					//当前使用shader

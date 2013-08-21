@@ -2,7 +2,7 @@
 #include "PixelBox.h"
 #include "Utility.h"
 
-namespace Common
+namespace SR
 {
 	PixelBox::PixelBox( int width, int height, int bytesPerPixel )
 	:m_width(width)

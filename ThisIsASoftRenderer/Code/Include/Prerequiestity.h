@@ -31,7 +31,6 @@ namespace Common
 	class Vector3;
 	class Vector4;
 	class Matrix44;
-	class PixelBox;
 	class AxisAlignBBox;
 }
 
@@ -44,6 +43,7 @@ typedef Common::AxisAlignBBox	AABB;
 namespace SR
 {
 	class Renderer;
+	class PixelBox;
 	class Scene;
 	class Camera;
 	class RenderObject;

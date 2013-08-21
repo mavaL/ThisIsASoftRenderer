@@ -27,7 +27,7 @@ namespace SR
 		m_rasLib.insert(std::make_pair(eRasterizeType_NormalMap, new RasNormalMap));
 
 		//创建后备缓冲
-		m_backBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
+		m_backBuffer.reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
 
 		int bmWidth = m_backBuffer->GetWidth();
 		int bmHeight = m_backBuffer->GetHeight();
@@ -37,7 +37,7 @@ namespace SR
 		m_bmBackBuffer.reset(new Gdiplus::Bitmap(bmWidth, bmHeight, bmPitch, PixelFormat32bppARGB, data));
 
 		//创建z-buffer
-		m_zBuffer.reset(new Common::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
+		m_zBuffer.reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
 
 		//创建fragment buffer
 		m_fragmentBuffer = new SFragment[SCREEN_WIDTH * SCREEN_HEIGHT];

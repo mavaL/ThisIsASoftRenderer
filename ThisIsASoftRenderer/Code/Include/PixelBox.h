@@ -8,7 +8,7 @@
 #ifndef PixelBox_h__
 #define PixelBox_h__
 
-namespace Common
+namespace SR
 {
 	class PixelBox
 	{

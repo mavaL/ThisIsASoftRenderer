@@ -77,7 +77,7 @@ namespace SR
 		void		Tex2D_Bilinear(VEC2& uv, SColor& ret) const;
 
 		STRING		texName;		
-		Common::PixelBox*	pData;
+		SR::PixelBox*	pData;
 	};
 
 	///////////////////////////////////////////////////

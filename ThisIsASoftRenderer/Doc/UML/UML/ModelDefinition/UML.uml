@@ -1,0 +1,705 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<modelStoreModel xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" xmlns:dm1="http://schemas.microsoft.com/dsltools/Kernel" xmlns:dm2="http://schemas.microsoft.com/dsltools/Component" xmlns:dm3="http://schemas.microsoft.com/dsltools/Activity" xmlns:dm4="http://schemas.microsoft.com/dsltools/Interaction" xmlns:dm5="http://schemas.microsoft.com/dsltools/UseCase" xmlns:dm6="http://schemas.microsoft.com/dsltools/UmlModelLibrary" xmlns:dm7="http://schemas.microsoft.com/dsltools/UmlDiagrams" xmlns:dm8="http://schemas.microsoft.com/dsltools/LogicalClassDesigner"
+  dslVersion="1.0.0.0"
+  Id="46063670-8eb3-4a6a-9269-d05d72e45216"
+  name="UML" xmlns="http://schemas.microsoft.com/dsltools/ModelStore">
+  <ownedCommentsInternal>
+    <comment
+      Id="0d48d3f3-0c5f-4db5-9a81-fb03b247ae71">
+      <body>A basic triangle</body>
+      <annotatedElements>
+        <useCaseMoniker
+          Id="013f648e-a263-4a30-a1cb-ab6d35f3f139"
+          LastKnownName="Scene1"
+          LastKnownLocation="UML.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="db9471c5-f133-4173-89d5-8a595760342c">
+      <body>Perspective-correction texturing</body>
+      <annotatedElements>
+        <useCaseMoniker
+          Id="e36b0d67-7632-4d97-a2a9-50c7d079b36c"
+          LastKnownName="Scene2"
+          LastKnownLocation="UML.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="b30bc254-4357-4aa4-8168-08864547a653">
+      <body>A textured marine model</body>
+      <annotatedElements>
+        <useCaseMoniker
+          Id="077bb156-ba04-4044-89e5-37f778f9bda5"
+          LastKnownName="Scene3"
+          LastKnownLocation="UML.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="202b3b62-c634-4d57-9606-398860034681">
+      <body>A teapot with Phong shading</body>
+      <annotatedElements>
+        <useCaseMoniker
+          Id="d5305570-2397-412e-b734-96a03381b245"
+          LastKnownName="Scene4"
+          LastKnownLocation="UML.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="164505b1-16f3-4f18-9e56-a960f33bfe07">
+      <body>Huge sponza scene</body>
+      <annotatedElements>
+        <useCaseMoniker
+          Id="dd690c99-0743-43a6-8bd9-6dc9ac28914f"
+          LastKnownName="Scene5"
+          LastKnownLocation="UML.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="ae0f7748-3eb5-4f06-9126-696ec136a9a2">
+      <body>Use the mouse and keyboard to wander the scene.</body>
+      <annotatedElements>
+        <useCaseMoniker
+          Id="b1629fba-e0a8-4f77-b83c-249eccadf13d"
+          LastKnownName="Operate   Camera"
+          LastKnownLocation="UML.uml" />
+      </annotatedElements>
+    </comment>
+    <comment
+      Id="15eac950-5d0e-4eaa-9fd2-c00161f2c3c7">
+      <body>Press R to toggle shade mode (Wireframe, Flat, Gauraund, Phong...)</body>
+      <annotatedElements>
+        <useCaseMoniker
+          Id="98905ccd-a744-4dbf-82ff-0a46400fcbf5"
+          LastKnownName="ToggleShadeMode"
+          LastKnownLocation="UML.uml" />
+      </annotatedElements>
+    </comment>
+  </ownedCommentsInternal>
+  <profileInstances>
+    <packageHasProfileInstances
+      Id="0caec977-1f8c-4ba3-a7db-8cc9ad9cc73b">
+      <profileInstance
+        Id="e34d544e-0fea-4ed6-ac5e-1b74119ac791"
+        name="StandardProfileL2" />
+    </packageHasProfileInstances>
+    <packageHasProfileInstances
+      Id="29349502-908c-4fda-9054-c48619c59ed0">
+      <profileInstance
+        Id="532ea607-fb19-44b8-8502-3351b05452be"
+        name="StandardProfileL3" />
+    </packageHasProfileInstances>
+  </profileInstances>
+  <packagedElements>
+    <packageHasNamedElement>
+      <actor
+        Id="f05c0b72-a77e-4469-aede-4bf5fcffafb0"
+        name="User"
+        isAbstract="false"
+        isLeaf="false">
+        <targetEnds>
+          <association
+            Id="1ab9a1b6-4709-414b-b2e6-0c1b472faafe"
+            isDerived="false"
+            sourceEndRoleName="User"
+            targetEndRoleName="UseCase1"
+            isLeaf="false"
+            isAbstract="false">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="907ff345-1d50-467c-b6d4-6f2442d73982"
+                  name="User"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="None"
+                  isComposite="false"
+                  isNavigableOwned="false" />
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="57e637da-5267-4363-9fbe-425d3161d369"
+                  name="UseCase1"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="None"
+                  isComposite="false" />
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+          </association>
+        </targetEnds>
+      </actor>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <subsystem
+        Id="473d90ff-e997-4594-a684-b172e67652ac"
+        name="SoftRendererApp"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="f14e915b-7668-4581-8082-88144ea71425"
+        name="TestScene"
+        isAbstract="false"
+        isLeaf="false">
+        <description>Press T to toggle scene.</description>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="013f648e-a263-4a30-a1cb-ab6d35f3f139"
+        name="Scene1"
+        isAbstract="false"
+        isLeaf="false">
+        <generalsInternal>
+          <generalization
+            Id="b7ae3251-5161-48c8-9c84-dc716294d56d"
+            isSubstitutable="false">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="614186b7-4d5c-4001-b264-c0a739338ed2"
+        name="Scene11"
+        isAbstract="false"
+        isLeaf="false" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="e36b0d67-7632-4d97-a2a9-50c7d079b36c"
+        name="Scene2"
+        isAbstract="false"
+        isLeaf="false">
+        <generalsInternal>
+          <generalization
+            Id="d949c48a-5640-46ae-9558-e4ebbeab036b"
+            isSubstitutable="false">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="077bb156-ba04-4044-89e5-37f778f9bda5"
+        name="Scene3"
+        isAbstract="false"
+        isLeaf="false">
+        <generalsInternal>
+          <generalization
+            Id="87f0c5d4-45a8-4802-8635-8e780e171d77"
+            isSubstitutable="false">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="d5305570-2397-412e-b734-96a03381b245"
+        name="Scene4"
+        isAbstract="false"
+        isLeaf="false">
+        <generalsInternal>
+          <generalization
+            Id="2be0ebb1-aba9-49e5-b124-a6d9ab6ed727"
+            isSubstitutable="false">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="dd690c99-0743-43a6-8bd9-6dc9ac28914f"
+        name="Scene5"
+        isAbstract="false"
+        isLeaf="false">
+        <generalsInternal>
+          <generalization
+            Id="dd46123b-7377-4479-b56a-197c5559d28d"
+            isSubstitutable="false">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+          </generalization>
+        </generalsInternal>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="b1629fba-e0a8-4f77-b83c-249eccadf13d"
+        name="Operate   Camera"
+        isAbstract="false"
+        isLeaf="false">
+        <extendedCases>
+          <extend
+            Id="6e30be51-643e-46d8-99db-d9bd8adc9156">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+          </extend>
+        </extendedCases>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <useCase
+        Id="98905ccd-a744-4dbf-82ff-0a46400fcbf5"
+        name="ToggleShadeMode"
+        isAbstract="false"
+        isLeaf="false">
+        <extendedCases>
+          <extend
+            Id="2b68a22d-5994-4eab-9945-82c60cd3792b">
+            <useCaseMoniker
+              Id="f14e915b-7668-4581-8082-88144ea71425"
+              LastKnownName="TestScene"
+              LastKnownLocation="UML.uml" />
+          </extend>
+        </extendedCases>
+        <subjects>
+          <subsystemMoniker
+            Id="473d90ff-e997-4594-a684-b172e67652ac"
+            LastKnownName="SoftRendererApp"
+            LastKnownLocation="UML.uml" />
+        </subjects>
+      </useCase>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <Interface
+        Id="3b84a887-e273-46ae-bfd1-dd6f40083420"
+        name="Interface1"
+        isAbstract="false"
+        isLeaf="false" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <packageMoniker
+        Id="c9614f9f-79a4-42ba-8b20-d66b52b8c38f"
+        LastKnownName="SR"
+        LastKnownLocation="Package_1618.uml" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <packageMoniker
+        Id="db406308-6a44-4db5-bad2-a170261b4b47"
+        LastKnownName="Common"
+        LastKnownLocation="Package_1633.uml" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <packageMoniker
+        Id="4f38b989-9599-42d6-af54-a6c07421ff4e"
+        LastKnownName="Ext"
+        LastKnownLocation="Package1_1633.uml" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <Interface
+        Id="0b678fe8-137d-4e4c-8ed0-865e626eb5a6"
+        name="Interface2"
+        isAbstract="false"
+        isLeaf="false" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <class
+        Id="50328017-e323-4504-b5f4-e8172096ab64"
+        name="SGlobalEnv"
+        isAbstract="false"
+        isLeaf="false"
+        isActiveClass="false">
+        <targetEnds>
+          <association
+            Id="c08dce87-45b5-4b3c-b7bf-de501a38e564"
+            isDerived="false"
+            sourceEndRoleName=""
+            targetEndRoleName=""
+            isLeaf="false"
+            isAbstract="false">
+            <classMoniker
+              Id="88fad555-566b-4661-a02f-e6833154d238"
+              LastKnownName="OgreMeshLoader"
+              LastKnownLocation="Package1_1633.uml" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="fdc0046b-06dc-43ed-bf01-10cebe72cb13"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="Shared"
+                  isComposite="false"
+                  isNavigableOwned="false" />
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="12318b0e-e0a7-4ef5-99af-31f8446ca5ee"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="None"
+                  isComposite="false" />
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+          </association>
+          <association
+            Id="8ba9a98a-5fac-40cf-aecf-0669f532794b"
+            isDerived="false"
+            sourceEndRoleName=""
+            targetEndRoleName=""
+            isLeaf="false"
+            isAbstract="false">
+            <classMoniker
+              Id="501abdba-e789-42e8-8d12-b14c0c7d4181"
+              LastKnownName="ObjMeshLoader"
+              LastKnownLocation="Package1_1633.uml" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="1d149680-a341-4893-9b22-ccfafff23e81"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="Shared"
+                  isComposite="false"
+                  isNavigableOwned="false" />
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="31eac9ba-64fa-4d44-a90c-b4adc2c351b3"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="None"
+                  isComposite="false" />
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+          </association>
+          <association
+            Id="bc43da16-f3aa-4842-8804-a712514a69f4"
+            isDerived="false"
+            sourceEndRoleName=""
+            targetEndRoleName=""
+            isLeaf="false"
+            isAbstract="false">
+            <classMoniker
+              Id="01e23cd4-ac4b-4b74-a051-e64b002d243e"
+              LastKnownName="Profiler"
+              LastKnownLocation="Package1_1633.uml" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="cc7dbc46-3668-49f2-bb3e-f24cf21b5e61"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="Shared"
+                  isComposite="false"
+                  isNavigableOwned="false" />
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="22b4afee-f7e6-4539-8c3a-7f39f49d05c5"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="None"
+                  isComposite="false" />
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+          </association>
+          <association
+            Id="b1436f59-7d5a-43a1-a005-99fab589cf61"
+            isDerived="false"
+            sourceEndRoleName=""
+            targetEndRoleName=""
+            isLeaf="false"
+            isAbstract="false">
+            <classMoniker
+              Id="da77c8f1-7c6f-43b8-8d67-38ca79b403d4"
+              LastKnownName="Renderer"
+              LastKnownLocation="Package_1618.uml" />
+            <relationshipOwnedElementsInternal>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="cbf5cc07-0fd7-461e-96ba-a95ec838a94e"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="Shared"
+                  isComposite="false"
+                  isNavigableOwned="false" />
+              </associationHasOwnedEnds>
+              <associationHasOwnedEnds>
+                <memberEnd
+                  Id="ea06b80d-f719-41b9-b890-d992c699b4e7"
+                  isLeaf="false"
+                  isStatic="false"
+                  isReadOnly="false"
+                  isDerived="false"
+                  isDerivedUnion="false"
+                  aggregation="None"
+                  isComposite="false" />
+              </associationHasOwnedEnds>
+            </relationshipOwnedElementsInternal>
+          </association>
+        </targetEnds>
+        <ownedAttributesInternal>
+          <property
+            Id="8cae08d0-8c10-4333-952f-79f2695af70b"
+            name="renderer"
+            isLeaf="false"
+            isStatic="false"
+            isReadOnly="false"
+            isUnique="false"
+            isDerived="false"
+            isDerivedUnion="false"
+            aggregation="None"
+            isComposite="false">
+            <type_NamedElement>
+              <undefinedTypeMoniker
+                Id="f6ba6732-57d8-4761-a033-030d3d98cc8c"
+                LastKnownName="SR::Renderer*"
+                LastKnownLocation="UML.uml" />
+            </type_NamedElement>
+          </property>
+          <property
+            Id="baa8b879-bd1a-4f1d-a75d-5b3d67a80620"
+            name="hwnd"
+            isLeaf="false"
+            isStatic="false"
+            isReadOnly="false"
+            isUnique="false"
+            isDerived="false"
+            isDerivedUnion="false"
+            aggregation="None"
+            isComposite="false">
+            <type_NamedElement>
+              <undefinedTypeMoniker
+                Id="fa6172dd-5f85-44b3-8b2b-0d9ade4bd088"
+                LastKnownName="HWND"
+                LastKnownLocation="UML.uml" />
+            </type_NamedElement>
+          </property>
+          <property
+            Id="1aa7f51d-1866-4202-9940-4b50497835e4"
+            name="objLoader"
+            isLeaf="false"
+            isStatic="false"
+            isReadOnly="false"
+            isUnique="false"
+            isDerived="false"
+            isDerivedUnion="false"
+            aggregation="None"
+            isComposite="false">
+            <type_NamedElement>
+              <undefinedTypeMoniker
+                Id="567f1d8c-5660-4da0-83ba-40968fb9ad30"
+                LastKnownName="Ext::ObjMeshLoader*"
+                LastKnownLocation="UML.uml" />
+            </type_NamedElement>
+          </property>
+          <property
+            Id="353a3d01-8d4c-4100-adb0-1360e27d8112"
+            name="meshLoader"
+            isLeaf="false"
+            isStatic="false"
+            isReadOnly="false"
+            isUnique="false"
+            isDerived="false"
+            isDerivedUnion="false"
+            aggregation="None"
+            isComposite="false">
+            <type_NamedElement>
+              <undefinedTypeMoniker
+                Id="0037f723-7a6b-4adb-8381-d9e159878e60"
+                LastKnownName="Ext::OgreMeshLoader*"
+                LastKnownLocation="UML.uml" />
+            </type_NamedElement>
+          </property>
+          <property
+            Id="023822fc-b08d-4982-ba34-b4cb9ef5f11c"
+            name="jobMgr"
+            isLeaf="false"
+            isStatic="false"
+            isReadOnly="false"
+            isUnique="false"
+            isDerived="false"
+            isDerivedUnion="false"
+            aggregation="None"
+            isComposite="false">
+            <type_NamedElement>
+              <undefinedTypeMoniker
+                Id="7c0c9981-c5bb-4588-99b7-f62d05002f30"
+                LastKnownName="SR::ThreadPool"
+                LastKnownLocation="UML.uml" />
+            </type_NamedElement>
+          </property>
+          <property
+            Id="e716569c-c81f-47d1-a5f7-4e5ce9469dba"
+            name="profiler"
+            isLeaf="false"
+            isStatic="false"
+            isReadOnly="false"
+            isUnique="false"
+            isDerived="false"
+            isDerivedUnion="false"
+            aggregation="None"
+            isComposite="false">
+            <type_NamedElement>
+              <undefinedTypeMoniker
+                Id="95493185-6045-4caf-9e78-4bf5d5a900c3"
+                LastKnownName="Ext::Profiler*"
+                LastKnownLocation="UML.uml" />
+            </type_NamedElement>
+          </property>
+        </ownedAttributesInternal>
+      </class>
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="af0866ad-9d26-40c0-8e21-93aaf88e7a41"
+        name="UML::Renderer::Renderer*" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="873a6892-dc9b-4b3b-b92d-d127cf9c248c"
+        name="Renderer*" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="fa6172dd-5f85-44b3-8b2b-0d9ade4bd088"
+        name="HWND" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="42897530-392a-4e06-8979-8e70ddea31c4"
+        name="OgreMeshLoader*" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="f6ba6732-57d8-4761-a033-030d3d98cc8c"
+        name="SR::Renderer*" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="0037f723-7a6b-4adb-8381-d9e159878e60"
+        name="Ext::OgreMeshLoader*" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="567f1d8c-5660-4da0-83ba-40968fb9ad30"
+        name="Ext::ObjMeshLoader*" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="95493185-6045-4caf-9e78-4bf5d5a900c3"
+        name="Ext::Profiler*" />
+    </packageHasNamedElement>
+    <packageHasNamedElement>
+      <undefinedType
+        Id="7c0c9981-c5bb-4588-99b7-f62d05002f30"
+        name="SR::ThreadPool" />
+    </packageHasNamedElement>
+  </packagedElements>
+  <primitiveType
+    Id="220a3521-e091-4221-bae9-3ef9018e845c"
+    name="Integer"
+    isAbstract="false"
+    isLeaf="false" />
+  <primitiveType
+    Id="8943dc84-709e-4f62-b15a-a3273aa6f165"
+    name="Boolean"
+    isAbstract="false"
+    isLeaf="false" />
+  <primitiveType
+    Id="59259974-6d55-42c6-b7bd-763d77ac8ef9"
+    name="String"
+    isAbstract="false"
+    isLeaf="false" />
+  <primitiveType
+    Id="3ab42e7d-4969-445a-b209-471f5cb8209c"
+    name="UnlimitedNatural"
+    isAbstract="false"
+    isLeaf="false" />
+</modelStoreModel>

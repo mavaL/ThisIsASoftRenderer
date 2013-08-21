@@ -35,7 +35,7 @@ namespace SR
 		cbm = CBitmap::FromHandle(hbm);
 		cbm->GetBitmap(&bitmap);
 
-		pData = new Common::PixelBox(&bitmap, true);
+		pData = new SR::PixelBox(&bitmap, true);
 		texName = filename;
 	}
 
