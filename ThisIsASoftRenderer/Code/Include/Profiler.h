@@ -11,6 +11,7 @@
 
 #include "Prerequiestity.h"
 #include "ThreadPool/ftlThread.h"
+#include "Color.h"
 
 namespace Ext
 {
@@ -77,6 +78,7 @@ namespace Ext
 		}
 
 		SFrameStatics	m_frameStatics;
+		std::vector<SR::SColor>	m_vecMipColor;		// Used for visualize mip distribution
 
 	private:
 		SR::CFCriticalSection	m_lock1, m_lock2;

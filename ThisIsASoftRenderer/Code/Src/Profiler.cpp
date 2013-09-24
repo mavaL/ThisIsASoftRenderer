@@ -7,6 +7,15 @@ namespace Ext
 {
 	Profiler::Profiler()
 	{
+		// 20 should enough
+		m_vecMipColor.resize(20);
+		for (int i=0; i<20; ++i)
+		{
+			m_vecMipColor[i].r = (rand() % 256) / 255.0f;
+			m_vecMipColor[i].g = (rand() % 256) / 255.0f;
+			m_vecMipColor[i].b = (rand() % 256) / 255.0f;
+			m_vecMipColor[i].a = 1.0f;
+		}
 	}
 
 	Profiler::~Profiler()

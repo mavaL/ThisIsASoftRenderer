@@ -160,7 +160,7 @@ void SetupTestScene3(SR::Scene* scene)
 	SR::SMaterial* mat = new SR::SMaterial;
 	mat->pDiffuseMap = new SR::STexture;
 	mat->pDiffuseMap->LoadTexture(GetResPath("grid.bmp"), true);
-	mat->mipDistance = 500;
+	mat->mipDistance = 300;
 	g_env.renderer->AddMaterial("MatGrid", mat);
 	obj->m_pMaterial = mat;
 	obj->m_bStatic = true;

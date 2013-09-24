@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GeometryDef.h"
+#include "Profiler.h"
 
 namespace SR
 {
@@ -69,6 +70,11 @@ namespace SR
 		int y = Ext::Ftoi32_Fast(uv.y * h);
 
 		ret.SetAsInt(pTexData[y * mipLevel->GetWidth() + x]);
+
+#if USE_PROFILER == 1
+		if(mip != 0)
+			ret *= g_env.profiler->m_vecMipColor[mip];
+#endif
 	}
 
 	void STexture::Tex2D_Bilinear( VEC2& uv, SColor& ret, int mip ) const

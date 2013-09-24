@@ -86,7 +86,6 @@ namespace SR
 		typedef std::vector<PixelBox*>	MipmapChain;
 		MipmapChain		texData;
 		bool			bMipMap;
-
 	};
 
 	///////////////////////////////////////////////////
