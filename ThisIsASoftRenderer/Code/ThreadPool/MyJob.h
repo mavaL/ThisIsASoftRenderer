@@ -43,6 +43,7 @@ namespace SR
 		SVertex			v0,v1,v2;
 		bool			bTopTri;
 		SMaterial*		pMaterial;
+		int				texLod;
 	};
 
 	class JobRS : public CFJobBase<void*>

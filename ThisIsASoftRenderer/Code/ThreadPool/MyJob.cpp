@@ -50,6 +50,7 @@ namespace SR
 
 		SScanLineData rasData;
 		RenderUtil::RasTriSetup(&param->v0, &param->v1, &param->v2, param->bTopTri, rasData);
+		rasData.texLod = param->texLod;
 
 		RenderUtil::RasterizeTriangle(rasData, param->pMaterial);
 

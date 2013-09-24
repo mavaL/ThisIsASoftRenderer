@@ -88,7 +88,7 @@ void SetupTestScene2(SR::Scene* scene)
 
 	SR::SMaterial* mat = new SR::SMaterial;
 	mat->pDiffuseMap = new SR::STexture;
-	mat->pDiffuseMap->LoadTexture(GetResPath("ChesePanel.bmp"));
+	mat->pDiffuseMap->LoadTexture(GetResPath("ChesePanel.bmp"), false);
 	g_env.renderer->AddMaterial("MatChese", mat);
 	obj->m_pMaterial = mat;
 	obj->m_bStatic = true;
@@ -107,6 +107,78 @@ void EnterTestScene2(SR::Scene* scene)
 
 void SetupTestScene3(SR::Scene* scene)
 {
+	SR::RenderObject* obj = new SR::RenderObject;
+
+	// Construct terrain likely grids
+	const int vertsPerSide = 11;
+	const float dimension = 1000;
+	const float halfDim = dimension / 2;
+	const float cellSpace = dimension / (vertsPerSide - 1.0f);
+	obj->m_verts.resize(vertsPerSide * vertsPerSide);
+	float posZ = halfDim;
+
+	// Wrap uv
+	const int uvTileCnt = 10;
+	float uvInc = cellSpace / dimension * uvTileCnt;
+
+	for (int z=0; z<vertsPerSide; ++z)
+	{
+		float posX = -halfDim;
+		posZ -= cellSpace;
+		for (int x=0; x<vertsPerSide; ++x)
+		{
+			posX += cellSpace;
+			int idx = z*vertsPerSide+x;
+			obj->m_verts[idx].pos = VEC4(posX, 0, posZ, 1);
+			obj->m_verts[idx].uv = VEC2(x*uvInc, z*uvInc);
+			obj->m_verts[idx].normal = VEC3::UNIT_Y;
+		}
+	}
+
+	// Index buffer
+	int nFaces = (vertsPerSide - 1) * (vertsPerSide - 1) * 2;
+	int iFace = 0;
+	obj->m_faces.resize(nFaces);
+	for (int z=0; z<vertsPerSide-1; ++z)
+	{
+		for (int x=0; x<vertsPerSide-1; ++x)
+		{
+			obj->m_faces[iFace].index1 = z * vertsPerSide + x;
+			obj->m_faces[iFace].index2 = (z + 1) * vertsPerSide + x;
+			obj->m_faces[iFace].index3 = z * vertsPerSide + x + 1;
+			obj->m_faces[iFace+1].index1 = z * vertsPerSide + x + 1;
+			obj->m_faces[iFace+1].index2 = (z + 1) * vertsPerSide + x;
+			obj->m_faces[iFace+1].index3 = (z + 1) * vertsPerSide + x + 1;
+
+			obj->m_faces[iFace].faceNormal = VEC3::UNIT_Y;
+			obj->m_faces[iFace+1].faceNormal = VEC3::UNIT_Y;
+
+			iFace += 2;
+		}
+	}
+
+	SR::SMaterial* mat = new SR::SMaterial;
+	mat->pDiffuseMap = new SR::STexture;
+	mat->pDiffuseMap->LoadTexture(GetResPath("grid.bmp"), true);
+	mat->mipDistance = 500;
+	g_env.renderer->AddMaterial("MatGrid", mat);
+	obj->m_pMaterial = mat;
+	obj->m_bStatic = true;
+
+	scene->AddRenderObject(obj);
+}
+
+void EnterTestScene3(SR::Scene* scene)
+{
+	g_env.renderer->m_camera.SetFarClip(10000);
+	g_env.renderer->m_camera.SetPosition(VEC3(-20,300,700));
+	g_env.renderer->m_camera.SetMoveSpeed(10.0f);
+	g_env.renderer->m_camera.SetDirection(VEC3(0,-1,-2));
+	g_env.renderer->SetRasterizeType(SR::eRasterizeType_TexturedGouraud);
+}
+
+void SetupTestScene4(SR::Scene* scene)
+{
 	try
 	{
 		if(!g_env.meshLoader->LoadMeshFile(GetResPath("marine.mesh.xml"), true))
@@ -114,7 +186,7 @@ void SetupTestScene3(SR::Scene* scene)
 
 		SR::SMaterial* mat = new SR::SMaterial;
 		mat->pDiffuseMap = new SR::STexture;
-		mat->pDiffuseMap->LoadTexture(GetResPath("marine_diffuse_blood.bmp"));
+		mat->pDiffuseMap->LoadTexture(GetResPath("marine_diffuse_blood.bmp"), false);
 		mat->bUseHalfLambert = true;
 		mat->bUseBilinearSampler = true;
 		mat->ambient.Set(0.5f, 0.5f, 0.5f);
@@ -133,7 +205,7 @@ void SetupTestScene3(SR::Scene* scene)
 	scene->AddRenderObject(g_env.meshLoader->m_objs[0]);
 }
 
-void EnterTestScene3(SR::Scene* scene)
+void EnterTestScene4(SR::Scene* scene)
 {
 	g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
 	g_env.renderer->m_camera.SetMoveSpeed(0.1f);
@@ -141,7 +213,7 @@ void EnterTestScene3(SR::Scene* scene)
 	g_env.renderer->SetRasterizeType(SR::eRasterizeType_TexturedGouraud);
 }
 
-void SetupTestScene4(SR::Scene* scene)
+void SetupTestScene5(SR::Scene* scene)
 {
 	try
 	{
@@ -166,7 +238,7 @@ void SetupTestScene4(SR::Scene* scene)
 	scene->AddRenderObject(g_env.meshLoader->m_objs[0]);
 }
 
-void EnterTestScene4(SR::Scene* scene)
+void EnterTestScene5(SR::Scene* scene)
 {
 	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
 	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
@@ -174,7 +246,7 @@ void EnterTestScene4(SR::Scene* scene)
 	g_env.renderer->SetRasterizeType(SR::eRasterizeType_BlinnPhong);
 }
 
-void SetupTestScene5(SR::Scene* scene)
+void SetupTestScene6(SR::Scene* scene)
 {
 	try
 	{
@@ -194,7 +266,7 @@ void SetupTestScene5(SR::Scene* scene)
 	});
 }
 
-void EnterTestScene5(SR::Scene* scene)
+void EnterTestScene6(SR::Scene* scene)
 {
 	g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
 	g_env.renderer->m_camera.SetMoveSpeed(2.0f);
@@ -213,14 +285,17 @@ namespace SR
 		//// Test SR::Scene 2: 透视校正纹理映射
 		ADD_TEST_SCENE(SetupTestScene2, EnterTestScene2);
 
-		//// Test SR::Scene 3: marine.mesh
+		//// Test SR::Scene 3: 纹理mip-mapping
 		ADD_TEST_SCENE(SetupTestScene3, EnterTestScene3);
 
-		//// Test SR::Scene 4: teapot.mesh + Phong模型
+		//// Test SR::Scene 4: marine.mesh
 		ADD_TEST_SCENE(SetupTestScene4, EnterTestScene4);
 
-		//// Test SR::Scene 5: sponza.obj
+		//// Test SR::Scene 5: teapot.mesh + Phong模型
 		ADD_TEST_SCENE(SetupTestScene5, EnterTestScene5);
+
+		//// Test SR::Scene 6: sponza.obj
+		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
 	}
 }
 

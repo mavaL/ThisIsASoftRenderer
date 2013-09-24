@@ -7,25 +7,32 @@ namespace SR
 	SColor SColor::BLACK	=	SColor(0.0f, 0.0f, 0.0f);
 	SColor SColor::BLUE		=	SColor(0.0f, 0.0f, 1.0f);
 	SColor SColor::RED		=	SColor(1.0f, 0.0f, 0.0f);
+	SColor SColor::NICE_BLUE =	SColor(0.0f, 0.125f, 0.3f);
+
 
 	STexture::STexture( const STexture& rhs )
 		:texName("")
-		,pData(nullptr)
 	{
 		*this = rhs;
 	}
 
+	STexture::~STexture()
+	{
+		std::for_each(texData.begin(), texData.end(), std::default_delete<PixelBox>());
+		texData.clear();
+	}
+
 	STexture& STexture::operator=( const STexture& rhs )
 	{
-		SAFE_DELETE(pData);
+		this->~STexture();
 		if(!rhs.texName.empty())
-			LoadTexture(rhs.texName);
+			LoadTexture(rhs.texName, false);
 		return *this;
 	}
 
-	void STexture::LoadTexture( const STRING& filename )
+	void STexture::LoadTexture( const STRING& filename, bool bmipmap )
 	{
-		assert(texName.empty() && !pData);
+		assert(texName.empty() && texData.empty());
 		Gdiplus::Bitmap bm(Ext::AnsiToUnicode(filename.c_str()).c_str(), TRUE);
 		HBITMAP hbm;
 		bm.GetHBITMAP(Gdiplus::Color::Black, &hbm);
@@ -35,37 +42,46 @@ namespace SR
 		cbm = CBitmap::FromHandle(hbm);
 		cbm->GetBitmap(&bitmap);
 
-		pData = new SR::PixelBox(&bitmap, true);
+		SR::PixelBox* baseLevel = new SR::PixelBox(&bitmap, true);
+		texData.push_back(baseLevel);
 		texName = filename;
+
+		if (bmipmap)
+		{
+			GenMipMaps();
+			bMipMap = true;
+		}
 	}
 
-	void STexture::Tex2D_Point( VEC2& uv, SColor& ret ) const
+	void STexture::Tex2D_Point( VEC2& uv, SColor& ret, int mip ) const
 	{
-		DWORD* pTexData = (DWORD*)pData->GetDataPointer();
+		PixelBox* mipLevel = texData[mip];
+		DWORD* pTexData = (DWORD*)mipLevel->GetDataPointer();
 
 		//Wrap mode
 		uv.x -= Ext::Floor32_Fast(uv.x);
 		uv.y -= Ext::Floor32_Fast(uv.y);
 
-		int w = pData->GetWidth() - 1;
-		int h = pData->GetHeight() - 1;
+		int w = mipLevel->GetWidth() - 1;
+		int h = mipLevel->GetHeight() - 1;
 
 		int x = Ext::Ftoi32_Fast(uv.x * w);
 		int y = Ext::Ftoi32_Fast(uv.y * h);
 
-		ret.SetAsInt(pTexData[y * pData->GetWidth() + x]);
+		ret.SetAsInt(pTexData[y * mipLevel->GetWidth() + x]);
 	}
 
-	void STexture::Tex2D_Bilinear( VEC2& uv, SColor& ret ) const
+	void STexture::Tex2D_Bilinear( VEC2& uv, SColor& ret, int mip ) const
 	{
-		DWORD* pTexData = (DWORD*)pData->GetDataPointer();
+		PixelBox* mipLevel = texData[mip];
+		DWORD* pTexData = (DWORD*)mipLevel->GetDataPointer();
 
 		//Wrap mode
 		uv.x -= Ext::Floor32_Fast(uv.x);
 		uv.y -= Ext::Floor32_Fast(uv.y);
 
-		float intU = (pData->GetWidth() - 1) * uv.x;
-		float intV = (pData->GetHeight() - 1) * uv.y;
+		float intU = (mipLevel->GetWidth() - 1) * uv.x;
+		float intV = (mipLevel->GetHeight() - 1) * uv.y;
 
 		int u_l = Ext::Floor32_Fast(intU);
 		int u_r = Ext::Ceil32_Fast(intU);
@@ -73,10 +89,10 @@ namespace SR
 		int v_b = Ext::Ceil32_Fast(intV);
 
 		SColor color[4];
-		color[0].SetAsInt(pTexData[v_t * pData->GetWidth() + u_l]);
-		color[1].SetAsInt(pTexData[v_t * pData->GetWidth() + u_r]);
-		color[2].SetAsInt(pTexData[v_b * pData->GetWidth() + u_l]);
-		color[3].SetAsInt(pTexData[v_b * pData->GetWidth() + u_r]);
+		color[0].SetAsInt(pTexData[v_t * mipLevel->GetWidth() + u_l]);
+		color[1].SetAsInt(pTexData[v_t * mipLevel->GetWidth() + u_r]);
+		color[2].SetAsInt(pTexData[v_b * mipLevel->GetWidth() + u_l]);
+		color[3].SetAsInt(pTexData[v_b * mipLevel->GetWidth() + u_r]);
 
 		float frac_u = intU - u_l;
 		float frac_v = intV - v_t;
@@ -98,6 +114,58 @@ namespace SR
 		ret += color[1];
 		ret += color[2];
 		ret += color[3];
+	}
+
+	void STexture::GenMipMaps()
+	{
+		const SR::PixelBox* baseLevel = texData[0];
+
+		bool bPowOfTwo_W = ((baseLevel->GetWidth()-1) & baseLevel->GetWidth()) == 0;
+		bool bPowOfTwo_H = ((baseLevel->GetHeight()-1) & baseLevel->GetHeight()) == 0;
+		if (!bPowOfTwo_W || !bPowOfTwo_H)
+		{
+			MessageBoxA(nullptr, "Only support pow2 mipmap!", "Warning", MB_OK|MB_ICONWARNING);
+			return;
+		}
+
+		// Generate mip of each level
+		int w = baseLevel->GetWidth();
+		int h = baseLevel->GetHeight();
+		int preLevel = 0;
+		while(w!=1 || h!=1)
+		{
+			w = max(1, w/2);
+			h = max(1, h/2);
+
+			PixelBox* mipLevel = new PixelBox(w, h, baseLevel->GetBytesPerPixel());
+			texData.push_back(mipLevel);
+			PixelBox* srcLevel = texData[preLevel++];
+
+			// Simple box filter..
+			int srcW = srcLevel->GetWidth();
+			int srcH = srcLevel->GetHeight();
+			int dest_i = 0;
+			for (int i=0; i<srcH-1; i+=2,++dest_i)
+			{
+				int dest_j = 0;
+				for (int j=0; j<srcW-1; j+=2,++dest_j)
+				{
+					SColor c1 = srcLevel->GetPixelAt(j, i);
+					c1 += srcLevel->GetPixelAt(j+1, i);
+					c1 += srcLevel->GetPixelAt(j, i+1);
+					c1 += srcLevel->GetPixelAt(j+1, i+1);
+					c1 *= 0.25f;
+
+					mipLevel->SetPixelAt(dest_j, dest_i, c1);
+				}
+			}
+
+#if USE_PROFILER == 1
+			char tmp[64];
+			sprintf_s(tmp, sizeof(tmp), "mipmap%d.bmp", preLevel);
+			mipLevel->SaveToFile(tmp);
+#endif
+		}
 	}
 
 }

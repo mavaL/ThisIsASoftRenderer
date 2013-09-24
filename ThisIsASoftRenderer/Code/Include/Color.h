@@ -10,6 +10,7 @@
 #define Color_h__
 
 #include "Prerequiestity.h"
+#include "MathDef.h"
 
 static float inv_byte = 1.0f / 255;
 
@@ -108,6 +109,7 @@ namespace SR
 		static SColor BLACK;
 		static SColor BLUE;
 		static SColor RED;
+		static SColor NICE_BLUE;
 	};
 }
 

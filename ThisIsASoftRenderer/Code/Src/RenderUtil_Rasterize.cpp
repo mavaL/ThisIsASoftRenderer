@@ -1043,11 +1043,11 @@ namespace SR
 #endif			
 								if(context.pMaterial->pDiffuseMap && context.pMaterial->bUseBilinearSampler)
 								{
-									context.pMaterial->pDiffuseMap->Tex2D_Bilinear(finalUV, pixelColor);
+									context.pMaterial->pDiffuseMap->Tex2D_Bilinear(finalUV, pixelColor, context.texLod);
 								}
 								else if(context.pMaterial->pDiffuseMap)
 								{
-									context.pMaterial->pDiffuseMap->Tex2D_Point(finalUV, pixelColor);
+									context.pMaterial->pDiffuseMap->Tex2D_Point(finalUV, pixelColor, context.texLod);
 								}
 								else
 								{
@@ -1129,6 +1129,7 @@ namespace SR
 		param->v0 = *vert0;
 		param->v1 = *vert1;
 		param->v2 = *vert2;
+		param->texLod = context.texLod;
 
 		JobRS* job = new JobRS(param);
 		g_env.jobMgr->SubmitJob(job, nullptr);
@@ -1318,6 +1319,7 @@ namespace SR
 						frag.bActive = true;
 						frag.pMaterial = (SMaterial*)pMaterial;
 						frag.finalColor = destBuffer + curX;
+						frag.texLod = scanLineData.texLod;
 
 #if USE_PERSPEC_CORRECT == 1
 						//双曲插值最后一步
@@ -1370,11 +1372,11 @@ namespace SR
 
 		if(pMaterial->bUseBilinearSampler)
 		{
-			pMaterial->pDiffuseMap->Tex2D_Bilinear(frag.uv, texColor);
+			pMaterial->pDiffuseMap->Tex2D_Bilinear(frag.uv, texColor, frag.texLod);
 		}
 		else
 		{
-			pMaterial->pDiffuseMap->Tex2D_Point(frag.uv, texColor);
+			pMaterial->pDiffuseMap->Tex2D_Point(frag.uv, texColor, frag.texLod);
 		}
 
 

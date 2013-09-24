@@ -36,6 +36,16 @@ namespace SR
 
 			assert(vert0.bActive && vert1.bActive && vert2.bActive && "Shit, this can't be true!");
 
+			// Determine mip level of this triangle
+			const SMaterial* pMat = context.pMaterial;
+			if (pMat->pDiffuseMap && pMat->pDiffuseMap->bMipMap)
+			{
+				float avergZ = abs((vert0.viewSpaceZ + vert1.viewSpaceZ + vert2.viewSpaceZ) / 3);
+				context.texLod = Ext::Floor32_Fast(avergZ / pMat->mipDistance);
+				if(context.texLod >= pMat->pDiffuseMap->GetMipCount())
+					context.texLod = pMat->pDiffuseMap->GetMipCount() - 1;
+			}
+
 			_RasterizeTriangle(vert0, vert1, vert2, face, context);
 		}
 	}

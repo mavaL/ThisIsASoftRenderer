@@ -19,11 +19,12 @@ namespace SR
 	/////////////////////////////////////////////////////////////
 	struct SRenderContext 
 	{
-		SRenderContext():pMaterial(nullptr) {}
+		SRenderContext():pMaterial(nullptr),texLod(0) {}
 
 		VertexBuffer	verts;
 		FaceList		faces;
 		SMaterial*		pMaterial;
+		int				texLod;		// Mip level for texture
 	};
 
 	/////////////////////////////////////////////////////////////

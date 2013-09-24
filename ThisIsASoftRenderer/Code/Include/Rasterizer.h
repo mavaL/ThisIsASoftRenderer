@@ -81,6 +81,7 @@ namespace SR
 		VEC3	dclr_L, dclr_R;
 		VEC2	curUV_L, curUV_R;
 		VEC2	duv_L, duv_R;
+		int		texLod;
 	};
 
 	class RasGouraud : public Rasterizer

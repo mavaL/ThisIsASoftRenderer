@@ -8,6 +8,9 @@
 #ifndef PixelBox_h__
 #define PixelBox_h__
 
+#include "Prerequiestity.h"
+#include "Color.h"
+
 namespace SR
 {
 	class PixelBox
@@ -18,12 +21,15 @@ namespace SR
 		~PixelBox();
 
 	public:
-		inline void*	GetDataPointer()	{ return (void*)m_data; }
-		inline int		GetWidth() const	{ return m_width; }
-		inline int		GetHeight() const	{ return m_height; }
-		inline int		GetPitch() const	{ return m_pitch; }
-		inline int		GetBitsPerPixel() const	{ return m_bytesPerPixel * 8; }
-		inline int		GetBytesPerPixel() const	{ return m_bytesPerPixel; }
+		void*	GetDataPointer()	{ return (void*)m_data; }
+		int		GetWidth() const	{ return m_width; }
+		int		GetHeight() const	{ return m_height; }
+		int		GetPitch() const	{ return m_pitch; }
+		int		GetBitsPerPixel() const	{ return m_bytesPerPixel * 8; }
+		int		GetBytesPerPixel() const	{ return m_bytesPerPixel; }
+		void	SetPixelAt(int x, int y, SColor p);
+		SColor	GetPixelAt(int x, int y) const;
+		void	SaveToFile(const STRING& filename);
 
 	private:
 		char*		m_data;

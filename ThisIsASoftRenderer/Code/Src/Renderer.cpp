@@ -110,7 +110,7 @@ namespace SR
 	void Renderer::RenderOneFrame()
 	{
 		//Ë¢ÐÂºó±¸»º³å
-		_Clear(SColor::BLACK, 1.0f);
+		_Clear(SColor::NICE_BLUE, 1.0f);
 
 		int nObj = (int)m_scenes[m_curScene]->m_renderList.size();
 

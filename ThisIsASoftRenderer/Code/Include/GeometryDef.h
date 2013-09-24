@@ -32,15 +32,18 @@ namespace SR
 	///////////////////////////////////////////////////
 	struct SVertex 
 	{
-		SVertex():normal(VEC3::ZERO),worldNormal(VEC3::ZERO),bActive(false),color(SColor::BLACK),uv(-1,-1) {}
+		SVertex()
+		:normal(VEC3::ZERO),worldNormal(VEC3::ZERO),bActive(false),
+		color(SColor::BLACK),uv(-1,-1),viewSpaceZ(0) {}
 
-		VEC4	worldPos;	
+		VEC4	worldPos;
 		VEC4	pos;
 		VEC3	worldNormal;
 		VEC3	normal;
 		VEC2	uv;
 		bool	bActive;
 		SColor	color;
+		float	viewSpaceZ;	// Use for mip determine
 	};
 	typedef std::vector<SVertex>	VertexBuffer;
 	typedef std::vector<Index>		IndexBuffer;
@@ -64,37 +67,44 @@ namespace SR
 	///////////////////////////////////////////////////
 	struct STexture
 	{
-		STexture():texName(""),pData(nullptr) {}
-		~STexture() { SAFE_DELETE(pData); }
+		STexture():texName(""),bMipMap(false) {}
+		~STexture();
 
 		STexture(const STexture& rhs);
 		STexture& operator= (const STexture& rhs);
 
-		void		LoadTexture(const STRING& filename);
+		void		LoadTexture(const STRING& filename, bool bmipmap);
 		//临近点采样
-		void		Tex2D_Point(VEC2& uv, SColor& ret) const;
+		void		Tex2D_Point(VEC2& uv, SColor& ret, int mip = 0) const;
 		//双线性插值采样
-		void		Tex2D_Bilinear(VEC2& uv, SColor& ret) const;
+		void		Tex2D_Bilinear(VEC2& uv, SColor& ret, int mip = 0) const;
+		//生成mipmap层
+		void		GenMipMaps();
+		int			GetMipCount() const { return texData.size(); }
 
-		STRING		texName;		
-		SR::PixelBox*	pData;
+		STRING			texName;
+		typedef std::vector<PixelBox*>	MipmapChain;
+		MipmapChain		texData;
+		bool			bMipMap;
+
 	};
 
 	///////////////////////////////////////////////////
 	struct SMaterial 
 	{
-		SMaterial():ambient(SColor::WHITE),diffuse(SColor::WHITE),specular(SColor::WHITE)
-			,pDiffuseMap(nullptr),pNormalMap(nullptr)
-			,shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false) {}
+		SMaterial()
+			:ambient(SColor::WHITE),diffuse(SColor::WHITE),specular(SColor::WHITE)
+			,pDiffuseMap(nullptr),shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false)
+			,mipDistance(0){}
 
-		~SMaterial() { SAFE_DELETE(pDiffuseMap); SAFE_DELETE(pNormalMap); }
+		~SMaterial() { SAFE_DELETE(pDiffuseMap); }
 
 		SColor		ambient, diffuse, specular;
 		float		shiness;
 		STexture*	pDiffuseMap;
-		STexture*	pNormalMap;
 		bool		bUseHalfLambert;		//See: https://developer.valvesoftware.com/wiki/Half_Lambert
 		bool		bUseBilinearSampler;	//使用纹理双线性插值
+		float		mipDistance;			// Distance to increase mip level
 	};
 
 	///////////////////////////////////////////////////
@@ -116,6 +126,7 @@ namespace SR
 		VEC2		uv;			//纹理坐标
 		VEC3		normal;		//世界法线
 		SMaterial*	pMaterial;	//材质
+		int			texLod;
 	};
 }
 

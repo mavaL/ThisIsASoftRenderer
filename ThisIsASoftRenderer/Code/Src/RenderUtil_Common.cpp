@@ -306,6 +306,8 @@ namespace SR
 			///////// Ïà»ú±ä»»
 			auto matView = cam->GetViewMatrix();
 			Common::Transform_Vec4_By_Mat44(vertPos, vertPos, matView);
+
+			vert.viewSpaceZ = vertPos.z;
 		}
 
 		/////////////////////////////////////////////////
