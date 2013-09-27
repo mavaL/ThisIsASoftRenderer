@@ -40,8 +40,16 @@ namespace SR
 			const SMaterial* pMat = context.pMaterial;
 			if (pMat->pDiffuseMap && pMat->pDiffuseMap->bMipMap)
 			{
-				float avergZ = abs((vert0.viewSpaceZ + vert1.viewSpaceZ + vert2.viewSpaceZ) / 3);
-				context.texLod = Ext::Floor32_Fast(avergZ / pMat->mipDistance);
+				const float areaScreen = Ext::CalcAreaOfTriangle(
+					VEC2(vert0.pos.x, vert0.pos.y),
+					VEC2(vert1.pos.x, vert1.pos.y),
+					VEC2(vert2.pos.x, vert2.pos.y));
+
+				float ratio = face.texArea / areaScreen;
+				context.texLod = log(ratio) / log(4.0f) + pMat->pDiffuseMap->lodBias;
+				//clamp it
+				if(context.texLod < 0)
+					context.texLod = 0;
 				if(context.texLod >= pMat->pDiffuseMap->GetMipCount())
 					context.texLod = pMat->pDiffuseMap->GetMipCount() - 1;
 			}

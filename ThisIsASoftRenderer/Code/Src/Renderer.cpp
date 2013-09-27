@@ -10,7 +10,7 @@ namespace SR
 {
 	Renderer::Renderer()
 	:m_curRas(nullptr)
-	,m_ambientColor(0.4f, 0.4f, 0.4f)
+	,m_ambientColor(0.6f, 0.6f, 0.6f)
 	,m_curScene(-1)
 	{
 		

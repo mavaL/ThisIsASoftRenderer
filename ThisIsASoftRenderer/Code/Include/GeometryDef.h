@@ -51,29 +51,34 @@ namespace SR
 	///////////////////////////////////////////////////
 	struct SFace
 	{
-		SFace():index1(-1),index2(-1),index3(-1),color(SColor::BLACK),IsBackface(false),bCulled(false) {}
+		SFace()
+		:index1(-1),index2(-1),index3(-1),color(SColor::BLACK),
+		IsBackface(false),bCulled(false),texArea(0) {}
 
-		SFace(Index idx1, Index idx2, Index idx3):index1(idx1),index2(idx2),index3(idx3),
-			faceNormal(VEC3::ZERO),color(SColor::BLACK),IsBackface(false),bCulled(false) {}
+		SFace(Index idx1, Index idx2, Index idx3)
+		:index1(idx1),index2(idx2),index3(idx3),faceNormal(VEC3::ZERO),
+		color(SColor::BLACK),IsBackface(false),bCulled(false),texArea(0) {}
 
 		Index	index1, index2, index3;
 		VEC3	faceNormal;				//面法线,用于背面拣选和Flat着色
 		SColor	color;					//用于Flat着色
 		bool	IsBackface;
 		bool	bCulled;
+		float	texArea;				//该三角面在纹理中所占面积
 	};
 	typedef std::vector<SFace>		FaceList;
 
 	///////////////////////////////////////////////////
 	struct STexture
 	{
-		STexture():texName(""),bMipMap(false) {}
+		STexture():texName(""),bMipMap(false),lodBias(0) {}
 		~STexture();
 
 		STexture(const STexture& rhs);
 		STexture& operator= (const STexture& rhs);
 
 		void		LoadTexture(const STRING& filename, bool bmipmap);
+		PixelBox*	GetSurface(int i);
 		//临近点采样
 		void		Tex2D_Point(VEC2& uv, SColor& ret, int mip = 0) const;
 		//双线性插值采样
@@ -86,6 +91,7 @@ namespace SR
 		typedef std::vector<PixelBox*>	MipmapChain;
 		MipmapChain		texData;
 		bool			bMipMap;
+		int				lodBias;
 	};
 
 	///////////////////////////////////////////////////
@@ -93,8 +99,7 @@ namespace SR
 	{
 		SMaterial()
 			:ambient(SColor::WHITE),diffuse(SColor::WHITE),specular(SColor::WHITE)
-			,pDiffuseMap(nullptr),shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false)
-			,mipDistance(0){}
+			,pDiffuseMap(nullptr),shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false) {}
 
 		~SMaterial() { SAFE_DELETE(pDiffuseMap); }
 
@@ -103,7 +108,6 @@ namespace SR
 		STexture*	pDiffuseMap;
 		bool		bUseHalfLambert;		//See: https://developer.valvesoftware.com/wiki/Half_Lambert
 		bool		bUseBilinearSampler;	//使用纹理双线性插值
-		float		mipDistance;			// Distance to increase mip level
 	};
 
 	///////////////////////////////////////////////////

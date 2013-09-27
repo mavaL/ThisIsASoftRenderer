@@ -106,6 +106,9 @@ namespace Ext
 		//return _mm_cvtt_ss2si(_mm_load_ss(&x)); 
 	}
 
+	//计算三角形面积
+	float			CalcAreaOfTriangle(const VEC2& p1, const VEC2& p2, const VEC2& p3);
+
 	std::wstring	AnsiToUnicode(const char* src);
 	STRING			UnicodeToEngine(const WCHAR* src);
 

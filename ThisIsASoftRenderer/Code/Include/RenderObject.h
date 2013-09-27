@@ -21,6 +21,7 @@ namespace SR
 	public:
 		RenderObject();
 
+		void	CalcAllFaceTexArea();
 		void	OnFrameMove();
 
 		VertexBuffer	m_verts;

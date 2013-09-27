@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Utility.h"
+#include "MathDef.h"
 
 namespace Ext
 {
@@ -106,5 +107,16 @@ namespace Ext
 
 		return nLogicalCpuCount;
 	}
+
+	float CalcAreaOfTriangle( const VEC2& p1, const VEC2& p2, const VEC2& p3 )
+	{
+		double mx=p3.x-p1.x,my=p3.y-p1.y,nx=p2.x-p1.x,ny=p2.y-p1.y;
+		double Lm= sqrt(mx*mx+my*my),Ln= sqrt(nx*nx+ny*ny),cosA=(mx*nx+my*ny)/Lm/Ln;
+		double sinA=sqrt(1-cosA*cosA);
+		double S_tri=0.5*Lm*Ln*sinA;
+		if(S_tri>=0)return S_tri;
+		else return (-1*S_tri);
+	}
+
 
 }

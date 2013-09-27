@@ -227,6 +227,12 @@ namespace Common
 		return std::move(Vector2(v.x * k, v.y * k));
 	}
 
+	//////// 2d向量乘2d向量
+	inline Vector2	Multiply_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2)
+	{
+		return std::move(Vector2(v1.x * v2.x, v1.y * v2.y));
+	}
+
 	//////// 角度转弧度
 	inline float	Angle_To_Radian(float angle)
 	{

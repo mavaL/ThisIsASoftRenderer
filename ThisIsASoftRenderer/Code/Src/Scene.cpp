@@ -14,6 +14,12 @@ namespace SR
 			obj->m_worldAABB.Transform(obj->m_matWorld);
 		}
 
+		if (obj->m_pMaterial->pDiffuseMap && obj->m_pMaterial->pDiffuseMap->bMipMap)
+		{
+			obj->CalcAllFaceTexArea();
+		}
+		
+
 		m_renderList.push_back(obj);
 	}
 

@@ -72,7 +72,7 @@ namespace SR
 		ret.SetAsInt(pTexData[y * mipLevel->GetWidth() + x]);
 
 #if USE_PROFILER == 1
-		if(mip != 0)
+		if(bMipMap)
 			ret *= g_env.profiler->m_vecMipColor[mip];
 #endif
 	}
@@ -120,6 +120,11 @@ namespace SR
 		ret += color[1];
 		ret += color[2];
 		ret += color[3];
+
+#if USE_PROFILER == 1
+		if(bMipMap)
+			ret *= g_env.profiler->m_vecMipColor[mip];
+#endif
 	}
 
 	void STexture::GenMipMaps()
@@ -173,5 +178,12 @@ namespace SR
 #endif
 		}
 	}
+
+	PixelBox* STexture::GetSurface( int i )
+	{
+		assert(i>=0 && i<texData.size());
+		return texData[i];
+	}
+
 
 }
