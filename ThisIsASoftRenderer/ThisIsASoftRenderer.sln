@@ -5,8 +5,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ThisIsASoftRenderer", "This
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F63AD143-EE66-48B9-9F0C-8423DD8FF2EE}"
 EndProject
-Project("{F088123C-0E9E-452A-89E6-6BA2F21D5CAC}") = "UML", "Doc\UML\UML\UML.modelproj", "{7A197E29-912D-490E-8EA6-5BF57864FD5C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,16 +25,6 @@ Global
 		{8A43EA2F-8D23-4098-8F45-D309D5015387}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{8A43EA2F-8D23-4098-8F45-D309D5015387}.Release|Win32.ActiveCfg = Release|Win32
 		{8A43EA2F-8D23-4098-8F45-D309D5015387}.Release|Win32.Build.0 = Release|Win32
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{7A197E29-912D-490E-8EA6-5BF57864FD5C}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -60,15 +60,14 @@ namespace SR
 		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context);
 		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context);
 		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context);
-		static void DrawScanLines(SScanLineData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context);
+		static void RasterizeScanLines(SScanLinesData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context);
 
-		///////	进行Lambert光照,假定法线已归一化
-		static void DoLambertLighting(SColor& result, const VEC3& wNormal, const SMaterial* pMaterial);
+		///////	进行Lambert光照,假定法线和光源向量都已归一化
+		static void DoLambertLighting(SColor& result, const VEC3& normal, const VEC3& lightDir, const SMaterial* pMaterial);
 
 		///////	绘制三角形的第三个版本.加入多线程并行.
-		static void	DrawTri_Scanline_V3(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context, bool bTopTir);
-		static void RasTriSetup(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTopTri, SScanLineData& rasData);
-		static void RasterizeTriangle(SScanLineData& scanLineData, const SMaterial* pMaterial);
+		static void	DrawTri_Scanline_V3(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context, eTriangleShape triType);
+		static void RasterizeTriangle(SScanLinesData& scanLineData, const SMaterial* pMaterial);
 		static void DrawFragment(SFragment& frag);
 	};
 }

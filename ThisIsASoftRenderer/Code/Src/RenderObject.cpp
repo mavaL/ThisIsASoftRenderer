@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "RenderObject.h"
+#include "Renderer.h"
 
 namespace SR
 {
@@ -49,5 +50,8 @@ namespace SR
 		}
 	}
 
+	void RenderObject::BuildTangentVectors()
+	{
 
+	}
 }

@@ -250,6 +250,45 @@ void SetupTestScene6(SR::Scene* scene)
 {
 	try
 	{
+		if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+			throw std::logic_error("Error, Load .mesh file failed!");
+
+		SR::SMaterial* mat = new SR::SMaterial;
+		mat->pDiffuseMap = new SR::STexture;
+		mat->pDiffuseMap->LoadTexture(GetResPath("RustedMetal.bmp"), false);
+
+		mat->pNormalMap = new SR::STexture;
+		mat->pNormalMap->LoadTexture(GetResPath("NormalMap.bmp"), false);
+
+		mat->ambient.Set(0.3f, 0.3f, 0.3f);
+		mat->diffuse.Set(0.5f, 0.5f, 0.5f);
+		mat->specular.Set(0.3f, 0.3f, 0.3f);
+		mat->shiness = 50;
+
+		g_env.renderer->AddMaterial("MatNormalMap", mat);
+		g_env.meshLoader->m_objs[0]->m_pMaterial = mat;
+	}
+	catch (std::exception& e)
+	{
+		MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+		return;
+	}
+
+	scene->AddRenderObject(g_env.meshLoader->m_objs[0]);
+}
+
+void EnterTestScene6(SR::Scene* scene)
+{
+	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
+	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
+	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
+	g_env.renderer->SetRasterizeType(SR::eRasterizeType_PhongWithNormalMap);
+}
+
+void SetupTestScene7(SR::Scene* scene)
+{
+	try
+	{
 		if(!g_env.objLoader->LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
 			throw std::logic_error("Error, Load .obj file failed!");
 	}
@@ -266,7 +305,7 @@ void SetupTestScene6(SR::Scene* scene)
 	});
 }
 
-void EnterTestScene6(SR::Scene* scene)
+void EnterTestScene7(SR::Scene* scene)
 {
 	g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
 	g_env.renderer->m_camera.SetMoveSpeed(2.0f);
@@ -294,8 +333,11 @@ namespace SR
 		//// Test SR::Scene 5: teapot.mesh + PhongÄ£ÐÍ
 		ADD_TEST_SCENE(SetupTestScene5, EnterTestScene5);
 
-		//// Test SR::Scene 6: sponza.obj
+		//// Test SR::Scene 6: Normal Map
 		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
+
+		//// Test SR::Scene 7: sponza.obj
+		ADD_TEST_SCENE(SetupTestScene7, EnterTestScene7);
 	}
 }
 

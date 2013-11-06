@@ -5,12 +5,6 @@
 #include "RenderObject.h"
 #include "Profiler.h"
 
-// clipping rectangle 
-static const int	min_clip_x = 0;                          
-static const int	max_clip_x = (SCREEN_WIDTH-1);
-static const int	min_clip_y = 0;
-static const int	max_clip_y = (SCREEN_HEIGHT-1);
-
 namespace SR
 {
 	void RenderUtil::DoBackfaceCulling( VertexBuffer& vb, FaceList& workingFaces, RenderObject& obj )
@@ -180,9 +174,6 @@ namespace SR
 	
 				SVertex newVert;
 				newVert.bActive = true;
-				newVert.normal = p1->normal;
-				newVert.pos.Set(newX2, newY2, -n, 1.0f);
-				newVert.color = p1->color;
 
 				SFace newFace;
 				newFace.faceNormal = face.faceNormal;
@@ -192,18 +183,12 @@ namespace SR
 				newFace.index3 = VB.size();
 
 				//需要重新插值的属性
-				Ext::LinearLerp(newVert.uv, p2->uv, p1->uv, t2);
-				Ext::LinearLerp(newVert.worldPos, p2->worldPos, p1->worldPos, t2);
-				Ext::LinearLerp(newVert.worldNormal, p2->worldNormal, p1->worldNormal, t2);
-				Ext::LinearLerp(newVert.color, p2->color, p1->color, t2);				
+				g_env.renderer->GetCurRas()->LerpVertexAttributes(&newVert, p2, p1, t2, eLerpType_Linear);
+				g_env.renderer->GetCurRas()->LerpVertexAttributes(p1, p0, p1, t1, eLerpType_Linear);
 
-				Ext::LinearLerp(p1->uv, p0->uv, p1->uv, t1);
-				Ext::LinearLerp(p1->worldPos, p0->worldPos, p1->worldPos, t1);
-				Ext::LinearLerp(p1->worldNormal, p0->worldNormal, p1->worldNormal, t1);
-				Ext::LinearLerp(p1->color, p0->color, p1->color, t1);				
-
+				newVert.pos.Set(newX2, newY2, -n, 1.0f);
 				//交点1覆盖原来的p1
-				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
+				p1->pos.Set(newX1, newY1, -n, 1);
 
 				//NB: 最后进行插入操作,不然会使指向元素的指针无效化
 				VB.push_back(newVert);
@@ -232,27 +217,19 @@ namespace SR
 				float t1 = (-n - p0->pos.z)/(line1.z);
 				float newX1 = p0->pos.x + line1.x * t1;
 				float newY1 = p0->pos.y + line1.y * t1;
-				//覆盖原来的p1
-				p1->pos.x = newX1; p1->pos.y = newY1; p1->pos.z = -n;
 
 				//另一个交点
 				const VEC4 line2 = Common::Sub_Vec4_By_Vec4(p2->pos, p0->pos);
 				float t2 = (-n - p0->pos.z)/(line2.z);
 				float newX2 = p0->pos.x + line2.x * t2;
 				float newY2 = p0->pos.y + line2.y * t2;
-				//覆盖原来的p2
-				p2->pos.x = newX2; p2->pos.y = newY2; p2->pos.z = -n;
 
 				//需要重新插值的属性
-				Ext::LinearLerp(p2->uv, p0->uv, p2->uv, t2);
-				Ext::LinearLerp(p2->worldPos, p0->worldPos, p2->worldPos, t2);
-				Ext::LinearLerp(p2->worldNormal, p0->worldNormal, p2->worldNormal, t2);
-				Ext::LinearLerp(p2->color, p0->color, p2->color, t2);				
+				g_env.renderer->GetCurRas()->LerpVertexAttributes(p2, p0, p2, t2, eLerpType_Linear);
+				g_env.renderer->GetCurRas()->LerpVertexAttributes(p1, p0, p1, t1, eLerpType_Linear);
 
-				Ext::LinearLerp(p1->uv, p0->uv, p1->uv, t1);
-				Ext::LinearLerp(p1->worldPos, p0->worldPos, p1->worldPos, t1);
-				Ext::LinearLerp(p1->worldNormal, p0->worldNormal, p1->worldNormal, t1);
-				Ext::LinearLerp(p1->color, p0->color, p1->color, t1);
+				p1->pos.Set(newX1, newY1, -n, 1);
+				p1->pos.Set(newX2, newY2, -n, 1);
 			}
 		}
 	}
@@ -406,9 +383,9 @@ namespace SR
 		});
 	}
 
-	void RenderUtil::DoLambertLighting( SColor& result, const VEC3& wNormal, const SMaterial* pMaterial )
+	void RenderUtil::DoLambertLighting( SColor& result, const VEC3& Normal, const VEC3& lightDir, const SMaterial* pMaterial )
 	{
-		float nl = Common::DotProduct_Vec3_By_Vec3(wNormal, g_env.renderer->m_testLight.neg_dir);
+		float nl = Common::DotProduct_Vec3_By_Vec3(Normal, lightDir);
 
 		//use half-lambert?
 		if(pMaterial->bUseHalfLambert)

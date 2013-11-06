@@ -161,6 +161,14 @@ namespace Common
 		return std::move(Vector4(v.x * k, v.y * k, v.z * k, v.w * k));
 	}
 
+	inline void	Multiply_Vec4_By_K(Vector4& result, const Vector4& v, float k)
+	{
+		result.x = v.x * k;
+		result.y = v.y * k;
+		result.z = v.z * k;
+		result.w = v.w * k;
+	}
+
 	//////// 4d向量相减
 	inline Vector4	Sub_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2)
 	{
@@ -221,10 +229,23 @@ namespace Common
 		return std::move(Vector3(v.x * k, v.y * k, v.z * k));
 	}
 
+	inline void	Multiply_Vec3_By_K(Vector3& result, const Vector3& v, float k)
+	{
+		result.x = v.x * k;
+		result.y = v.y * k;
+		result.z = v.z * k;
+	}
+
 	//////// 2d向量乘以常数
 	inline Vector2	Multiply_Vec2_By_K(const Vector2& v, float k)
 	{
 		return std::move(Vector2(v.x * k, v.y * k));
+	}
+
+	inline void	Multiply_Vec2_By_K(Vector2& result, const Vector2& v, float k)
+	{
+		result.x = v.x * k;
+		result.y = v.y * k;
 	}
 
 	//////// 2d向量乘2d向量

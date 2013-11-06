@@ -48,8 +48,8 @@ namespace SR
 	{
 		JobParamRS* param = (JobParamRS*)m_JobParam;
 
-		SScanLineData rasData;
-		RenderUtil::RasTriSetup(&param->v0, &param->v1, &param->v2, param->bTopTri, rasData);
+		SScanLinesData rasData;
+		g_env.renderer->GetCurRas()->RasTriangleSetup(rasData, &param->v0, &param->v1, &param->v2, param->triType);
 		rasData.texLod = param->texLod;
 
 		RenderUtil::RasterizeTriangle(rasData, param->pMaterial);

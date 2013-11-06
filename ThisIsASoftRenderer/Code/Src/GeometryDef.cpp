@@ -54,20 +54,21 @@ namespace SR
 		}
 	}
 
-	void STexture::Tex2D_Point( VEC2& uv, SColor& ret, int mip ) const
+	void STexture::Tex2D_Point( const VEC2& uv, SColor& ret, int mip ) const
 	{
 		PixelBox* mipLevel = texData[mip];
 		DWORD* pTexData = (DWORD*)mipLevel->GetDataPointer();
 
+		VEC2 tmpUV = uv;
 		//Wrap mode
-		uv.x -= Ext::Floor32_Fast(uv.x);
-		uv.y -= Ext::Floor32_Fast(uv.y);
+		tmpUV.x -= Ext::Floor32_Fast(tmpUV.x);
+		tmpUV.y -= Ext::Floor32_Fast(tmpUV.y);
 
 		int w = mipLevel->GetWidth() - 1;
 		int h = mipLevel->GetHeight() - 1;
 
-		int x = Ext::Ftoi32_Fast(uv.x * w);
-		int y = Ext::Ftoi32_Fast(uv.y * h);
+		int x = Ext::Ftoi32_Fast(tmpUV.x * w);
+		int y = Ext::Ftoi32_Fast(tmpUV.y * h);
 
 		ret.SetAsInt(pTexData[y * mipLevel->GetWidth() + x]);
 
@@ -77,17 +78,18 @@ namespace SR
 #endif
 	}
 
-	void STexture::Tex2D_Bilinear( VEC2& uv, SColor& ret, int mip ) const
+	void STexture::Tex2D_Bilinear( const VEC2& uv, SColor& ret, int mip ) const
 	{
 		PixelBox* mipLevel = texData[mip];
 		DWORD* pTexData = (DWORD*)mipLevel->GetDataPointer();
 
+		VEC2 tmpUV = uv;
 		//Wrap mode
-		uv.x -= Ext::Floor32_Fast(uv.x);
-		uv.y -= Ext::Floor32_Fast(uv.y);
+		tmpUV.x -= Ext::Floor32_Fast(tmpUV.x);
+		tmpUV.y -= Ext::Floor32_Fast(tmpUV.y);
 
-		float intU = (mipLevel->GetWidth() - 1) * uv.x;
-		float intV = (mipLevel->GetHeight() - 1) * uv.y;
+		float intU = (mipLevel->GetWidth() - 1) * tmpUV.x;
+		float intV = (mipLevel->GetHeight() - 1) * tmpUV.y;
 
 		int u_l = Ext::Floor32_Fast(intU);
 		int u_r = Ext::Ceil32_Fast(intU);

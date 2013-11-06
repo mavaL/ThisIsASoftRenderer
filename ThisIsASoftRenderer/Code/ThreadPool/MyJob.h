@@ -41,7 +41,7 @@ namespace SR
 	struct JobParamRS
 	{
 		SVertex			v0,v1,v2;
-		bool			bTopTri;
+		eTriangleShape	triType;
 		SMaterial*		pMaterial;
 		int				texLod;
 	};

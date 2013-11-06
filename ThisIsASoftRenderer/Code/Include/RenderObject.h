@@ -21,7 +21,11 @@ namespace SR
 	public:
 		RenderObject();
 
+		// Mip-map level determination
 		void	CalcAllFaceTexArea();
+		// Calc tangent space for mesh of this object
+		void	BuildTangentVectors();
+
 		void	OnFrameMove();
 
 		VertexBuffer	m_verts;

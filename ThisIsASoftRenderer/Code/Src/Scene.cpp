@@ -8,6 +8,8 @@ namespace SR
 	{
 		RenderUtil::ComputeAABB(*obj);
 
+		// If object is static in scene, we can do some pre-calcs
+		// instead of doing them at run-time.
 		if(obj->m_bStatic)
 		{
 			obj->m_worldAABB = obj->m_localAABB;

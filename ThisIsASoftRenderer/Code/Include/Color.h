@@ -123,6 +123,14 @@ namespace Ext
 		LinearLerp(result.g, s.g, e.g, t);
 		LinearLerp(result.b, s.b, e.b, t);
 	}
+
+	template<> inline void HyperLerp(SR::SColor& result, const SR::SColor& s, const SR::SColor& e, float t, float ws, float we)
+	{
+		HyperLerp(result.r, s.r, e.r, t, ws, we);
+		HyperLerp(result.g, s.g, e.g, t, ws, we);
+		HyperLerp(result.b, s.b, e.b, t, ws, we);
+		HyperLerp(result.a, s.a, e.a, t, ws, we);
+	}
 }
 
 #endif // Color_h__

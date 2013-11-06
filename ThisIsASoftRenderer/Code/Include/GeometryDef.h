@@ -33,17 +33,25 @@ namespace SR
 	struct SVertex 
 	{
 		SVertex()
-		:normal(VEC3::ZERO),worldNormal(VEC3::ZERO),bActive(false),
-		color(SColor::BLACK),uv(-1,-1),viewSpaceZ(0) {}
+		:normal(VEC3::ZERO),tangent(VEC3::ZERO),binormal(VEC3::ZERO)
+		,worldNormal(VEC3::ZERO),lightDirTS(VEC3::ZERO),halfAngleTS(VEC3::ZERO)
+		,bActive(false)
+		,color(SColor::BLACK)
+		,uv(-1,-1)
+		,viewSpaceZ(0) {}
 
 		VEC4	worldPos;
 		VEC4	pos;
 		VEC3	worldNormal;
 		VEC3	normal;
+		VEC3	tangent;
+		VEC3	binormal;
+		VEC3	lightDirTS;		// Light direction in tangent space
+		VEC3	halfAngleTS;	// Half-angle in tangent space
 		VEC2	uv;
 		bool	bActive;
 		SColor	color;
-		float	viewSpaceZ;	// Use for mip determine
+		float	viewSpaceZ;		// Use for mip determine
 	};
 	typedef std::vector<SVertex>	VertexBuffer;
 	typedef std::vector<Index>		IndexBuffer;
@@ -80,9 +88,9 @@ namespace SR
 		void		LoadTexture(const STRING& filename, bool bmipmap);
 		PixelBox*	GetSurface(int i);
 		//临近点采样
-		void		Tex2D_Point(VEC2& uv, SColor& ret, int mip = 0) const;
+		void		Tex2D_Point(const VEC2& uv, SColor& ret, int mip = 0) const;
 		//双线性插值采样
-		void		Tex2D_Bilinear(VEC2& uv, SColor& ret, int mip = 0) const;
+		void		Tex2D_Bilinear(const VEC2& uv, SColor& ret, int mip = 0) const;
 		//生成mipmap层
 		void		GenMipMaps();
 		int			GetMipCount() const { return texData.size(); }
@@ -99,13 +107,15 @@ namespace SR
 	{
 		SMaterial()
 			:ambient(SColor::WHITE),diffuse(SColor::WHITE),specular(SColor::WHITE)
-			,pDiffuseMap(nullptr),shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false) {}
+			,pDiffuseMap(nullptr),pNormalMap(nullptr)
+			,shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false) {}
 
 		~SMaterial() { SAFE_DELETE(pDiffuseMap); }
 
 		SColor		ambient, diffuse, specular;
 		float		shiness;
 		STexture*	pDiffuseMap;
+		STexture*	pNormalMap;
 		bool		bUseHalfLambert;		//See: https://developer.valvesoftware.com/wiki/Half_Lambert
 		bool		bUseBilinearSampler;	//使用纹理双线性插值
 	};

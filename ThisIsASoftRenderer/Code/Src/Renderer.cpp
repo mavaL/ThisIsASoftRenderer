@@ -24,7 +24,7 @@ namespace SR
 		m_rasLib.insert(std::make_pair(eRasterizeType_Gouraud, new RasGouraud));
 		m_rasLib.insert(std::make_pair(eRasterizeType_TexturedGouraud, new RasTexturedGouraud));
 		m_rasLib.insert(std::make_pair(eRasterizeType_BlinnPhong, new RasBlinnPhong));
-		m_rasLib.insert(std::make_pair(eRasterizeType_NormalMap, new RasNormalMap));
+		m_rasLib.insert(std::make_pair(eRasterizeType_PhongWithNormalMap, new RasPhongWithNormalMap));
 
 		//创建后备缓冲
 		m_backBuffer.reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
@@ -113,10 +113,6 @@ namespace SR
 		_Clear(SColor::NICE_BLUE, 1.0f);
 
 		int nObj = (int)m_scenes[m_curScene]->m_renderList.size();
-
-#if USE_OPENMP == 1
-#pragma omp parallel for
-#endif
 
 		bool bUseMultiThread;
 #if USE_MULTI_THREAD == 1
@@ -260,8 +256,8 @@ namespace SR
 		case SR::eRasterizeType_Flat:				SetRasterizeType(SR::eRasterizeType_Gouraud); break;
 		case SR::eRasterizeType_Gouraud:			SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
 		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_BlinnPhong); break;
-		case SR::eRasterizeType_BlinnPhong:			SetRasterizeType(SR::eRasterizeType_NormalMap); break;
-		case SR::eRasterizeType_NormalMap:			SetRasterizeType(SR::eRasterizeType_Wireframe); break;
+		case SR::eRasterizeType_BlinnPhong:			SetRasterizeType(SR::eRasterizeType_PhongWithNormalMap); break;
+		case SR::eRasterizeType_PhongWithNormalMap:			SetRasterizeType(SR::eRasterizeType_Wireframe); break;
 		default: assert(0);
 		}
 	}
@@ -310,7 +306,7 @@ namespace SR
 		case eRasterizeType_Gouraud:		return "Gouraud"; break;
 		case eRasterizeType_TexturedGouraud: return "TexturedGouraud"; break;
 		case eRasterizeType_BlinnPhong:		return "BlinnPhong"; break;
-		case eRasterizeType_NormalMap:		return "PhongWithNormalMap"; break;
+		case eRasterizeType_PhongWithNormalMap:		return "PhongWithNormalMap"; break;
 		default: assert(0);					return nullptr;
 		}
 	}
