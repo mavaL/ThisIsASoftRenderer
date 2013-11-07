@@ -655,39 +655,23 @@ namespace SR
 #endif
 	}
 
-	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context )
+	void RenderUtil::DrawTriangle_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context )
 	{
 		eTriangleShape triType;
 		if(!PreDrawTriangle(vert0, vert1, vert2, triType))
 			return;
 
-		bool bSponza = g_env.renderer->IsCurSponzaScene();
-
 		switch (triType)
 		{
 		case eTriangleShape_Bottom: 
 			{
-				if (bSponza)
-				{
-					DrawTri_Scanline_V3(vert0, vert1, vert2, context, eTriangleShape_Bottom);
-				} 
-				else
-				{
-					DrawBottomTri_Scanline_V2(vert0, vert1, vert2, bTextured, bPerPixel, context);
-				}
+				DrawBottomTri_Scanline_V2(vert0, vert1, vert2, context);
 			}
 			break;
 
 		case eTriangleShape_Top: 
 			{
-				if (bSponza)
-				{
-					DrawTri_Scanline_V3(vert0, vert1, vert2, context, eTriangleShape_Top);
-				} 
-				else
-				{
-					DrawTopTri_Scanline_V2(vert0, vert1, vert2, bTextured, bPerPixel, context);
-				}
+				DrawTopTri_Scanline_V2(vert0, vert1, vert2, context);
 			}
 			break;
 
@@ -700,6 +684,7 @@ namespace SR
 				float y2 = vert2->pos.y;
 				//插值各属性
 				float t = (y2-y0)/(y1-y0);
+				Ext::LinearLerp(vert3.pos, vert0->pos, vert1->pos, t);
 #if USE_PERSPEC_CORRECT == 1
 				g_env.renderer->GetCurRas()->LerpVertexAttributes(&vert3, vert0, vert1, t, eLerpType_Hyper);
 #else
@@ -707,23 +692,15 @@ namespace SR
 #endif
 				vert3.pos.y = y2;
 
-				if (bSponza)
-				{
-					DrawTri_Scanline_V3(vert0, &vert3, vert2, context, eTriangleShape_Bottom);
-					DrawTri_Scanline_V3(&vert3, vert1, vert2, context, eTriangleShape_Top);
-				} 
-				else
-				{
-					DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, bTextured, bPerPixel, context);
-					DrawTopTri_Scanline_V2(&vert3, vert1, vert2, bTextured, bPerPixel, context);
-				}
+				DrawBottomTri_Scanline_V2(vert0, &vert3, vert2, context);
+				DrawTopTri_Scanline_V2(&vert3, vert1, vert2, context);
 			}
 			break;
 		default: assert(0);
 		}
 	}
 
-	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context )
+	void RenderUtil::DrawBottomTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context )
 	{
 		SScanLinesData scanLineData;
 
@@ -733,16 +710,24 @@ namespace SR
 
 		assert(Ext::Ceil32_Fast(vert1->pos.y) == Ext::Ceil32_Fast(vert2->pos.y));
 
+#if USE_MULTI_THREAD == 1
+		JobParamRS* param = new JobParamRS;
+		param->triType = eTriangleShape_Bottom;
+		param->pMaterial = context.pMaterial;
+		param->v0 = *vert0;
+		param->v1 = *vert1;
+		param->v2 = *vert2;
+		param->texLod = context.texLod;
+
+		JobRS* job = new JobRS(param);
+		g_env.jobMgr->SubmitJob(job, nullptr);
+#else
 		g_env.renderer->GetCurRas()->RasTriangleSetup(scanLineData, vert0, vert1, vert2, eTriangleShape_Bottom);
-
-		RasterizeScanLines(scanLineData, bTextured, bPerPixel, context);
-
-#if USE_PROFILER == 1
-		g_env.profiler->AddRenderedFace();
+		RasterizeScanLines(scanLineData, context);
 #endif
 	}
 
-	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context )
+	void RenderUtil::DrawTopTri_Scanline_V2( const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context )
 	{
 		SScanLinesData scanLineData;
 
@@ -752,22 +737,31 @@ namespace SR
 
 		assert(Ext::Ceil32_Fast(vert0->pos.y) == Ext::Ceil32_Fast(vert2->pos.y));
 
+#if USE_MULTI_THREAD == 1
+		JobParamRS* param = new JobParamRS;
+		param->triType = eTriangleShape_Top;
+		param->pMaterial = context.pMaterial;
+		param->v0 = *vert0;
+		param->v1 = *vert1;
+		param->v2 = *vert2;
+		param->texLod = context.texLod;
+
+		JobRS* job = new JobRS(param);
+		g_env.jobMgr->SubmitJob(job, nullptr);
+#else
 		g_env.renderer->GetCurRas()->RasTriangleSetup(scanLineData, vert0, vert1, vert2, eTriangleShape_Top);		
-
-		RasterizeScanLines(scanLineData, bTextured, bPerPixel, context);
-
-#if USE_PROFILER == 1
-		g_env.profiler->AddRenderedFace();
+		RasterizeScanLines(scanLineData, context);
 #endif
 	}
 
-	void RenderUtil::RasterizeScanLines( SScanLinesData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context )
+	void RenderUtil::RasterizeScanLines( SScanLinesData& scanLineData )
 	{
 		//定位输出位置
-		DWORD* vb_start = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer();
 		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
-		DWORD* destBuffer = vb_start + scanLineData.curY * lpitch;
-		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + scanLineData.curY * lpitch;
+
+		DWORD* destBuffer = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer() + scanLineData.curY * lpitch;
+		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + scanLineData.curY * SCREEN_WIDTH;
+		SFragment* fragBuf = g_env.renderer->m_fragmentBuffer + scanLineData.curY * SCREEN_WIDTH;
 
 		Rasterizer* curRaster = g_env.renderer->GetCurRas();
 		SScanLine scanLine;
@@ -780,201 +774,78 @@ namespace SR
 
 			if(scanLine.lineX1 - scanLine.lineX0 >= 0)
 			{
-				curRaster->RasLineClipX(scanLine, scanLineData);
+				curRaster->RasLineSetup(scanLine, scanLineData);
 
 				if(scanLine.lineX1 > max_clip_x)
 				{
 					scanLine.lineX1 = max_clip_x;
 				}
 
-				//画水平直线
+				// Rasterize a line
 				for (int curX=scanLine.lineX0; curX<=scanLine.lineX1; ++curX)
 				{
-					//深度测试
+					// Z-test
 					if(scanLine.z < zBuffer[curX])
 					{
-						curRaster->RasScanLine();
-					}
-					curRaster->RasAdvanceToNextPixel();
-				}
-			}
+						zBuffer[curX] = scanLine.z;
 
-			++scanLineData.curY;
-			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, scanLineData.dp_L);
-			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
-
-			curRaster->RasAdvanceToNextScanLine();
-
-			destBuffer += lpitch;
-			zBuffer += lpitch;
-		}
-	}
-
-	void RenderUtil::DrawTri_Scanline_V3(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context, eTriangleShape triType)
-	{
-		if(triType == eTriangleShape_Top)
-		{
-			if(vert0->pos.x > vert2->pos.x)
-				Ext::Swap(vert0, vert2);
-
-			assert(Ext::Ceil32_Fast(vert0->pos.y) == Ext::Ceil32_Fast(vert2->pos.y));
-		}
-		else
-		{
-			if(vert1->pos.x > vert2->pos.x)
-				Ext::Swap(vert1, vert2);
-
-			assert(Ext::Ceil32_Fast(vert1->pos.y) == Ext::Ceil32_Fast(vert2->pos.y));
-		}
-
-		JobParamRS* param = new JobParamRS;
-		param->triType = triType;
-		param->pMaterial = context.pMaterial;
-		param->v0 = *vert0;
-		param->v1 = *vert1;
-		param->v2 = *vert2;
-		param->texLod = context.texLod;
-
-		JobRS* job = new JobRS(param);
-		g_env.jobMgr->SubmitJob(job, nullptr);
-	}
-
-	CFCriticalSection	m_cs;
-
-	void RenderUtil::RasterizeTriangle(SScanLinesData& scanLineData, const SMaterial* pMaterial)
-	{
-		//定位输出位置
-		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
-
-		DWORD* destBuffer = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer() + scanLineData.curY * lpitch;
-		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + scanLineData.curY * SCREEN_WIDTH;
-		SFragment* fragBuf = g_env.renderer->m_fragmentBuffer + scanLineData.curY * SCREEN_WIDTH;
-
-		VEC3 curPW, curN;
-		VEC3 deltaPW, deltaN;
-		VEC2 curUV;
-		VEC2 deltaUV;
-
-		while (scanLineData.curY <= scanLineData.endY)
-		{
-			//左上填充规则:左
-			int lineX0 = Ext::Ceil32_Fast(scanLineData.curP_L.x);
-			int lineX1 = Ext::Ceil32_Fast(scanLineData.curP_R.x);
-
-			if(lineX1 - lineX0 >= 0)
-			{
-				float invdx = 1.0f / (lineX1 - lineX0);
-				deltaUV.Set((scanLineData.curUV_R.x-scanLineData.curUV_L.x)*invdx, (scanLineData.curUV_R.y-scanLineData.curUV_L.y)*invdx);
-				deltaPW.Set((scanLineData.curPW_R.x-scanLineData.curPW_L.x)*invdx, (scanLineData.curPW_R.y-scanLineData.curPW_L.y)*invdx, (scanLineData.curPW_R.z-scanLineData.curPW_L.z)*invdx);
-				deltaN.Set((scanLineData.curN_R.x-scanLineData.curN_L.x)*invdx, (scanLineData.curN_R.y-scanLineData.curN_L.y)*invdx, (scanLineData.curN_R.z-scanLineData.curN_L.z)*invdx);
-				float dz = (scanLineData.curP_R.y - scanLineData.curP_L.y) * invdx;
-				float dw = (scanLineData.curP_R.z - scanLineData.curP_L.z) * invdx;
-
-				curUV = scanLineData.curUV_L;
-				curPW = scanLineData.curPW_L;
-				curN = scanLineData.curN_L;
-				float z = scanLineData.curP_L.y;
-				float w = scanLineData.curP_L.z;
-
-				//裁剪区域裁剪x
-				if(lineX0 < min_clip_x)
-				{
-					const float dx = min_clip_x-lineX0;
-					Common::Add_Vec2_By_Vec2(curUV, curUV, Common::Multiply_Vec2_By_K(deltaUV, dx));
-					Common::Add_Vec3_By_Vec3(curPW, curPW, Common::Multiply_Vec3_By_K(deltaPW, dx));
-					Common::Add_Vec3_By_Vec3(curN, curN, Common::Multiply_Vec3_By_K(deltaN, dx));
-					lineX0 = min_clip_x;
-					z += dx*dz;
-					w += dx*dw;
-				}
-				if(lineX1 > max_clip_x)
-				{
-					lineX1 = max_clip_x;
-				}
-				
-				//画水平直线
-				for (int curX=lineX0; curX<=lineX1; ++curX)
-				{
-					//m_cs.Lock();
-
-					//深度测试
-					if(z < zBuffer[curX])
-					{
-						zBuffer[curX] = z;
-
-						//m_cs.UnLock();
-
-						SFragment& frag = fragBuf[curX];
-						frag.bActive = true;
-						frag.pMaterial = (SMaterial*)pMaterial;
-						frag.finalColor = destBuffer + curX;
-						frag.texLod = scanLineData.texLod;
-
-#if USE_PERSPEC_CORRECT == 1
-						//双曲插值最后一步
-						float inv_w = 1 / w;
-						frag.uv.Set(curUV.x*inv_w, curUV.y*inv_w);
-						frag.worldPos.Set(curPW.x*inv_w, curPW.y*inv_w, curPW.z*inv_w);
-						frag.normal.Set(curN.x*inv_w, curN.y*inv_w, curN.z*inv_w);
+						curRaster->RasterizePixel(scanLine, scanLineData);
+						
+#if USE_MULTI_THREAD == 1
+// 						SFragment& frag = fragBuf[curX];
+// 						frag.bActive = true;
+// 						frag.pMaterial = scanLineData.pMaterial;
+// 						frag.finalColor = destBuffer + curX;
+// 						frag.texLod = scanLineData.texLod;
+// 						frag.uv.Set(curUV.x*inv_w, curUV.y*inv_w);
+// 						frag.worldPos.Set(curPW.x*inv_w, curPW.y*inv_w, curPW.z*inv_w);
+// 						frag.normal.Set(curN.x*inv_w, curN.y*inv_w, curN.z*inv_w);
 #else
-						frag.uv			= curUV;
-						frag.worldPos	= curPW;
-						frag.normal		= curN;
-#endif			
-					}
-					else
-					{
-						//m_cs.UnLock();
-					}
+						scanLine.pixelColor.Saturate();
+						// Output to back buffer
+						destBuffer[curX] = scanLine.pixelColor.GetAsInt();
 
-					Common::Add_Vec2_By_Vec2(curUV, curUV, deltaUV);
-					Common::Add_Vec3_By_Vec3(curPW, curPW, deltaPW);
-					Common::Add_Vec3_By_Vec3(curN, curN, deltaN);
-					z += dz;
-					w += dw;
+#if USE_PROFILER == 1
+						g_env.profiler->AddRenderedPixel();
+#endif
+#endif
+					}
+					
+					// Advance to next pixel
+					Common::Add_Vec3_By_Vec3(scanLine.curClr, scanLine.curClr, scanLine.deltaClr);
+					Common::Add_Vec2_By_Vec2(scanLine.curUV, scanLine.curUV, scanLine.deltaUV);
+					Common::Add_Vec3_By_Vec3(scanLine.curPW, scanLine.curPW, scanLine.deltaPW);
+					Common::Add_Vec3_By_Vec3(scanLine.curN, scanLine.curN, scanLine.deltaN);
+					Common::Add_Vec3_By_Vec3(scanLine.curLightDir, scanLine.curLightDir, scanLine.deltaLightDir);
+					Common::Add_Vec3_By_Vec3(scanLine.curHVector, scanLine.curHVector, scanLine.deltaHVector);
+					scanLine.z += scanLine.dz;
+					scanLine.w += scanLine.dw;
 				}
 			}
 
+			// Advance to next line
 			++scanLineData.curY;
 			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, scanLineData.dp_L);
 			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
+			Common::Add_Vec3_By_Vec3(scanLineData.clr_L, scanLineData.clr_L, scanLineData.dclr_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.clr_R, scanLineData.clr_R, scanLineData.dclr_R);
 			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
 			Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, scanLineData.duv_R);
 			Common::Add_Vec3_By_Vec3(scanLineData.curPW_L, scanLineData.curPW_L, scanLineData.dpw_L);
 			Common::Add_Vec3_By_Vec3(scanLineData.curPW_R, scanLineData.curPW_R, scanLineData.dpw_R);
 			Common::Add_Vec3_By_Vec3(scanLineData.curN_L, scanLineData.curN_L, scanLineData.dn_L);
 			Common::Add_Vec3_By_Vec3(scanLineData.curN_R, scanLineData.curN_R, scanLineData.dn_R);
+			Common::Add_Vec3_By_Vec3(scanLineData.curLightDir_L, scanLineData.curLightDir_L, scanLineData.dLightDir_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.curLightDir_R, scanLineData.curLightDir_R, scanLineData.dLightDir_R);
+			Common::Add_Vec3_By_Vec3(scanLineData.curHVector_L, scanLineData.curHVector_L, scanLineData.dHVector_L);
+			Common::Add_Vec3_By_Vec3(scanLineData.curHVector_R, scanLineData.curHVector_R, scanLineData.dHVector_R);
+
 			destBuffer += lpitch;
 			zBuffer += SCREEN_WIDTH;
 			fragBuf += SCREEN_WIDTH;
 		}
-
+#if USE_PROFILER == 1
 		g_env.profiler->AddRenderedFace();
-	}
-
-	void RenderUtil::DrawFragment(SFragment& frag)
-	{
- 		assert(frag.bActive);
-
-		SColor texColor, lightColor(SColor::WHITE);
-		SMaterial* pMaterial = frag.pMaterial;
-
-		if(pMaterial->bUseBilinearSampler)
-		{
-			pMaterial->pDiffuseMap->Tex2D_Bilinear(frag.uv, texColor, frag.texLod);
-		}
-		else
-		{
-			pMaterial->pDiffuseMap->Tex2D_Point(frag.uv, texColor, frag.texLod);
-		}
-
-
-		g_env.renderer->m_curRas->DoPerPixelLighting(lightColor, frag.worldPos, frag.normal, frag.uv, pMaterial);
-		texColor *= lightColor;
-
-		texColor.Saturate();
-		*frag.finalColor = texColor.GetAsInt();
-
-		g_env.profiler->AddRenderedPixel();
+#endif
 	}
 }

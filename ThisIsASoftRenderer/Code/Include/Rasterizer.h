@@ -42,15 +42,14 @@ namespace SR
 		//逐顶点光照
 		virtual void	DoPerVertexLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj) {}
 		//逐像素光照
-		virtual void	DoPerPixelLighting(SColor& result, const VEC3& worldPos, const VEC3& worldNormal, const VEC2& uv, const SMaterial* pMaterial) {}
-		//以下两个光栅化虚函数,目的是不同shading model自行选择需要插值的顶点属性
-		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
+		virtual void	DoPerPixelLighting(SColor& result, void* pLightingContext, const SMaterial* pMaterial) {}
+		// Only called when opening multi-thread
+		virtual void	FragmentPS(SFragment& frag) {}
+		////扫描线光栅化
+		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type) = 0;
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
-		//扫描线光栅化
-		virtual void	RasLineClipX(SScanLine& scanLine, const SScanLinesData& rasData);
-		virtual void	RasScanLine(SScanLine& scanLine, const SScanLinesData& rasData, const SRenderContext& context);
-		virtual void	RasAdvanceToNextPixel();
-		virtual void	RasAdvanceToNextScanLine();
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData) = 0;
 
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context) = 0;
@@ -64,6 +63,8 @@ namespace SR
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_Wireframe; }
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type) {}
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type) {}
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData) {}
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData) {}
 
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
@@ -79,8 +80,9 @@ namespace SR
 		virtual void	DoPerVertexLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj);
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type) {}
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type) {}
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData) {}
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData) {}
 
-	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
 	};
 
@@ -105,17 +107,23 @@ namespace SR
 		VEC3	curHVector_L, curHVector_R;		// H-vector in tangent space
 		VEC3	dHVector_L, dHVector_R;
 		int		texLod;
+		bool	bClipY;
+		float	clip_dy;
+		SMaterial*	pMaterial;
 	};
 
 	struct SScanLine 
 	{
-		VEC3	curClr, curPW, curN, finalPW, finalN;
-		VEC3	deltaClr, deltaPW, deltaN;
 		SColor	pixelColor, curPixelClr;
+		VEC3	curClr, curPW, curN, curLightDir, curHVector;
+		VEC3	finalPW, finalN, finalLightDir, finalHVector;
+		VEC3	deltaClr, deltaPW, deltaN, deltaLightDir, deltaHVector;
 		VEC2	curUV, finalUV;
 		VEC2	deltaUV;
 		int		lineX0, lineX1;
-		float	z, dz, w, dw;
+		float	z, dz, w, dw, inv_dx;
+		bool	bClipX;
+		float	clip_dx;
 	};
 	
 
@@ -126,6 +134,8 @@ namespace SR
 		virtual void	DoPerVertexLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj);
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
@@ -139,6 +149,8 @@ namespace SR
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_TexturedGouraud; }
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
@@ -146,13 +158,26 @@ namespace SR
 
 	/////////////////////////////////////////////////////////////
 	//////// Blinn-Phong光照,Phong模型是逐像素光照
+
+	struct SLightingContext_Phong
+	{
+		virtual ~SLightingContext_Phong() {}
+
+		VEC3*	worldPos;
+		VEC3*	worldNormal;
+		VEC2*	uv;
+	};
+
 	class RasBlinnPhong : public Rasterizer
 	{
 	public:
 		virtual eRasterizeType	GetType()	{ return eRasterizeType_BlinnPhong; }
-		virtual void	DoPerPixelLighting(SColor& result, const VEC3& worldPos, const VEC3& worldNormal, const VEC2& uv, const SMaterial* pMaterial);
+		virtual void	DoPerPixelLighting(SColor& result, void* pLightingContext, const SMaterial* pMaterial);
+		virtual void	FragmentPS(SFragment& frag);
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
@@ -160,6 +185,13 @@ namespace SR
 
 	/////////////////////////////////////////////////////////////
 	//////// Phong + 法线贴图
+
+	struct SLightingContext_PhongWithNormalMap : public SLightingContext_Phong
+	{
+		VEC3*	lightDirTS;
+		VEC3*	hVectorTS;
+	};
+
 	class RasPhongWithNormalMap : public RasBlinnPhong
 	{
 	public:
@@ -167,10 +199,12 @@ namespace SR
 		// Use TBN matrix in VS
 		virtual void	DoPerVertexLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj);
 		// Apply normal mapping in PS
-		virtual void	DoPerPixelLighting(SColor& result, const VEC3& worldPos, const VEC3& worldNormal, const VEC2& uv, const SMaterial* pMaterial);
-
+		virtual void	DoPerPixelLighting(SColor& result, void* pLightingContext, const SMaterial* pMaterial);
+		virtual void	FragmentPS(SFragment& frag);
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 	};
 }
 

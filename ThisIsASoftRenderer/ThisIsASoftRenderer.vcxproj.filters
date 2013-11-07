@@ -134,9 +134,6 @@
     <ClCompile Include="Code\Src\MathDef.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Code\Src\Rasterizer.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="Code\Src\OgreMeshLoader.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -190,6 +187,27 @@
     </ClCompile>
     <ClCompile Include="Code\ThreadPool\MyJob.cpp">
       <Filter>ThreadPool</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_BlinnPhong.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_Flat.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_Gouraud.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_PhongWithNormalMap.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_TexturedGouraud.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_Wireframe.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer.cpp">
+      <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

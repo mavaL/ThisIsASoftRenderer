@@ -132,6 +132,12 @@
     <ClCompile Include="Code\Src\PixelBox.cpp" />
     <ClCompile Include="Code\Src\Profiler.cpp" />
     <ClCompile Include="Code\Src\Rasterizer.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_BlinnPhong.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_Flat.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_Gouraud.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_PhongWithNormalMap.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_TexturedGouraud.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_Wireframe.cpp" />
     <ClCompile Include="Code\Src\Renderer.cpp" />
     <ClCompile Include="Code\Src\RenderObject.cpp" />
     <ClCompile Include="Code\Src\RenderUtil_Common.cpp" />

@@ -51,8 +51,9 @@ namespace SR
 		SScanLinesData rasData;
 		g_env.renderer->GetCurRas()->RasTriangleSetup(rasData, &param->v0, &param->v1, &param->v2, param->triType);
 		rasData.texLod = param->texLod;
+		rasData.pMaterial = param->pMaterial;
 
-		RenderUtil::RasterizeTriangle(rasData, param->pMaterial);
+		RenderUtil::RasterizeScanLines(rasData);
 
 		return TRUE;
 	}
@@ -79,7 +80,7 @@ namespace SR
 	{
 		JobParamPS* param = (JobParamPS*)m_JobParam;
 
-		RenderUtil::DrawFragment(*param->frag);
+		g_env.renderer->GetCurRas()->FragmentPS(*param->frag);
 
 		return TRUE;
 	}

@@ -10,7 +10,7 @@ namespace SR
 {
 	Renderer::Renderer()
 	:m_curRas(nullptr)
-	,m_ambientColor(0.6f, 0.6f, 0.6f)
+	,m_ambientColor(SColor::WHITE)
 	,m_curScene(-1)
 	{
 		
@@ -47,7 +47,9 @@ namespace SR
 		m_testLight.dir.Normalize();
 		m_testLight.neg_dir = m_testLight.dir;
 		m_testLight.neg_dir.Neg();
-		m_testLight.color = SColor::WHITE;
+		m_testLight.color.Set(0.7f, 0.7f, 0.7f);
+
+		m_ambientColor.Set(0.4f, 0.4f, 0.4f);
 
 		_InitAllScene();
 
@@ -114,65 +116,51 @@ namespace SR
 
 		int nObj = (int)m_scenes[m_curScene]->m_renderList.size();
 
-		bool bUseMultiThread;
-#if USE_MULTI_THREAD == 1
-		bUseMultiThread = true;
-#endif
-		
-		//多线程只用于Sponza场景
-		if(!IsCurSponzaScene())
-			bUseMultiThread = false;
-
 		//for each object
 		for (int iObj=0; iObj<nObj; ++iObj)
 		{
 			RenderObject& obj = *m_scenes[m_curScene]->m_renderList[iObj];
 
 			//T&L
-			if (bUseMultiThread)
-			{
-				JobParamVS* param = new JobParamVS;
-				param->object = &obj;
+#if USE_MULTI_THREAD == 1
+			JobParamVS* param = new JobParamVS;
+			param->object = &obj;
 
-				JobVS* job = new JobVS(param);
+			JobVS* job = new JobVS(param);
+			g_env.jobMgr->SubmitJob(job, nullptr);
+#else			
+			SRenderContext context;
+			context.pMaterial = obj.m_pMaterial;
+
+			RenderUtil::ObjectTnL(obj, context);
+
+			//光栅化物体
+			m_curRas->RasterizeTriangleList(context);
+#endif
+		}
+#if USE_MULTI_THREAD == 1
+		g_env.jobMgr->Flush();
+
+		//到这个阶段VS,RS已执行完,且fragment buffer保存了ps需要执行的像素
+		int nPixel = SCREEN_WIDTH * SCREEN_HEIGHT;
+		SFragment* curFrag = &m_fragmentBuffer[0];
+
+		for (int i=0; i<nPixel; ++i)
+		{
+			if(curFrag->bActive)
+			{
+				JobParamPS* param = new JobParamPS;
+				param->frag = curFrag;
+
+				JobPS* job = new JobPS(param);
 				g_env.jobMgr->SubmitJob(job, nullptr);
 			}
-			else
-			{
-				SRenderContext context;
-				context.pMaterial = obj.m_pMaterial;
 
-				RenderUtil::ObjectTnL(obj, context);
-
-				//光栅化物体
-				m_curRas->RasterizeTriangleList(context);
-			}
+			++curFrag;
 		}
 
-		if (bUseMultiThread)
-		{
-			g_env.jobMgr->Flush();
-
-			//到这个阶段VS,RS已执行完,且fragment buffer保存了ps需要执行的像素
-			int nPixel = SCREEN_WIDTH * SCREEN_HEIGHT;
-			SFragment* curFrag = &m_fragmentBuffer[0];
-
-			for (int i=0; i<nPixel; ++i)
-			{
-				if(curFrag->bActive)
-				{
-					JobParamPS* param = new JobParamPS;
-					param->frag = curFrag;
-
-					JobPS* job = new JobPS(param);
-					g_env.jobMgr->SubmitJob(job, nullptr);
-				}
-
-				++curFrag;
-			}
-
-			g_env.jobMgr->Flush();
-		}
+		g_env.jobMgr->Flush();
+#endif
 	}
 
 	void Renderer::Present()
@@ -257,7 +245,7 @@ namespace SR
 		case SR::eRasterizeType_Gouraud:			SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
 		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_BlinnPhong); break;
 		case SR::eRasterizeType_BlinnPhong:			SetRasterizeType(SR::eRasterizeType_PhongWithNormalMap); break;
-		case SR::eRasterizeType_PhongWithNormalMap:			SetRasterizeType(SR::eRasterizeType_Wireframe); break;
+		case SR::eRasterizeType_PhongWithNormalMap:	SetRasterizeType(SR::eRasterizeType_Wireframe); break;
 		default: assert(0);
 		}
 	}
@@ -319,10 +307,4 @@ namespace SR
 
 		m_scenes[m_curScene]->Enter();
 	}
-
-	bool Renderer::IsCurSponzaScene()
-	{
-		return m_scenes[m_curScene]->m_bIsSponzaScene;
-	}
-
 }

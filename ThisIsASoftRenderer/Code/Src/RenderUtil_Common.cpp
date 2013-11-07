@@ -174,6 +174,8 @@ namespace SR
 	
 				SVertex newVert;
 				newVert.bActive = true;
+				newVert.pos.Set(newX2, newY2, -n, 1.0f);
+				newVert.normal = p1->normal;
 
 				SFace newFace;
 				newFace.faceNormal = face.faceNormal;
@@ -186,7 +188,6 @@ namespace SR
 				g_env.renderer->GetCurRas()->LerpVertexAttributes(&newVert, p2, p1, t2, eLerpType_Linear);
 				g_env.renderer->GetCurRas()->LerpVertexAttributes(p1, p0, p1, t1, eLerpType_Linear);
 
-				newVert.pos.Set(newX2, newY2, -n, 1.0f);
 				//交点1覆盖原来的p1
 				p1->pos.Set(newX1, newY1, -n, 1);
 
@@ -217,19 +218,20 @@ namespace SR
 				float t1 = (-n - p0->pos.z)/(line1.z);
 				float newX1 = p0->pos.x + line1.x * t1;
 				float newY1 = p0->pos.y + line1.y * t1;
+				//覆盖原来的p1
+				p1->pos.Set(newX1, newY1, -n, 1);
 
 				//另一个交点
 				const VEC4 line2 = Common::Sub_Vec4_By_Vec4(p2->pos, p0->pos);
 				float t2 = (-n - p0->pos.z)/(line2.z);
 				float newX2 = p0->pos.x + line2.x * t2;
 				float newY2 = p0->pos.y + line2.y * t2;
+				//覆盖原来的p2
+				p2->pos.Set(newX2, newY2, -n, 1);
 
 				//需要重新插值的属性
 				g_env.renderer->GetCurRas()->LerpVertexAttributes(p2, p0, p2, t2, eLerpType_Linear);
 				g_env.renderer->GetCurRas()->LerpVertexAttributes(p1, p0, p1, t1, eLerpType_Linear);
-
-				p1->pos.Set(newX1, newY1, -n, 1);
-				p1->pos.Set(newX2, newY2, -n, 1);
 			}
 		}
 	}

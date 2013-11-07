@@ -45,7 +45,6 @@ namespace SR
 		void	SetRasterizeType(eRasterizeType type);
 		void	OnFrameMove();
 		Rasterizer*	GetCurRas() { return m_curRas; }
-		bool	IsCurSponzaScene();
 		//切换渲染模式(wireframe, flat, gouraud, phong)
 		void	ToggleShadingMode();
 		//获取当前渲染模式名字

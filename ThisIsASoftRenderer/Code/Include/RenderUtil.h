@@ -57,18 +57,13 @@ namespace SR
 		static void	SortTris_PainterAlgorithm(const VertexBuffer& verts, FaceList& faces);
 
 		///////	绘制三角形的第二个版本.线性插值所需的attribute
-		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context);
-		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context);
-		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, bool bTextured, bool bPerPixel, const SRenderContext& context);
-		static void RasterizeScanLines(SScanLinesData& scanLineData, bool bTextured, bool bPerPixel, const SRenderContext& context);
+		static void	DrawTriangle_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context);
+		static void	DrawBottomTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context);
+		static void	DrawTopTri_Scanline_V2(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context);
+		static void RasterizeScanLines(SScanLinesData& scanLineData);
 
 		///////	进行Lambert光照,假定法线和光源向量都已归一化
 		static void DoLambertLighting(SColor& result, const VEC3& normal, const VEC3& lightDir, const SMaterial* pMaterial);
-
-		///////	绘制三角形的第三个版本.加入多线程并行.
-		static void	DrawTri_Scanline_V3(const SVertex* vert0, const SVertex* vert1, const SVertex* vert2, const SRenderContext& context, eTriangleShape triType);
-		static void RasterizeTriangle(SScanLinesData& scanLineData, const SMaterial* pMaterial);
-		static void DrawFragment(SFragment& frag);
 	};
 }
 
