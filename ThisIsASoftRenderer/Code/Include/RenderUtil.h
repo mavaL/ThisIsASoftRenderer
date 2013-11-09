@@ -26,9 +26,6 @@ namespace SR
 		/////// 遍历所有顶点计算物体包围盒
 		static void	ComputeAABB(RenderObject& obj);
 
-		///////	Bresenahams画线算法,取自<<3D编程大师技巧>>
-		static void	DrawLine_Bresenahams(int x0, int y0, int x1, int y1, SColor color, bool bClip);
-
 		///////	最简单的DDA画线算法
 		static void	DrawLine_DDA(int x0, int y0, int x1, int y1, SColor color, bool bClip);
 

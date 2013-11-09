@@ -20,25 +20,14 @@ namespace SR
 
 	public:
 		Scene(StrategyFunc& setupFunc, StrategyFunc& enterFunc)
-		:m_bSetup(false),m_setupFunc(setupFunc),m_enterFunc(enterFunc),m_bIsSponzaScene(false) {}
+		:m_bSetup(false),m_setupFunc(setupFunc),m_enterFunc(enterFunc) {}
 
 		~Scene();
 
-		bool		m_bIsSponzaScene;
 		RenderList	m_renderList;	//场景中所有渲染物体
 
 	public:
-		void	Enter()
-		{
-			if(!m_bSetup)
-			{
-				m_setupFunc(this);
-				m_bSetup = true;
-			}
-			m_bIsSponzaScene = false;
-			m_enterFunc(this);
-		}
-
+		void	Enter();
 		void	AddRenderObject(RenderObject* obj);
 
 	private:

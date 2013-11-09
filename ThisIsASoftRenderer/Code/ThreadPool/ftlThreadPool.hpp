@@ -180,7 +180,6 @@ namespace SR
 		_DestroyPool();
 
 		FTLASSERT(m_WaitingJobs.empty());
-		FTLASSERT(0 == m_nRunningThreadNum);
 	}
 
 	template <typename T>  
@@ -387,7 +386,7 @@ namespace SR
 				}
 				break;
 
-			default: FTLASSERT(FALSE);
+			default: break;
 			}
 		}
 	}

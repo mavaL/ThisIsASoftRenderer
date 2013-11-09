@@ -114,5 +114,12 @@ namespace SR
 		
 		// Vertex color stores lighting diffuse
 		scanLine.pixelColor *= scanLine.curPixelClr;
+
+		scanLine.pixelColor.Saturate();
+		*scanLine.pFragmeng->finalColor = scanLine.pixelColor.GetAsInt();
+
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedPixel();
+#endif
 	}
 }

@@ -8,135 +8,6 @@
 
 namespace SR
 {
-	void RenderUtil::DrawLine_Bresenahams(int x0, int y0, int x1,int y1, SColor color, bool bClip)
-	{
-		int cxs, cys,
-			cxe, cye;
-
-		color.Saturate();
-
-		// clip and draw each line
-		cxs = x0;
-		cys = y0;
-		cxe = x1;
-		cye = y1;
-
-		if(bClip && !ClipLine(cxs, cys, cxe, cye))
-			return;
-
-		UCHAR* vb_start = (UCHAR*)g_env.renderer->m_backBuffer->GetDataPointer();
-		int bytesPerPixel = g_env.renderer->m_backBuffer->GetBytesPerPixel();
-		int lpitch = g_env.renderer->m_backBuffer->GetWidth() * bytesPerPixel;
-
-		int dx,             // difference in x's
-			dy,             // difference in y's
-			dx2,            // dx,dy * 2
-			dy2, 
-			x_inc,          // amount in pixel space to move during drawing
-			y_inc,          // amount in pixel space to move during drawing
-			error,          // the discriminant i.e. error i.e. decision variable
-			index;          // used for looping
-
-		// pre-compute first pixel address in video buffer
-		vb_start = vb_start + cxs*bytesPerPixel + cys*lpitch;
-
-		// compute horizontal and vertical deltas
-		dx = cxe-cxs;
-		dy = cye-cys;
-
-		// test which direction the line is going in i.e. slope angle
-		if (dx>=0)
-		{
-			x_inc = bytesPerPixel;
-
-		} // end if line is moving right
-		else
-		{
-			x_inc = -bytesPerPixel;
-			dx    = -dx;  // need absolute value
-
-		} // end else moving left
-
-		// test y component of slope
-
-		if (dy>=0)
-		{
-			y_inc = lpitch;
-		} // end if line is moving down
-		else
-		{
-			y_inc = -lpitch;
-			dy    = -dy;  // need absolute value
-
-		} // end else moving up
-
-		// compute (dx,dy) * 2
-		dx2 = dx << 1;
-		dy2 = dy << 1;
-
-		// now based on which delta is greater we can draw the line
-		if (dx > dy)
-		{
-			// initialize error term
-			error = dy2 - dx; 
-
-			// draw the line
-			for (index=0; index <= dx; index++)
-			{
-				// set the pixel
-				*(DWORD*)vb_start = color.GetAsInt();
-
-				// test if error has overflowed
-				if (error >= 0) 
-				{
-					error-=dx2;
-
-					// move to next line
-					vb_start+=y_inc;
-
-				} // end if error overflowed
-
-				// adjust the error term
-				error+=dy2;
-
-				// move to the next pixel
-				vb_start+=x_inc;
-
-			} // end for
-
-		} // end if |slope| <= 1
-		else
-		{
-			// initialize error term
-			error = dx2 - dy; 
-
-			// draw the line
-			for (index=0; index <= dy; index++)
-			{
-				// set the pixel
-				*(DWORD*)vb_start = color.GetAsInt();
-
-				// test if error overflowed
-				if (error >= 0)
-				{
-					error-=dy2;
-
-					// move to next line
-					vb_start+=x_inc;
-
-				} // end if error overflowed
-
-				// adjust the error term
-				error+=dx2;
-
-				// move to the next pixel
-				vb_start+=y_inc;
-
-			} // end for
-
-		} // end else |slope| > 1
-	}
-
 	void RenderUtil::DrawLine_DDA( int x0, int y0, int x1,int y1, SColor color, bool bClip )
 	{
 		color.Saturate();
@@ -603,7 +474,7 @@ namespace SR
 
 			if(lineX1 - lineX0 >= 0)
 			{
-				RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+				RenderUtil::DrawLine_DDA(lineX0, curY, lineX1, curY, color, true);
 			}
 
 			++curY;
@@ -642,7 +513,7 @@ namespace SR
 
 			if(lineX1 - lineX0 >= 0)
 			{
-				RenderUtil::DrawLine_Bresenahams(lineX0, curY, lineX1, curY, color, true);
+				RenderUtil::DrawLine_DDA(lineX0, curY, lineX1, curY, color, true);
 			}
 
 			++curY;
@@ -722,8 +593,10 @@ namespace SR
 		JobRS* job = new JobRS(param);
 		g_env.jobMgr->SubmitJob(job, nullptr);
 #else
+		scanLineData.pMaterial = context.pMaterial;
+		scanLineData.texLod = context.texLod;
 		g_env.renderer->GetCurRas()->RasTriangleSetup(scanLineData, vert0, vert1, vert2, eTriangleShape_Bottom);
-		RasterizeScanLines(scanLineData, context);
+		RasterizeScanLines(scanLineData);
 #endif
 	}
 
@@ -749,8 +622,10 @@ namespace SR
 		JobRS* job = new JobRS(param);
 		g_env.jobMgr->SubmitJob(job, nullptr);
 #else
+		scanLineData.pMaterial = context.pMaterial;
+		scanLineData.texLod = context.texLod;
 		g_env.renderer->GetCurRas()->RasTriangleSetup(scanLineData, vert0, vert1, vert2, eTriangleShape_Top);		
-		RasterizeScanLines(scanLineData, context);
+		RasterizeScanLines(scanLineData);
 #endif
 	}
 
@@ -772,7 +647,7 @@ namespace SR
 			scanLine.lineX0 = Ext::Ceil32_Fast(scanLineData.curP_L.x);
 			scanLine.lineX1 = Ext::Ceil32_Fast(scanLineData.curP_R.x);
 
-			if(scanLine.lineX1 - scanLine.lineX0 >= 0)
+			if(scanLine.lineX1 - scanLine.lineX0 > 0)
 			{
 				curRaster->RasLineSetup(scanLine, scanLineData);
 
@@ -789,26 +664,11 @@ namespace SR
 					{
 						zBuffer[curX] = scanLine.z;
 
-						curRaster->RasterizePixel(scanLine, scanLineData);
-						
-#if USE_MULTI_THREAD == 1
-// 						SFragment& frag = fragBuf[curX];
-// 						frag.bActive = true;
-// 						frag.pMaterial = scanLineData.pMaterial;
-// 						frag.finalColor = destBuffer + curX;
-// 						frag.texLod = scanLineData.texLod;
-// 						frag.uv.Set(curUV.x*inv_w, curUV.y*inv_w);
-// 						frag.worldPos.Set(curPW.x*inv_w, curPW.y*inv_w, curPW.z*inv_w);
-// 						frag.normal.Set(curN.x*inv_w, curN.y*inv_w, curN.z*inv_w);
-#else
-						scanLine.pixelColor.Saturate();
-						// Output to back buffer
-						destBuffer[curX] = scanLine.pixelColor.GetAsInt();
+						scanLine.pFragmeng = &fragBuf[curX];
+						scanLine.pFragmeng->pMaterial = scanLineData.pMaterial;
+						scanLine.pFragmeng->finalColor = destBuffer + curX;
 
-#if USE_PROFILER == 1
-						g_env.profiler->AddRenderedPixel();
-#endif
-#endif
+						curRaster->RasterizePixel(scanLine, scanLineData);
 					}
 					
 					// Advance to next pixel

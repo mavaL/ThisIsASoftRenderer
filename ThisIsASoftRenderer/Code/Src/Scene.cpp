@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Scene.h"
 #include "RenderUtil.h"
+#include "Renderer.h"
 
 namespace SR
 {
@@ -31,6 +32,18 @@ namespace SR
 		m_renderList.clear();
 	}
 
+	void Scene::Enter()
+	{
+		if(!m_bSetup)
+		{
+			m_setupFunc(this);
+			m_bSetup = true;
+		}
+		m_enterFunc(this);
+
+		g_env.renderer->m_camera._BuildViewMatrix();
+		g_env.renderer->m_camera._BuildProjMatrix();
+	}
 }
 
 

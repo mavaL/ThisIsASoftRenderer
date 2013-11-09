@@ -28,7 +28,9 @@ namespace SR
 			VEC3 worldNormal = Common::Transform_Vec3_By_Mat44(vert.normal, obj.m_matWorldIT, false).GetVec3();
 			worldNormal.Normalize();
 
-			RenderUtil::DoLambertLighting(vert.color, worldNormal, g_env.renderer->m_testLight.neg_dir, obj.m_pMaterial);
+			SColor tmp;
+			RenderUtil::DoLambertLighting(tmp, worldNormal, g_env.renderer->m_testLight.neg_dir, obj.m_pMaterial);
+			vert.color *= tmp;
 		}
 	}
 
@@ -112,11 +114,16 @@ namespace SR
 #if USE_PERSPEC_CORRECT == 1
 		//双曲插值最后一步
 		float inv_w = 1 / scanLine.w;
-		scanLine.curPixelClr.Set(scanLine.curClr.x*inv_w, scanLine.curClr.y*inv_w, scanLine.curClr.z*inv_w);
+		scanLine.pixelColor.Set(scanLine.curClr.x*inv_w, scanLine.curClr.y*inv_w, scanLine.curClr.z*inv_w);
 #else
-		scanLine.curPixelClr = scanLine.curClr;
-#endif	
+		scanLine.pixelColor = scanLine.curClr;
+#endif
 
-		scanLine.pixelColor.Set(scanLine.curClr.x, scanLine.curClr.y, scanLine.curClr.z);
+		scanLine.pixelColor.Saturate();
+		*scanLine.pFragmeng->finalColor = scanLine.pixelColor.GetAsInt();
+
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedPixel();
+#endif
 	}
 }

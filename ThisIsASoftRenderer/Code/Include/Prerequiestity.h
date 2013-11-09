@@ -9,8 +9,8 @@
 #ifndef Prerequiestity_h__
 #define Prerequiestity_h__
 
-const int		SCREEN_WIDTH	=	800;
-const int		SCREEN_HEIGHT	=	600;
+const int		SCREEN_WIDTH	=	640;
+const int		SCREEN_HEIGHT	=	480;
 const int		PIXEL_MODE		=	4;		//像素模式(字节数). NB:只支持32位模式,不要更改
 // clipping rectangle 
 const int		min_clip_x		=	0;                          

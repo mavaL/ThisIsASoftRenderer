@@ -19,6 +19,8 @@ namespace SR
 	public:
 		Camera();
 
+		bool	m_bActive;
+
 	public:
 		void	Update();
 
@@ -45,7 +47,6 @@ namespace SR
 		//对物体进行视锥裁减测试.被剪裁返回true.
 		bool	ObjectFrustumCulling(const RenderObject& obj);
 
-	private:
 		void	_BuildViewMatrix();
 		void	_BuildProjMatrix();
 

@@ -36,7 +36,7 @@ namespace SR
 		:normal(VEC3::ZERO),tangent(VEC3::ZERO),binormal(VEC3::ZERO)
 		,worldNormal(VEC3::ZERO),lightDirTS(VEC3::ZERO),halfAngleTS(VEC3::ZERO)
 		,bActive(false)
-		,color(SColor::BLACK)
+		,color(SColor::WHITE)
 		,uv(-1,-1)
 		,viewSpaceZ(0) {}
 

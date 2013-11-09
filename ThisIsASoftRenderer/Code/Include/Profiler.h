@@ -52,28 +52,28 @@ namespace Ext
 		void	AddRenderedFace()
 		{
 #if USE_MULTI_THREAD == 1
-			m_lock1.Lock();
+			m_lock.Lock();
 #endif
 			DWORD tid = GetCurrentThreadId();
 			++m_frameStatics.nRenderedFace;
 			++m_frameStatics.threadStatMap[tid].nRenderedTri;
 
 #if USE_MULTI_THREAD == 1
-			m_lock1.UnLock();
+			m_lock.UnLock();
 #endif
 		}
 
 		void	AddRenderedPixel()
 		{
 #if USE_MULTI_THREAD == 1
-			m_lock2.Lock();
+			m_lock.Lock();
 #endif
 
 			DWORD tid = GetCurrentThreadId();
 			++m_frameStatics.threadStatMap[tid].nRenderedPixel;
 
 #if USE_MULTI_THREAD == 1
-			m_lock2.UnLock();
+			m_lock.UnLock();
 #endif
 		}
 
@@ -81,7 +81,7 @@ namespace Ext
 		std::vector<SR::SColor>	m_vecMipColor;		// Used for visualize mip distribution
 
 	private:
-		SR::CFCriticalSection	m_lock1, m_lock2;
+		SR::CFCriticalSection	m_lock;
 	};
 }
 

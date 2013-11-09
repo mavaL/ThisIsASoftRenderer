@@ -30,6 +30,10 @@ void SetupTestScene1(SR::Scene* scene)
 	v2.uv = VEC2(1.0f, 1.0f);
 	v3.uv = VEC2(0.5f, 0.0f);
 
+	v1.color.SetAsInt(0xffff0000);
+	v2.color.SetAsInt(0xff00ff00);
+	v3.color.SetAsInt(0xff0000ff);
+
 	obj->m_verts.push_back(v1);
 	obj->m_verts.push_back(v2);
 	obj->m_verts.push_back(v3);
@@ -51,7 +55,7 @@ void EnterTestScene1(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
 	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_Flat);
+	g_env.renderer->SetRasterizeType(SR::eRasterizeType_Gouraud);
 }
 
 void SetupTestScene2(SR::Scene* scene)
@@ -311,14 +315,13 @@ void EnterTestScene7(SR::Scene* scene)
 	g_env.renderer->m_camera.SetMoveSpeed(2.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
 	g_env.renderer->SetRasterizeType(SR::eRasterizeType_BlinnPhong);
-	scene->m_bIsSponzaScene = true;
 }
 
 namespace SR
 {
 	void Renderer::_InitAllScene()
 	{
-		//// Test SR::Scene 1: One simple triangle
+		//// Test SR::Scene 1: Triangle with gouraud
 		ADD_TEST_SCENE(SetupTestScene1, EnterTestScene1);
 
 		//// Test SR::Scene 2: 透视校正纹理映射
@@ -334,7 +337,7 @@ namespace SR
 		ADD_TEST_SCENE(SetupTestScene5, EnterTestScene5);
 
 		//// Test SR::Scene 6: Normal Map
-		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
+		//ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
 
 		//// Test SR::Scene 7: sponza.obj
 		ADD_TEST_SCENE(SetupTestScene7, EnterTestScene7);

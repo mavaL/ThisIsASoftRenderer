@@ -43,7 +43,7 @@ namespace SR
 		virtual void	DoPerVertexLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj) {}
 		//逐像素光照
 		virtual void	DoPerPixelLighting(SColor& result, void* pLightingContext, const SMaterial* pMaterial) {}
-		// Only called when opening multi-thread
+		// Only be called when opening multi-thread
 		virtual void	FragmentPS(SFragment& frag) {}
 		////扫描线光栅化
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type) = 0;
@@ -124,6 +124,7 @@ namespace SR
 		float	z, dz, w, dw, inv_dx;
 		bool	bClipX;
 		float	clip_dx;
+		SFragment*	pFragmeng;
 	};
 	
 

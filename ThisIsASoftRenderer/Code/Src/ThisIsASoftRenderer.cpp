@@ -235,6 +235,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_ERASEBKGND:
 		return 0;
 
+	case WM_LBUTTONDOWN:
+		g_env.renderer->m_camera.m_bActive = true;
+		return 0;
+
+	case WM_LBUTTONUP:
+		g_env.renderer->m_camera.m_bActive = false;
+		return 0;
+
 	case WM_KEYDOWN:
 		{
 			switch (wParam)

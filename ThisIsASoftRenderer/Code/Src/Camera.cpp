@@ -11,6 +11,7 @@ namespace SR
 	,m_farClip(1000)
 	,m_fixYawAxis(true)
 	,m_moveSpeed(1.0f)
+	,m_bActive(false)
 	{
 		m_fov = Common::Angle_To_Radian(45);
 		m_aspectRatio = SCREEN_WIDTH / (float)SCREEN_HEIGHT;
@@ -31,6 +32,9 @@ namespace SR
 		if(dy) pitchDelta = -dy/5.0f;
 
 		lastCursorPos = curCursorPos;
+
+		if(!m_bActive)
+			return;
 
 		//Ïà»úÐý×ª
 		if(dx)

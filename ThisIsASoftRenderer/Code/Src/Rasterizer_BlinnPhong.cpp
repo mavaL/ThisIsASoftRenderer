@@ -154,7 +154,7 @@ namespace SR
 		scanLine.curN = rasData.curN_L;
 
 		//≤√ºÙ«¯”Ú≤√ºÙx
-		if(scanLine.lineX0 < min_clip_x)
+		if(scanLine.bClipX)
 		{
 			Common::Add_Vec2_By_Vec2(scanLine.curUV, scanLine.curUV, Common::Multiply_Vec2_By_K(scanLine.deltaUV, scanLine.clip_dx));
 			Common::Add_Vec3_By_Vec3(scanLine.curPW, scanLine.curPW, Common::Multiply_Vec3_By_K(scanLine.deltaPW, scanLine.clip_dx));
@@ -176,28 +176,15 @@ namespace SR
 		scanLine.finalN = scanLine.curN;
 #endif			
 
-#if USE_MULTI_THREAD == 0
-		if(rasData.pMaterial->pDiffuseMap && rasData.pMaterial->bUseBilinearSampler)
-		{
-			rasData.pMaterial->pDiffuseMap->Tex2D_Bilinear(scanLine.finalUV, scanLine.pixelColor, rasData.texLod);
-		}
-		else if(rasData.pMaterial->pDiffuseMap)
-		{
-			rasData.pMaterial->pDiffuseMap->Tex2D_Point(scanLine.finalUV, scanLine.pixelColor, rasData.texLod);
-		}
-		else
-		{
-			scanLine.pixelColor = SColor::WHITE;
-		}
+		scanLine.pFragmeng->texLod = rasData.texLod;
+		scanLine.pFragmeng->uv = scanLine.finalUV;
+		scanLine.pFragmeng->worldPos = scanLine.finalPW;
+		scanLine.pFragmeng->normal = scanLine.finalN;
 
-		SLightingContext_Phong lc;
-		lc.uv = &scanLine.finalUV;
-		lc.worldNormal = &scanLine.finalN;
-		lc.worldPos = &scanLine.finalPW;
-
-		g_env.renderer->GetCurRas()->DoPerPixelLighting(scanLine.curPixelClr, &lc, rasData.pMaterial);
-
-		scanLine.pixelColor *= scanLine.curPixelClr;
+#if USE_MULTI_THREAD == 1
+		scanLine.pFragmeng->bActive = true;
+#else
+		FragmentPS(*scanLine.pFragmeng);
 #endif
 	}
 
@@ -205,7 +192,7 @@ namespace SR
 	{
 		assert(frag.bActive);
 
-		SColor texColor, lightColor(SColor::WHITE);
+		SColor texColor(SColor::WHITE), lightColor(SColor::WHITE);
 		SMaterial* pMaterial = frag.pMaterial;
 
 		if(pMaterial->pDiffuseMap && pMaterial->bUseBilinearSampler)
@@ -224,7 +211,6 @@ namespace SR
 
 		g_env.renderer->GetCurRas()->DoPerPixelLighting(lightColor, &lc, pMaterial);
 		texColor *= lightColor;
-
 		texColor.Saturate();
 		*frag.finalColor = texColor.GetAsInt();
 
