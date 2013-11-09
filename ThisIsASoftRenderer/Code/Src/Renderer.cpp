@@ -72,12 +72,12 @@ namespace SR
 		m_matLib.clear();
 	}
 
-	void Renderer::SetRasterizeType( eRasterizeType type )
+	Rasterizer* Renderer::GetRasterizer( eRasterizeType type )
 	{
 		auto iter = m_rasLib.find(type);
 		assert(iter != m_rasLib.end());
 
-		m_curRas = iter->second;
+		return iter->second;
 	}
 
 	void Renderer::OnFrameMove()
@@ -120,6 +120,7 @@ namespace SR
 		for (int iObj=0; iObj<nObj; ++iObj)
 		{
 			RenderObject& obj = *m_scenes[m_curScene]->m_renderList[iObj];
+			m_curRas = obj.m_pShader;
 
 			//T&L
 #if USE_MULTI_THREAD == 1
@@ -236,20 +237,6 @@ namespace SR
 		}
 	}
 
-	void Renderer::ToggleShadingMode()
-	{
-		switch (m_curRas->GetType())
-		{
-		case SR::eRasterizeType_Wireframe:			SetRasterizeType(SR::eRasterizeType_Flat); break;
-		case SR::eRasterizeType_Flat:				SetRasterizeType(SR::eRasterizeType_Gouraud); break;
-		case SR::eRasterizeType_Gouraud:			SetRasterizeType(SR::eRasterizeType_TexturedGouraud); break;
-		case SR::eRasterizeType_TexturedGouraud:	SetRasterizeType(SR::eRasterizeType_BlinnPhong); break;
-		case SR::eRasterizeType_BlinnPhong:			SetRasterizeType(SR::eRasterizeType_PhongWithNormalMap); break;
-		case SR::eRasterizeType_PhongWithNormalMap:	SetRasterizeType(SR::eRasterizeType_Wireframe); break;
-		default: assert(0);
-		}
-	}
-
 	void Renderer::AddMaterial( const STRING& name, SMaterial* mat )
 	{
 		auto iter = m_matLib.find(name);
@@ -283,20 +270,6 @@ namespace SR
 		}
 
 		return iter->second;
-	}
-
-	const char* Renderer::GetCurShadingModeName() const
-	{
-		switch (m_curRas->GetType())
-		{
-		case eRasterizeType_Flat:			return "Flat"; break;
-		case eRasterizeType_Wireframe:		return "Wireframe"; break;
-		case eRasterizeType_Gouraud:		return "Gouraud"; break;
-		case eRasterizeType_TexturedGouraud: return "TexturedGouraud"; break;
-		case eRasterizeType_BlinnPhong:		return "BlinnPhong"; break;
-		case eRasterizeType_PhongWithNormalMap:		return "PhongWithNormalMap"; break;
-		default: assert(0);					return nullptr;
-		}
 	}
 
 	void Renderer::ToggleScene()

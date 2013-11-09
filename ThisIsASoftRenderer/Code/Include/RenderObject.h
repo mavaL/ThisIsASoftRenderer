@@ -13,6 +13,7 @@
 #include "MathDef.h"
 #include "GeometryDef.h"
 #include "AABB.h"
+#include "Rasterizer.h"
 
 namespace SR
 {
@@ -27,6 +28,7 @@ namespace SR
 		void	BuildTangentVectors();
 
 		void	OnFrameMove();
+		void	SetShader(eRasterizeType shader);
 
 		VertexBuffer	m_verts;
 		FaceList		m_faces;
@@ -36,6 +38,13 @@ namespace SR
 		AABB			m_localAABB;		//本地包围盒
 		AABB			m_worldAABB;		//世界包围盒
 		bool			m_bStatic;			//该物体在场景中完全固定
+		Rasterizer*		m_pShader;
+
+	private:
+		// From Irrlicht
+		void	_CalcTangentSpace(VEC3& oNormal, VEC3& oTangent, VEC3& oBinormal, 
+			const VEC3& vt1, const VEC3& vt2, const VEC3& vt3,
+			const VEC2& tc1, const VEC2& tc2, const VEC2& tc3);
 	};
 
 	typedef std::vector<RenderObject*>		RenderList;

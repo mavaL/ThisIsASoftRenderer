@@ -26,7 +26,7 @@ namespace Common
 		Vector2():x(0),y(0) {}
 		Vector2(float _x, float _y):x(_x),y(_y) {}
 
-		inline void Set(float _x, float _y) { x=_x; y=_y; }
+		void Set(float _x, float _y) { x=_x; y=_y; }
 
 		float x, y;
 	};
@@ -40,9 +40,16 @@ namespace Common
 		Vector3(float _x, float _y, float _z):x(_x),y(_y),z(_z) {}
 		Vector3(const Vector3& rhs):x(rhs.x),y(rhs.y),z(rhs.z) {}
 
-		inline void Set(float _x, float _y, float _z) { x=_x; y=_y; z=_z; }
+		bool operator ==(const Vector3& other) const
+		{
+			return x == other.x &&
+				y == other.y &&
+				z == other.z;
+		}
 
-		inline void	Normalize()
+		void Set(float _x, float _y, float _z) { x=_x; y=_y; z=_z; }
+
+		void	Normalize()
 		{
 			float mod = std::sqrt(x * x + y * y + z * z);
 			float invMode = 1 / mod;
@@ -51,7 +58,7 @@ namespace Common
 			z *= invMode;
 		}
 		//求负
-		inline void	Neg() { x = -x; y = -y; z = -z; }
+		void	Neg() { x = -x; y = -y; z = -z; }
 
 		float x, y, z;
 
@@ -73,10 +80,10 @@ namespace Common
 		Vector4(Vector3 pt, float _w):x(pt.x),y(pt.y),z(pt.z),w(_w) {}
 		Vector4(float _x, float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) {}
 
-		inline void		Set(float _x, float _y, float _z, float _w) { x=_x; y=_y; z=_z; w=_w; }
-		inline const Vector3& GetVec3() const	{ return vec3; }
+		void		Set(float _x, float _y, float _z, float _w) { x=_x; y=_y; z=_z; w=_w; }
+		const Vector3& GetVec3() const	{ return vec3; }
 		//求负
-		inline void	Neg() { x = -x; y = -y; z = -z; w = -w; }
+		void	Neg() { x = -x; y = -y; z = -z; w = -w; }
 
 		union
 		{

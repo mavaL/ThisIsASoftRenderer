@@ -271,12 +271,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_CHAR:
 		{
-			if(wParam == 'r')
-			{
-				g_env.renderer->ToggleShadingMode();
-				return 0;
-			}
-			else if(wParam == 't')
+			if(wParam == 't')
 			{
 				g_env.renderer->ToggleScene();
 				return 0;

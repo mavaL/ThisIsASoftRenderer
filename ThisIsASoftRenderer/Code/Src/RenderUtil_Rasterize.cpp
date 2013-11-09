@@ -629,6 +629,8 @@ namespace SR
 #endif
 	}
 
+	CFCriticalSection g_lock;
+
 	void RenderUtil::RasterizeScanLines( SScanLinesData& scanLineData )
 	{
 		//定位输出位置
@@ -659,16 +661,23 @@ namespace SR
 				// Rasterize a line
 				for (int curX=scanLine.lineX0; curX<=scanLine.lineX1; ++curX)
 				{
+					g_lock.Lock();
 					// Z-test
 					if(scanLine.z < zBuffer[curX])
 					{
 						zBuffer[curX] = scanLine.z;
+
+						g_lock.UnLock();
 
 						scanLine.pFragmeng = &fragBuf[curX];
 						scanLine.pFragmeng->pMaterial = scanLineData.pMaterial;
 						scanLine.pFragmeng->finalColor = destBuffer + curX;
 
 						curRaster->RasterizePixel(scanLine, scanLineData);
+					}
+					else
+					{
+						g_lock.UnLock();
 					}
 					
 					// Advance to next pixel

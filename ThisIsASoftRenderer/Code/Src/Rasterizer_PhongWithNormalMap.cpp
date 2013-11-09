@@ -146,7 +146,7 @@ namespace SR
 
 	void RasPhongWithNormalMap::RasLineSetup( SScanLine& scanLine, const SScanLinesData& rasData )
 	{
-		Rasterizer::RasLineSetup(scanLine, rasData);
+		RasBlinnPhong::RasLineSetup(scanLine, rasData);
 
 		scanLine.deltaLightDir.Set((rasData.curLightDir_R.x-rasData.curLightDir_L.x)*scanLine.inv_dx, (rasData.curLightDir_R.y-rasData.curLightDir_L.y)*scanLine.inv_dx, (rasData.curLightDir_R.z-rasData.curLightDir_L.z)*scanLine.inv_dx);
 		scanLine.deltaHVector.Set((rasData.curHVector_R.x-rasData.curHVector_L.x)*scanLine.inv_dx, (rasData.curHVector_R.y-rasData.curHVector_L.y)*scanLine.inv_dx, (rasData.curHVector_R.z-rasData.curHVector_L.z)*scanLine.inv_dx);
@@ -178,11 +178,40 @@ namespace SR
 		scanLine.finalLightDir.Normalize();
 		scanLine.finalHVector.Normalize();
 
+		scanLine.pFragmeng->lightDirTS = scanLine.finalLightDir;
+		scanLine.pFragmeng->hVectorTS = scanLine.finalHVector;
+
 		RasBlinnPhong::RasterizePixel(scanLine, rasData);
 	}
 
 	void RasPhongWithNormalMap::FragmentPS( SFragment& frag )
 	{
+		SColor texColor(SColor::WHITE), lightColor(SColor::WHITE);
+		SMaterial* pMaterial = frag.pMaterial;
 
+		if(pMaterial->pDiffuseMap && pMaterial->bUseBilinearSampler)
+		{
+			pMaterial->pDiffuseMap->Tex2D_Bilinear(frag.uv, texColor, frag.texLod);
+		}
+		else if(pMaterial->pDiffuseMap)
+		{
+			pMaterial->pDiffuseMap->Tex2D_Point(frag.uv, texColor, frag.texLod);
+		}
+
+		SLightingContext_PhongWithNormalMap lc;
+		lc.uv = &frag.uv;
+		lc.worldNormal = &frag.normal;
+		lc.worldPos = &frag.worldPos;
+		lc.lightDirTS = &frag.lightDirTS;
+		lc.hVectorTS = &frag.hVectorTS;
+
+		g_env.renderer->GetCurRas()->DoPerPixelLighting(lightColor, &lc, pMaterial);
+		texColor *= lightColor;
+		texColor.Saturate();
+		*frag.finalColor = texColor.GetAsInt();
+
+#if USE_PROFILER == 1
+		g_env.profiler->AddRenderedPixel();
+#endif
 	}
 }

@@ -46,6 +46,7 @@ void SetupTestScene1(SR::Scene* scene)
 	g_env.renderer->AddMaterial("MatTriangle", mat);
 	obj->m_pMaterial = mat;
 	obj->m_bStatic = true;
+	obj->SetShader(SR::eRasterizeType_Gouraud);
 
 	scene->AddRenderObject(obj);
 }
@@ -55,7 +56,6 @@ void EnterTestScene1(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
 	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_Gouraud);
 }
 
 void SetupTestScene2(SR::Scene* scene)
@@ -96,6 +96,7 @@ void SetupTestScene2(SR::Scene* scene)
 	g_env.renderer->AddMaterial("MatChese", mat);
 	obj->m_pMaterial = mat;
 	obj->m_bStatic = true;
+	obj->SetShader(SR::eRasterizeType_TexturedGouraud);
 
 	scene->AddRenderObject(obj);
 }
@@ -106,7 +107,6 @@ void EnterTestScene2(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(-20,706,1706));
 	g_env.renderer->m_camera.SetMoveSpeed(5.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3(0,-1,-2));
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_TexturedGouraud);
 }
 
 void SetupTestScene3(SR::Scene* scene)
@@ -168,6 +168,7 @@ void SetupTestScene3(SR::Scene* scene)
 	g_env.renderer->AddMaterial("MatGrid", mat);
 	obj->m_pMaterial = mat;
 	obj->m_bStatic = true;
+	obj->SetShader(SR::eRasterizeType_TexturedGouraud);	
 
 	scene->AddRenderObject(obj);
 }
@@ -178,7 +179,6 @@ void EnterTestScene3(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(-20,300,700));
 	g_env.renderer->m_camera.SetMoveSpeed(10.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3(0,-1,-2));
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_TexturedGouraud);
 }
 
 void SetupTestScene4(SR::Scene* scene)
@@ -199,6 +199,7 @@ void SetupTestScene4(SR::Scene* scene)
 
 		g_env.renderer->AddMaterial("MatMarine", mat);
 		g_env.meshLoader->m_objs[0]->m_pMaterial = mat;
+		g_env.meshLoader->m_objs[0]->SetShader(SR::eRasterizeType_TexturedGouraud);
 	}
 	catch (std::exception& e)
 	{
@@ -214,7 +215,6 @@ void EnterTestScene4(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(0,0,10));
 	g_env.renderer->m_camera.SetMoveSpeed(0.1f);
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_TexturedGouraud);
 }
 
 void SetupTestScene5(SR::Scene* scene)
@@ -232,6 +232,7 @@ void SetupTestScene5(SR::Scene* scene)
 
 		g_env.renderer->AddMaterial("MatTeapot", mat);
 		g_env.meshLoader->m_objs[0]->m_pMaterial = mat;
+		g_env.meshLoader->m_objs[0]->SetShader(SR::eRasterizeType_BlinnPhong);
 	}
 	catch (std::exception& e)
 	{
@@ -247,7 +248,6 @@ void EnterTestScene5(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
 	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_BlinnPhong);
 }
 
 void SetupTestScene6(SR::Scene* scene)
@@ -260,6 +260,7 @@ void SetupTestScene6(SR::Scene* scene)
 		SR::SMaterial* mat = new SR::SMaterial;
 		mat->pDiffuseMap = new SR::STexture;
 		mat->pDiffuseMap->LoadTexture(GetResPath("RustedMetal.bmp"), false);
+		mat->bUseBilinearSampler = true;
 
 		mat->pNormalMap = new SR::STexture;
 		mat->pNormalMap->LoadTexture(GetResPath("NormalMap.bmp"), false);
@@ -271,6 +272,8 @@ void SetupTestScene6(SR::Scene* scene)
 
 		g_env.renderer->AddMaterial("MatNormalMap", mat);
 		g_env.meshLoader->m_objs[0]->m_pMaterial = mat;
+		g_env.meshLoader->m_objs[0]->BuildTangentVectors();
+		g_env.meshLoader->m_objs[0]->SetShader(SR::eRasterizeType_PhongWithNormalMap);
 	}
 	catch (std::exception& e)
 	{
@@ -286,7 +289,6 @@ void EnterTestScene6(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
 	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_PhongWithNormalMap);
 }
 
 void SetupTestScene7(SR::Scene* scene)
@@ -314,7 +316,6 @@ void EnterTestScene7(SR::Scene* scene)
 	g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
 	g_env.renderer->m_camera.SetMoveSpeed(2.0f);
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
-	g_env.renderer->SetRasterizeType(SR::eRasterizeType_BlinnPhong);
 }
 
 namespace SR
@@ -337,7 +338,7 @@ namespace SR
 		ADD_TEST_SCENE(SetupTestScene5, EnterTestScene5);
 
 		//// Test SR::Scene 6: Normal Map
-		//ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
+		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
 
 		//// Test SR::Scene 7: sponza.obj
 		ADD_TEST_SCENE(SetupTestScene7, EnterTestScene7);

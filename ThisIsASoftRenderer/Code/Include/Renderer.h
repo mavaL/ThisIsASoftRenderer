@@ -42,13 +42,9 @@ namespace SR
 
 	public:
 		void	Init();
-		void	SetRasterizeType(eRasterizeType type);
 		void	OnFrameMove();
+		Rasterizer* GetRasterizer(eRasterizeType type);
 		Rasterizer*	GetCurRas() { return m_curRas; }
-		//切换渲染模式(wireframe, flat, gouraud, phong)
-		void	ToggleShadingMode();
-		//获取当前渲染模式名字
-		const char*	GetCurShadingModeName() const;
 		//切换测试场景
 		void	ToggleScene();
 		//渲染管线

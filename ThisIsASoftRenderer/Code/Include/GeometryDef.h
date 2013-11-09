@@ -133,13 +133,15 @@ namespace SR
 	///////////////////////////////////////////////////
 	struct SFragment 
 	{
-		bool		bActive;
-		DWORD*		finalColor;	//最终颜色输出
 		VEC3		worldPos;	//世界坐标
-		VEC2		uv;			//纹理坐标
 		VEC3		normal;		//世界法线
+		VEC2		uv;			//纹理坐标
+		VEC3		lightDirTS;	// Light direction in tangent space
+		VEC3		hVectorTS;	// H-vector in tangent space
 		SMaterial*	pMaterial;	//材质
+		DWORD*		finalColor;	//最终颜色输出
 		int			texLod;
+		bool		bActive;
 	};
 }
 

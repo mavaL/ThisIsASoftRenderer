@@ -190,8 +190,6 @@ namespace SR
 
 	void RasBlinnPhong::FragmentPS( SFragment& frag )
 	{
-		assert(frag.bActive);
-
 		SColor texColor(SColor::WHITE), lightColor(SColor::WHITE);
 		SMaterial* pMaterial = frag.pMaterial;
 

@@ -170,6 +170,9 @@ namespace SR
 
 		m_hEventFlushJobs = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 		FTLASSERT(NULL != m_hEventFlushJobs);
+
+		m_hEventWaitAllJobsDone = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+		FTLASSERT(NULL != m_hEventWaitAllJobsDone);
 	}
 
 	template <typename T>  
@@ -321,7 +324,7 @@ namespace SR
 	template <typename T>  
 	FTLINLINE void CFThreadPool<T>::Flush()
 	{
-		BOOL bRet = FALSE;
+		m_nThreadDoneWork = 0;
 		PulseEvent(m_hEventFlushJobs);
 
 		//主线程也加入处理任务
@@ -330,6 +333,10 @@ namespace SR
 		{
 			bContinue = _DoJob();
 		}
+
+		// Wait for all threads done working
+		BOOL bRet = WaitForSingleObject(m_hEventWaitAllJobsDone, INFINITE) == WAIT_OBJECT_0;
+		FTLASSERT(bRet == TRUE);
 	}
 
 	template <typename T>  
@@ -357,6 +364,7 @@ namespace SR
 		SAFE_CLOSE_HANDLE(m_hEventFlushJobs,NULL);
 		SAFE_CLOSE_HANDLE(m_hEventContinue,NULL);
 		SAFE_CLOSE_HANDLE(m_hEventStop,NULL);
+		SAFE_CLOSE_HANDLE(m_hEventWaitAllJobsDone,NULL);
 	}
 
 	template <typename T>  
@@ -433,6 +441,12 @@ namespace SR
 
 			return true;
 		}
+
+		m_lockThreadDoneWork.Lock();
+		++m_nThreadDoneWork;
+		if (m_nThreadDoneWork == m_TaskThreads.size()+1)
+			::SetEvent(m_hEventWaitAllJobsDone);
+		m_lockThreadDoneWork.UnLock();
 
 		return false;
 	}

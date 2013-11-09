@@ -179,12 +179,16 @@ namespace SR
         typedef std::map<DWORD, HANDLE>   TaskThreadContrainer;     //!maintain thread, thread id -> handle
         TaskThreadContrainer m_TaskThreads;
 
+		CFCriticalSection m_lockThreadDoneWork;
+		LONG		m_nThreadDoneWork;
+
 		typedef std::deque<CFJobBase<T>*> WaitingJobContainer;
 		WaitingJobContainer		m_WaitingJobs;
 
 		HANDLE m_hEventStop;                    //! Stop pool event
 		HANDLE m_hEventContinue;				//! The pool continue running event
 		HANDLE m_hEventFlushJobs;
+		HANDLE m_hEventWaitAllJobsDone;
 
 		CFCriticalSection m_lockWaitingJobs;    //! access for m_WaitingJobs
 		CFCriticalSection m_lockThreads;        //! access for m_TaskThreads

@@ -27,6 +27,7 @@ namespace Ext
 				break;
 
 			SR::RenderObject* obj = new SR::RenderObject;
+			obj->SetShader(SR::eRasterizeType_BlinnPhong);
 			m_objs.push_back(obj);
 
 			//获取数据量,避免反复分配存储空间
@@ -146,6 +147,17 @@ namespace Ext
 			nTotalUvCount += nUv;
 			nTotalNormalCount += nNormal;
 		}
+
+		// Build tangent for normal-mapping object
+		for (size_t i=0; i<m_objs.size(); ++i)
+		{
+			SR::SMaterial* pMaterial = m_objs[i]->m_pMaterial;
+			if (pMaterial->pNormalMap)
+			{
+				m_objs[i]->BuildTangentVectors();
+				m_objs[i]->SetShader(SR::eRasterizeType_PhongWithNormalMap);
+			}
+		}
 				
 		return true;
 	}
@@ -261,8 +273,8 @@ namespace Ext
 			{
 				STRING texName;
 				file >> texName;
-// 				pNewMaterial->pNormalMap = new SR::STexture;
-// 				pNewMaterial->pNormalMap->LoadTexture(GetResPath(texName), false);
+				pNewMaterial->pNormalMap = new SR::STexture;
+				pNewMaterial->pNormalMap->LoadTexture(GetResPath(texName), false);
 			}
 			else if (strcmp(command.c_str(), "Ka") == 0)
 			{

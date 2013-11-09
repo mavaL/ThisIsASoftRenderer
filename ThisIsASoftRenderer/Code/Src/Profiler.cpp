@@ -26,18 +26,17 @@ namespace Ext
 	{
 		{
 			const VEC4& pos = g_env.renderer->m_camera.GetPos();
+			const float speed = g_env.renderer->m_camera.GetMoveSpeed();
 			char szText[128];
-			sprintf_s(szText, ARRAYSIZE(szText), "CamPos : (%f, %f, %f), Current Shade Mode : %s", 
-				pos.x, pos.y, pos.z, g_env.renderer->GetCurShadingModeName());
+			sprintf_s(szText, ARRAYSIZE(szText), "CamPos : (%f, %f, %f) Camera Speed: %f .", pos.x, pos.y, pos.z, speed);
 
 			SR::RenderUtil::DrawText(10, 10, szText, 0xff00ff00);
 		}
 
 		{
-			const float speed = g_env.renderer->m_camera.GetMoveSpeed();
 			char szText[128];
 			sprintf_s(szText, ARRAYSIZE(szText), 
-				"Camera Speed: %f . Press \"+/-\" to change camera speed. Press R to toggle shade mode. Press T to toggle scene !", speed);
+				"Press \"+/-\" to change camera speed. Press T to toggle scene !");
 
 			SR::RenderUtil::DrawText(10, 35, szText, 0xff00ff00);
 		}
