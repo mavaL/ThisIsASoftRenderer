@@ -56,34 +56,40 @@ namespace SR
 
 	void Rasterizer::RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type)
 	{
-		const VEC4& p0 = v0->pos;
-		const VEC4& p1 = v1->pos;
-		const VEC4& p2 = v2->pos;
+		const VEC3 p0(v0->pos.x, v0->pos.z, v0->pos.w);
+		const VEC3 p1(v1->pos.x, v1->pos.z, v1->pos.w);
+		const VEC3 p2(v2->pos.x, v2->pos.z, v2->pos.w);
+
+		float y0 = v0->pos.y;
+		float y1 = v1->pos.y;
+		float y2 = v2->pos.y;
 
 		if (type == eTriangleShape_Bottom)
 		{
 			//左上填充规则:上
-			rasData.curY = Ext::Ceil32_Fast(p0.y), rasData.endY = Ext::Ceil32_Fast(p1.y) - 1;
+			rasData.curY = Ext::Ceil32_Fast(y0), rasData.endY = Ext::Ceil32_Fast(y1) - 1;
 			//位置坐标及增量
-			rasData.inv_dy_L = 1.0f / (p1.y - p0.y);
-			rasData.inv_dy_R = 1.0f / (p2.y - p0.y);
-			rasData.curP_L.Set(p0.x, p0.z, p0.w);
-			rasData.curP_R.Set(p0.x, p0.z, p0.w);
-			rasData.dp_L.Set((p1.x-p0.x)*rasData.inv_dy_L, (p1.z-p0.z)*rasData.inv_dy_L, (p1.w-p0.w)*rasData.inv_dy_L);
-			rasData.dp_R.Set((p2.x-p0.x)*rasData.inv_dy_R, (p2.z-p0.z)*rasData.inv_dy_R, (p2.w-p0.w)*rasData.inv_dy_R);
+			rasData.inv_dy_L = 1.0f / (y1 - y0);
+			rasData.inv_dy_R = 1.0f / (y2 - y0);
+			rasData.curP_L = p0;
+			rasData.curP_R = p0;
+			rasData.dp_L = Common::Sub_Vec3_By_Vec3(p1, p0);
+			rasData.dp_R = Common::Sub_Vec3_By_Vec3(p2, p0);
 		}
 		else
 		{
 			//左上填充规则:上
-			rasData.curY = Ext::Ceil32_Fast(p0.y), rasData.endY = Ext::Ceil32_Fast(p1.y) - 1;
+			rasData.curY = Ext::Ceil32_Fast(y0), rasData.endY = Ext::Ceil32_Fast(y1) - 1;
 			//屏幕坐标及增量
-			rasData.inv_dy_L = 1.0f / (p1.y - p0.y);
-			rasData.inv_dy_R = 1.0f / (p1.y - p2.y);
-			rasData.curP_L.Set(p0.x, p0.z, p0.w);
-			rasData.curP_R.Set(p2.x, p2.z, p2.w);
-			rasData.dp_L.Set((p1.x-p0.x)*rasData.inv_dy_L, (p1.z-p0.z)*rasData.inv_dy_L, (p1.w-p0.w)*rasData.inv_dy_L);
-			rasData.dp_R.Set((p1.x-p2.x)*rasData.inv_dy_R, (p1.z-p2.z)*rasData.inv_dy_R, (p1.w-p2.w)*rasData.inv_dy_R);
+			rasData.inv_dy_L = 1.0f / (y1 - y0);
+			rasData.inv_dy_R = 1.0f / (y1 - y2);
+			rasData.curP_L = p0;
+			rasData.curP_R = p2;
+			rasData.dp_L = Common::Sub_Vec3_By_Vec3(p1, p0);
+			rasData.dp_R = Common::Sub_Vec3_By_Vec3(p1, p2);
 		}
+		Common::Multiply_Vec3_By_K(rasData.dp_L, rasData.dp_L, rasData.inv_dy_L);
+		Common::Multiply_Vec3_By_K(rasData.dp_R, rasData.dp_R, rasData.inv_dy_R);
 
 		//裁剪区域裁剪y
 		if(rasData.curY < min_clip_y)
@@ -107,10 +113,9 @@ namespace SR
 	void Rasterizer::RasLineSetup( SScanLine& scanLine, const SScanLinesData& rasData )
 	{
 		scanLine.inv_dx = 1.0f / (scanLine.lineX1 - scanLine.lineX0);
-		scanLine.dz = (rasData.curP_R.y - rasData.curP_L.y) * scanLine.inv_dx;
-		scanLine.dw = (rasData.curP_R.z - rasData.curP_L.z) * scanLine.inv_dx;
-		scanLine.z = rasData.curP_L.y;
-		scanLine.w = rasData.curP_L.z;
+		scanLine.dzdw.Set(rasData.curP_R.y-rasData.curP_L.y, rasData.curP_R.z-rasData.curP_L.z);
+		scanLine.zw.Set(rasData.curP_L.y, rasData.curP_L.z);
+		Common::Multiply_Vec2_By_K(scanLine.dzdw, scanLine.dzdw, scanLine.inv_dx);
 
 		//裁剪区域裁剪x
 		if(scanLine.lineX0 < min_clip_x)
@@ -118,8 +123,7 @@ namespace SR
 			scanLine.bClipX = true;
 			scanLine.clip_dx = min_clip_x-scanLine.lineX0;
 			scanLine.lineX0 = min_clip_x;			
-			scanLine.z += scanLine.clip_dx*scanLine.dz;
-			scanLine.w += scanLine.clip_dx*scanLine.dw;
+			Common::Add_Vec2_By_Vec2(scanLine.zw, scanLine.zw, Common::Multiply_Vec2_By_K(scanLine.dzdw, scanLine.clip_dx));
 		}
 		else
 		{

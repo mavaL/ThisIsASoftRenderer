@@ -663,9 +663,9 @@ namespace SR
 				{
 					g_lock.Lock();
 					// Z-test
-					if(scanLine.z < zBuffer[curX])
+					if(scanLine.zw.x < zBuffer[curX])
 					{
-						zBuffer[curX] = scanLine.z;
+						zBuffer[curX] = scanLine.zw.x;
 
 						g_lock.UnLock();
 
@@ -687,8 +687,7 @@ namespace SR
 					Common::Add_Vec3_By_Vec3(scanLine.curN, scanLine.curN, scanLine.deltaN);
 					Common::Add_Vec3_By_Vec3(scanLine.curLightDir, scanLine.curLightDir, scanLine.deltaLightDir);
 					Common::Add_Vec3_By_Vec3(scanLine.curHVector, scanLine.curHVector, scanLine.deltaHVector);
-					scanLine.z += scanLine.dz;
-					scanLine.w += scanLine.dw;
+					Common::Add_Vec2_By_Vec2(scanLine.zw, scanLine.zw, scanLine.dzdw);
 				}
 			}
 

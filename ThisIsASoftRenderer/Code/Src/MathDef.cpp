@@ -98,7 +98,7 @@ namespace Common
 		m30 = 0;	m31 = 0;	m32 = 0;	m33 = 1;
 	}
 
-	void Matrix44::SetRow( int row, const Vector4 vec )
+	void Matrix44::SetRow( int row, const Vector4& vec )
 	{
 		assert(row >= 0 && row < 4);
 		m_arr[row][0] = vec.x;

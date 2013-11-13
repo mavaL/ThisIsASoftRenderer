@@ -49,14 +49,7 @@ namespace Common
 
 		void Set(float _x, float _y, float _z) { x=_x; y=_y; z=_z; }
 
-		void	Normalize()
-		{
-			float mod = std::sqrt(x * x + y * y + z * z);
-			float invMode = 1 / mod;
-			x *= invMode;
-			y *= invMode;
-			z *= invMode;
-		}
+		void	Normalize();
 		//求负
 		void	Neg() { x = -x; y = -y; z = -z; }
 
@@ -77,7 +70,7 @@ namespace Common
 	{
 	public:
 		Vector4():x(0),y(0),z(0),w(0) {}
-		Vector4(Vector3 pt, float _w):x(pt.x),y(pt.y),z(pt.z),w(_w) {}
+		Vector4(const Vector3& pt, float _w):x(pt.x),y(pt.y),z(pt.z),w(_w) {}
 		Vector4(float _x, float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) {}
 
 		void		Set(float _x, float _y, float _z, float _w) { x=_x; y=_y; z=_z; w=_w; }
@@ -109,7 +102,7 @@ namespace Common
 					,m20(_m20),m21(_m21),m22(_m22),m23(_m23)
 					,m30(_m30),m31(_m31),m32(_m32),m33(_m33) {}
 
-		void		SetRow(int row, const Vector4 vec);
+		void		SetRow(int row, const Vector4& vec);
 		//单位矩阵化
 		void		MakeIdentity();
 		//零矩阵化
@@ -156,170 +149,26 @@ namespace Common
 	//////// 4x4矩阵相乘
 	Matrix44	Multiply_Mat44_By_Mat44(const Matrix44& mat1, const Matrix44& mat2);
 
-	//////// 4d向量相加
-	inline Vector4	Add_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2)
-	{
-		return std::move(Vector4(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z, v1.w+v2.w));
-	}
-
-	//////// 4d向量乘以常数
-	inline Vector4	Multiply_Vec4_By_K(const Vector4& v, float k)
-	{
-		return std::move(Vector4(v.x * k, v.y * k, v.z * k, v.w * k));
-	}
-
-	inline void	Multiply_Vec4_By_K(Vector4& result, const Vector4& v, float k)
-	{
-		result.x = v.x * k;
-		result.y = v.y * k;
-		result.z = v.z * k;
-		result.w = v.w * k;
-	}
-
-	//////// 4d向量相减
-	inline Vector4	Sub_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2)
-	{
-		return std::move(Vector4(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z, v1.w-v2.w));
-	}
-
-	//////// 3d向量相减
-	inline Vector3	Sub_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
-	{
-		return std::move(Vector3(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z));
-	}
-
-	//////// 2d向量相加
-	inline void	Add_Vec2_By_Vec2(Vector2& result, const Vector2& v1, const Vector2& v2)
-	{
-		float x = v1.x + v2.x;
-		float y = v1.y + v2.y;
-
-		result.Set(x, y);
-	}
-
-	//////// 3d向量相加
-	inline void	Add_Vec3_By_Vec3(Vector3& result, const Vector3& v1, const Vector3& v2)
-	{
-		float x = v1.x + v2.x;
-		float y = v1.y + v2.y;
-		float z = v1.z + v2.z;
-
-		result.Set(x, y, z);
-	}
-
-	inline Vector3	Add_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
-	{
-		return std::move(Vector3(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z));
-	}
-
-	//////// 3d向量点乘
-	inline float	DotProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
-	{
-		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-	}
-
-	//////// 3d向量叉乘
-	inline Vector3	CrossProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
-	{
-		Vector3 ret;
-
-		ret.x = v1.y * v2.z - v1.z * v2.y;
-		ret.y = v1.z * v2.x - v1.x * v2.z;
-		ret.z = v1.x * v2.y - v1.y * v2.x;
-
-		return std::move(ret);
-	}
-
-	//////// 3d向量乘以常数
-	inline Vector3	Multiply_Vec3_By_K(const Vector3& v, float k)
-	{
-		return std::move(Vector3(v.x * k, v.y * k, v.z * k));
-	}
-
-	inline void	Multiply_Vec3_By_K(Vector3& result, const Vector3& v, float k)
-	{
-		result.x = v.x * k;
-		result.y = v.y * k;
-		result.z = v.z * k;
-	}
-
-	//////// 2d向量乘以常数
-	inline Vector2	Multiply_Vec2_By_K(const Vector2& v, float k)
-	{
-		return std::move(Vector2(v.x * k, v.y * k));
-	}
-
-	inline void	Multiply_Vec2_By_K(Vector2& result, const Vector2& v, float k)
-	{
-		result.x = v.x * k;
-		result.y = v.y * k;
-	}
-
-	//////// 2d向量乘2d向量
-	inline Vector2	Multiply_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2)
-	{
-		return std::move(Vector2(v1.x * v2.x, v1.y * v2.y));
-	}
-
-	//////// 角度转弧度
-	inline float	Angle_To_Radian(float angle)
-	{
-		return angle * PI / 180;
-	}
-
-	//////// 两点间距离
-	inline float	Vec3_Distance(const Vector3& v1, const Vector3& v2)
-	{
-		float dx = v1.x - v2.x, dy = v1.y - v2.y, dz = v1.z - v2.z;
-		return sqrt(dx * dx + dy * dy + dz * dz);
-	}
+	Vector4		Multiply_Vec4_By_K(const Vector4& v, float k);
+	void		Multiply_Vec4_By_K(Vector4& result, const Vector4& v, float k);
+	Vector2		Sub_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2);
+	Vector3		Sub_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2);
+	void		Add_Vec2_By_Vec2(Vector2& result, const Vector2& v1, const Vector2& v2);
+	void		Add_Vec3_By_Vec3(Vector3& result, const Vector3& v1, const Vector3& v2);
+	Vector3		Add_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2);
+	Vector4		Add_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2);
+	Vector4		Sub_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2);
+	float		DotProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2);
+	Vector3		CrossProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2);
+	Vector3		Multiply_Vec3_By_K(const Vector3& v, float k);
+	void		Multiply_Vec3_By_K(Vector3& result, const Vector3& v, float k);
+	Vector2		Multiply_Vec2_By_K(const Vector2& v, float k);
+	void		Multiply_Vec2_By_K(Vector2& result, const Vector2& v, float k);
+	Vector2		Multiply_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2);
+	float		Angle_To_Radian(float angle);
+	float		Vec3_Distance(const Vector3& v1, const Vector3& v2);
 }
 
-namespace Ext
-{
-	//特化Vector2
-	template<> inline void LinearLerp(VEC2& result, const VEC2& s, const VEC2& e, float t)
-	{
-		LinearLerp(result.x, s.x, e.x, t);
-		LinearLerp(result.y, s.y, e.y, t);
-	}
-	//特化Vector3
-	template<> inline void LinearLerp(VEC3& result, const VEC3& s, const VEC3& e, float t)
-	{
-		LinearLerp(result.x, s.x, e.x, t);
-		LinearLerp(result.y, s.y, e.y, t);
-		LinearLerp(result.z, s.z, e.z, t);
-	}
-	//特化Vector4
-	template<> inline void LinearLerp(VEC4& result, const VEC4& s, const VEC4& e, float t)
-	{
-		LinearLerp(result.x, s.x, e.x, t);
-		LinearLerp(result.y, s.y, e.y, t);
-		LinearLerp(result.z, s.z, e.z, t);
-		LinearLerp(result.w, s.w, e.w, t);
-	}
-
-	//特化Vector2
-	template<> inline void HyperLerp(VEC2& result, const VEC2& s, const VEC2& e, float t, float ws, float we)
-	{
-		HyperLerp(result.x, s.x, e.x, t, ws, we);
-		HyperLerp(result.y, s.y, e.y, t, ws, we);
-	}
-	//特化Vector3
-	template<> inline void HyperLerp(VEC3& result, const VEC3& s, const VEC3& e, float t, float ws, float we)
-	{
-		HyperLerp(result.x, s.x, e.x, t, ws, we);
-		HyperLerp(result.y, s.y, e.y, t, ws, we);
-		HyperLerp(result.z, s.z, e.z, t, ws, we);
-	}
-	//特化Vector4
-	template<> inline void HyperLerp(VEC4& result, const VEC4& s, const VEC4& e, float t, float ws, float we)
-	{
-		HyperLerp(result.x, s.x, e.x, t, ws, we);
-		HyperLerp(result.y, s.y, e.y, t, ws, we);
-		HyperLerp(result.z, s.z, e.z, t, ws, we);
-		HyperLerp(result.w, s.w, e.w, t, ws, we);
-	}
-}
+#include "MathDef.inl"
 
 #endif // MathDef_h__

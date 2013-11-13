@@ -24,7 +24,7 @@ namespace SR
 		m_rasLib.insert(std::make_pair(eRasterizeType_Gouraud, new RasGouraud));
 		m_rasLib.insert(std::make_pair(eRasterizeType_TexturedGouraud, new RasTexturedGouraud));
 		m_rasLib.insert(std::make_pair(eRasterizeType_BlinnPhong, new RasBlinnPhong));
-		m_rasLib.insert(std::make_pair(eRasterizeType_PhongWithNormalMap, new RasPhongWithNormalMap));
+		m_rasLib.insert(std::make_pair(eRasterizeType_NormalMap, new RasNormalMap));
 
 		//创建后备缓冲
 		m_backBuffer.reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));

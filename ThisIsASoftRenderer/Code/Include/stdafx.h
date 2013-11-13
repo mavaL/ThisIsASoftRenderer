@@ -38,6 +38,10 @@
 #include <tinyxml/tinystr.h>
 #include <tinyxml/tinyxml.h>
 
+//SSE
+#include <xmmintrin.h>
+#include <emmintrin.h>
+
 
 #include <GdiPlus.h>
 #pragma comment(lib, "gdiplus.lib")

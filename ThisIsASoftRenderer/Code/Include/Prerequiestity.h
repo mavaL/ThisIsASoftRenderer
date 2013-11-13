@@ -22,6 +22,7 @@ const int		max_clip_y		=	(SCREEN_HEIGHT-1);
 #define USE_PERSPEC_CORRECT		1			//是否使用透视修正
 #define USE_PROFILER			1			//是否使用Profiler
 #define USE_MULTI_THREAD		0			//是否使用多线程
+#define USE_SIMD				1			//是否使用SIMD
 
 
 typedef std::string STRING;

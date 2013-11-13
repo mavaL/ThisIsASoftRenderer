@@ -86,13 +86,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="small.ico" />
-    <None Include="ThisIsASoftRenderer.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="ThisIsASoftRenderer.rc" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Code\Include\AABB.h" />
     <ClInclude Include="Code\Include\Camera.h" />
     <ClInclude Include="Code\Include\Color.h" />
@@ -135,7 +128,7 @@
     <ClCompile Include="Code\Src\Rasterizer_BlinnPhong.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_Flat.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_Gouraud.cpp" />
-    <ClCompile Include="Code\Src\Rasterizer_PhongWithNormalMap.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_NormalMap.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_TexturedGouraud.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_Wireframe.cpp" />
     <ClCompile Include="Code\Src\Renderer.cpp" />
@@ -168,6 +161,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ThisIsASoftRenderer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Code\Include\MathDef.inl" />
+    <None Include="small.ico" />
+    <None Include="ThisIsASoftRenderer.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

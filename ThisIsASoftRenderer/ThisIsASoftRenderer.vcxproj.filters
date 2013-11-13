@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Res">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Include">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
@@ -12,25 +8,15 @@
     <Filter Include="Src">
       <UniqueIdentifier>{1c316bf6-57f0-49cb-9c2b-6a3652880049}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\tinyxml">
-      <UniqueIdentifier>{ecc28c9c-8bd9-495b-9ac5-3c50fd5a119a}</UniqueIdentifier>
+    <Filter Include="Res">
+      <UniqueIdentifier>{d24fa59b-e942-4d31-b36c-d74d57df1df7}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThreadPool">
-      <UniqueIdentifier>{dde22d79-c645-4605-877d-c8187ed1d67c}</UniqueIdentifier>
+      <UniqueIdentifier>{9573ee6b-01a2-469c-aeac-da7c625a8033}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="small.ico">
-      <Filter>Res</Filter>
-    </None>
-    <None Include="ThisIsASoftRenderer.ico">
-      <Filter>Res</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="ThisIsASoftRenderer.rc">
-      <Filter>Res</Filter>
-    </ResourceCompile>
+    <Filter Include="Src\tinyxml">
+      <UniqueIdentifier>{432c8b0d-444f-47b8-b56b-9c8060cc505d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Include\Renderer.h">
@@ -62,12 +48,6 @@
     </ClInclude>
     <ClInclude Include="Code\Include\OgreMeshLoader.h">
       <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\tinyxml\tinystr.h">
-      <Filter>Src\tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\tinyxml\tinyxml.h">
-      <Filter>Src\tinyxml</Filter>
     </ClInclude>
     <ClInclude Include="Code\Include\Utility.h">
       <Filter>Include</Filter>
@@ -114,6 +94,12 @@
     <ClInclude Include="Code\ThreadPool\MyJob.h">
       <Filter>ThreadPool</Filter>
     </ClInclude>
+    <ClInclude Include="Code\tinyxml\tinystr.h">
+      <Filter>Src\tinyxml</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\tinyxml\tinyxml.h">
+      <Filter>Src\tinyxml</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Renderer.cpp">
@@ -136,18 +122,6 @@
     </ClCompile>
     <ClCompile Include="Code\Src\OgreMeshLoader.cpp">
       <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\tinyxml\tinystr.cpp">
-      <Filter>Src\tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\tinyxml\tinyxml.cpp">
-      <Filter>Src\tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\tinyxml\tinyxmlerror.cpp">
-      <Filter>Src\tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\tinyxml\tinyxmlparser.cpp">
-      <Filter>Src\tinyxml</Filter>
     </ClCompile>
     <ClCompile Include="Code\Src\Utility.cpp">
       <Filter>Src</Filter>
@@ -182,12 +156,6 @@
     <ClCompile Include="Code\Src\RenderUtil_Rasterize.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Code\ThreadPool\ftlThread.cpp">
-      <Filter>ThreadPool</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\ThreadPool\MyJob.cpp">
-      <Filter>ThreadPool</Filter>
-    </ClCompile>
     <ClCompile Include="Code\Src\Rasterizer_BlinnPhong.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -195,9 +163,6 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Code\Src\Rasterizer_Gouraud.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\Src\Rasterizer_PhongWithNormalMap.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Code\Src\Rasterizer_TexturedGouraud.cpp">
@@ -209,5 +174,42 @@
     <ClCompile Include="Code\Src\Rasterizer.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_NormalMap.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\ThreadPool\ftlThread.cpp">
+      <Filter>ThreadPool</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\ThreadPool\MyJob.cpp">
+      <Filter>ThreadPool</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinystr.cpp">
+      <Filter>Src\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinyxml.cpp">
+      <Filter>Src\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinyxmlerror.cpp">
+      <Filter>Src\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\tinyxml\tinyxmlparser.cpp">
+      <Filter>Src\tinyxml</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ThisIsASoftRenderer.rc">
+      <Filter>Res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="small.ico">
+      <Filter>Res</Filter>
+    </None>
+    <None Include="ThisIsASoftRenderer.ico">
+      <Filter>Res</Filter>
+    </None>
+    <None Include="Code\Include\MathDef.inl">
+      <Filter>Include</Filter>
+    </None>
   </ItemGroup>
 </Project>

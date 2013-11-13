@@ -95,7 +95,7 @@ namespace SR
 	{
 #if USE_PERSPEC_CORRECT == 1
 		//双曲插值最后一步
-		float inv_w = 1 / scanLine.w;
+		float inv_w = 1 / scanLine.zw.y;
 		scanLine.finalUV.Set(scanLine.curUV.x*inv_w, scanLine.curUV.y*inv_w);
 		scanLine.curPixelClr.Set(scanLine.curClr.x*inv_w, scanLine.curClr.y*inv_w, scanLine.curClr.z*inv_w);
 #else

@@ -20,7 +20,7 @@ namespace SR
 		eRasterizeType_Gouraud,
 		eRasterizeType_TexturedGouraud,
 		eRasterizeType_BlinnPhong,
-		eRasterizeType_PhongWithNormalMap
+		eRasterizeType_NormalMap
 	};
 
 	enum eLerpType
@@ -120,8 +120,9 @@ namespace SR
 		VEC3	deltaClr, deltaPW, deltaN, deltaLightDir, deltaHVector;
 		VEC2	curUV, finalUV;
 		VEC2	deltaUV;
+		VEC2	dzdw, zw;
 		int		lineX0, lineX1;
-		float	z, dz, w, dw, inv_dx;
+		float	inv_dx;
 		bool	bClipX;
 		float	clip_dx;
 		SFragment*	pFragmeng;
@@ -185,18 +186,19 @@ namespace SR
 	};
 
 	/////////////////////////////////////////////////////////////
-	//////// Phong + ·¨ÏßÌùÍ¼
+	//////// Normal mapping
 
-	struct SLightingContext_PhongWithNormalMap : public SLightingContext_Phong
+	struct SLightingContext_NormalMap
 	{
+		VEC2*	uv;
 		VEC3*	lightDirTS;
 		VEC3*	hVectorTS;
 	};
 
-	class RasPhongWithNormalMap : public RasBlinnPhong
+	class RasNormalMap : public Rasterizer
 	{
 	public:
-		virtual eRasterizeType	GetType()	{ return eRasterizeType_PhongWithNormalMap; }
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_NormalMap; }
 		// Use TBN matrix in VS
 		virtual void	DoPerVertexLighting(VertexBuffer& workingVB, FaceList& workingFaces, RenderObject& obj);
 		// Apply normal mapping in PS
@@ -206,6 +208,8 @@ namespace SR
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
 		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
+	protected:
+		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
 	};
 }
 

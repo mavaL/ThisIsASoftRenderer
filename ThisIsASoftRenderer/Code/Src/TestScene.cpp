@@ -273,7 +273,7 @@ void SetupTestScene6(SR::Scene* scene)
 		g_env.renderer->AddMaterial("MatNormalMap", mat);
 		g_env.meshLoader->m_objs[0]->m_pMaterial = mat;
 		g_env.meshLoader->m_objs[0]->BuildTangentVectors();
-		g_env.meshLoader->m_objs[0]->SetShader(SR::eRasterizeType_PhongWithNormalMap);
+		g_env.meshLoader->m_objs[0]->SetShader(SR::eRasterizeType_NormalMap);
 	}
 	catch (std::exception& e)
 	{

@@ -155,7 +155,7 @@ namespace Ext
 			if (pMaterial->pNormalMap)
 			{
 				m_objs[i]->BuildTangentVectors();
-				m_objs[i]->SetShader(SR::eRasterizeType_PhongWithNormalMap);
+				m_objs[i]->SetShader(SR::eRasterizeType_NormalMap);
 			}
 		}
 				
