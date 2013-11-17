@@ -173,11 +173,11 @@ namespace SR
 				}
 			}
 
-#if USE_PROFILER == 1
-			char tmp[64];
-			sprintf_s(tmp, sizeof(tmp), "mipmap%d.bmp", preLevel);
-			mipLevel->SaveToFile(tmp);
-#endif
+// #if USE_PROFILER == 1
+// 			char tmp[64];
+// 			sprintf_s(tmp, sizeof(tmp), "mipmap%d.bmp", preLevel);
+// 			mipLevel->SaveToFile(tmp);
+// #endif
 		}
 	}
 

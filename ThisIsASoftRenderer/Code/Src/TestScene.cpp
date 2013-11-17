@@ -267,7 +267,7 @@ void SetupTestScene6(SR::Scene* scene)
 
 		mat->ambient.Set(0.3f, 0.3f, 0.3f);
 		mat->diffuse.Set(0.5f, 0.5f, 0.5f);
-		mat->specular.Set(0.3f, 0.3f, 0.3f);
+		mat->specular.Set(0.9f, 0.9f, 0.9f);
 		mat->shiness = 50;
 
 		g_env.renderer->AddMaterial("MatNormalMap", mat);

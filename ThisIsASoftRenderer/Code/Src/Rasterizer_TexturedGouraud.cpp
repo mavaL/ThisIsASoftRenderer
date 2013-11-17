@@ -91,6 +91,19 @@ namespace SR
 		}
 	}
 
+	void RasTexturedGouraud::RaterizeAdvancePixel( SScanLine& scanLine )
+	{
+		RasGouraud::RaterizeAdvancePixel(scanLine);
+		Common::Add_Vec2_By_Vec2(scanLine.curUV, scanLine.curUV, scanLine.deltaUV);
+	}
+
+	void RasTexturedGouraud::RaterizeAdvanceLine( SScanLinesData& scanLineData )
+	{
+		RasGouraud::RaterizeAdvanceLine(scanLineData);
+		Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
+		Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, scanLineData.duv_R);
+	}
+
 	void RasTexturedGouraud::RasterizePixel( SScanLine& scanLine, const SScanLinesData& rasData )
 	{
 #if USE_PERSPEC_CORRECT == 1

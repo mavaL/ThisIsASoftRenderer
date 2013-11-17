@@ -8,328 +8,174 @@
 
 namespace SR
 {
-	void RenderUtil::DrawLine_DDA( int x0, int y0, int x1,int y1, SColor color, bool bClip )
+	void RenderUtil::DrawLine_DDA( int x0, int y0, int x1,int y1, const SColor& color )
 	{
-		color.Saturate();
+		int lerp_dx = x1 - x0;
+		int lerp_dy = y1 - y0;
 
-		int cxs, cys,
-			cxe, cye;
-
-		// clip and draw each line
-		cxs = x0;
-		cys = y0;
-		cxe = x1;
-		cye = y1;
-
-		if(bClip && !ClipLine(cxs, cxe, cys, cye))
+		if(!ClipLine(x0, y0, x1, y1))
 			return;
 
-		UCHAR* vb_start = (UCHAR*)g_env.renderer->m_backBuffer->GetDataPointer();
-		int bytesPerPixel = g_env.renderer->m_backBuffer->GetBytesPerPixel();
-		int lpitch = g_env.renderer->m_backBuffer->GetWidth() * bytesPerPixel;
+		int dx = x1 - x0;
+		int dy = y1 - y0;
 
-		vb_start = vb_start + cxs*bytesPerPixel + cys*lpitch;
-		int dx = cxe-cxs;
-		int dy = cye-cys;
-		float k = abs(dy/(float)dx);
-		float x_inc, y_inc;
+		PixelBox* pBackBuffer = g_env.renderer->m_backBuffer.get();
+		DWORD* destBuffer = (DWORD*)pBackBuffer->GetDataPointer() + y0 * pBackBuffer->GetWidth() + x0;
+		const DWORD iColor = color.GetAsInt();
 
-		if (dx>=0)
+		if (dx == 0)		// Vertical line
 		{
-			x_inc = (float)bytesPerPixel;
+			int inc_y = dy > 0 ? 1 : -1;
+			float dt = 1.0f / abs(lerp_dy);
+			for (int y=y0; y!=y1; y+=inc_y)
+			{
+				*destBuffer = iColor;
+				destBuffer += pBackBuffer->GetWidth() * inc_y;
+			}
+		}
+		else if (dy == 0)	// Horizontal line
+		{
+			int inc_x = dx > 0 ? 1 : -1;
+			float dt = 1.0f / abs(lerp_dx);
+			for (int x=x0; x!=x1; x+=inc_x)
+			{
+				*destBuffer = iColor;
+				destBuffer += inc_x;
+			}
 		}
 		else
 		{
-			x_inc = -(float)bytesPerPixel;
-			dx = -dx;
-		}
-		if (dy>=0)
-		{
-			y_inc = 1;
-		}
-		else
-		{
-			y_inc = -1;
-			dy = -dy;
-		}
+			float k = abs(lerp_dy/(float)lerp_dx);
+			float inc_x, inc_y;
+			if (dx >= 0)
+			{
+				inc_x = 1.0f;
+			} 
+			else
+			{
+				inc_x = -1.0f;
+				dx = -dx;
+			}
+			if (dy >= 0)
+			{
+				inc_y= 1.0f;
+			} 
+			else
+			{
+				inc_y = -1.0f;
+				dy = -dy;
+			}
 
-		y_inc *= k;
-		float y=0;
-		int x=0;
-		*(DWORD*)vb_start = color.GetAsInt();
-		for (int index=1; index<dx; ++index)
-		{
-			y += y_inc;
-			x += (int)x_inc;
-			*(DWORD*)(vb_start+(int)y*lpitch+x) = color.GetAsInt();
+			float dist = sqrt((float)dx*dx+dy*dy);
+
+			inc_y *= k;
+			float y = 0;
+			int x = 0;
+			for (int i=0; i<dx; ++i)
+			{
+				destBuffer[(int)y*pBackBuffer->GetWidth()+x] = iColor;
+
+				y += inc_y;
+				x += (int)inc_x;
+			}
 		}
 	}
 
-	int RenderUtil::ClipLine( int& x1, int& y1, int& x2, int& y2 )
+	bool RenderUtil::ClipLine( int& x1, int& y1, int& x2, int& y2 )
 	{
-		// this function clips the sent line using the globally defined clipping
-		// region
-
-		// internal clipping codes
-#define CLIP_CODE_C  0x0000
-#define CLIP_CODE_N  0x0008
-#define CLIP_CODE_S  0x0004
-#define CLIP_CODE_E  0x0002
-#define CLIP_CODE_W  0x0001
-
-#define CLIP_CODE_NE 0x000a
-#define CLIP_CODE_SE 0x0006
-#define CLIP_CODE_NW 0x0009 
-#define CLIP_CODE_SW 0x0005
-
-		int xc1=x1, 
-			yc1=y1, 
-			xc2=x2, 
-			yc2=y2;
-
-		int p1_code=0, 
-			p2_code=0;
-
-		// determine codes for p1 and p2
-		if (y1 < min_clip_y)
-			p1_code|=CLIP_CODE_N;
-		else
-			if (y1 > max_clip_y)
-				p1_code|=CLIP_CODE_S;
-
-		if (x1 < min_clip_x)
-			p1_code|=CLIP_CODE_W;
-		else
-			if (x1 > max_clip_x)
-				p1_code|=CLIP_CODE_E;
-
-		if (y2 < min_clip_y)
-			p2_code|=CLIP_CODE_N;
-		else
-			if (y2 > max_clip_y)
-				p2_code|=CLIP_CODE_S;
-
-		if (x2 < min_clip_x)
-			p2_code|=CLIP_CODE_W;
-		else
-			if (x2 > max_clip_x)
-				p2_code|=CLIP_CODE_E;
-
-		// try and trivially reject
-		if ((p1_code & p2_code)) 
-			return(0);
-
-		// test for totally visible, if so leave points untouched
-		if (p1_code==0 && p2_code==0)
-			return(1);
-
-		// determine end clip point for p1
-		switch(p1_code)
+		// Left edge
+		if (x1 < min_clip_x && x2 < min_clip_x)
 		{
-		case CLIP_CODE_C: break;
-
-		case CLIP_CODE_N:
-			{
-				yc1 = min_clip_y;
-				xc1 = x1 + 0.5+(min_clip_y-y1)*(x2-x1)/(y2-y1);
-			} break;
-		case CLIP_CODE_S:
-			{
-				yc1 = max_clip_y;
-				xc1 = x1 + 0.5+(max_clip_y-y1)*(x2-x1)/(y2-y1);
-			} break;
-
-		case CLIP_CODE_W:
-			{
-				xc1 = min_clip_x;
-				yc1 = y1 + 0.5+(min_clip_x-x1)*(y2-y1)/(x2-x1);
-			} break;
-
-		case CLIP_CODE_E:
-			{
-				xc1 = max_clip_x;
-				yc1 = y1 + 0.5+(max_clip_x-x1)*(y2-y1)/(x2-x1);
-			} break;
-
-			// these cases are more complex, must compute 2 intersections
-		case CLIP_CODE_NE:
-			{
-				// north hline intersection
-				yc1 = min_clip_y;
-				xc1 = x1 + 0.5+(min_clip_y-y1)*(x2-x1)/(y2-y1);
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc1 < min_clip_x || xc1 > max_clip_x)
-				{
-					// east vline intersection
-					xc1 = max_clip_x;
-					yc1 = y1 + 0.5+(max_clip_x-x1)*(y2-y1)/(x2-x1);
-				} // end if
-
-			} break;
-
-		case CLIP_CODE_SE:
-			{
-				// south hline intersection
-				yc1 = max_clip_y;
-				xc1 = x1 + 0.5+(max_clip_y-y1)*(x2-x1)/(y2-y1);	
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc1 < min_clip_x || xc1 > max_clip_x)
-				{
-					// east vline intersection
-					xc1 = max_clip_x;
-					yc1 = y1 + 0.5+(max_clip_x-x1)*(y2-y1)/(x2-x1);
-				} // end if
-
-			} break;
-
-		case CLIP_CODE_NW: 
-			{
-				// north hline intersection
-				yc1 = min_clip_y;
-				xc1 = x1 + 0.5+(min_clip_y-y1)*(x2-x1)/(y2-y1);
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc1 < min_clip_x || xc1 > max_clip_x)
-				{
-					xc1 = min_clip_x;
-					yc1 = y1 + 0.5+(min_clip_x-x1)*(y2-y1)/(x2-x1);	
-				} // end if
-
-			} break;
-
-		case CLIP_CODE_SW:
-			{
-				// south hline intersection
-				yc1 = max_clip_y;
-				xc1 = x1 + 0.5+(max_clip_y-y1)*(x2-x1)/(y2-y1);	
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc1 < min_clip_x || xc1 > max_clip_x)
-				{
-					xc1 = min_clip_x;
-					yc1 = y1 + 0.5+(min_clip_x-x1)*(y2-y1)/(x2-x1);	
-				} // end if
-
-			} break;
-
-		default:break;
-
-		} // end switch
-
-		// determine clip point for p2
-		switch(p2_code)
+			return false;
+		} 
+		else if(x1 >= min_clip_x && x2 >= min_clip_x)
 		{
-		case CLIP_CODE_C: break;
-
-		case CLIP_CODE_N:
-			{
-				yc2 = min_clip_y;
-				xc2 = x2 + (min_clip_y-y2)*(x1-x2)/(y1-y2);
-			} break;
-
-		case CLIP_CODE_S:
-			{
-				yc2 = max_clip_y;
-				xc2 = x2 + (max_clip_y-y2)*(x1-x2)/(y1-y2);
-			} break;
-
-		case CLIP_CODE_W:
-			{
-				xc2 = min_clip_x;
-				yc2 = y2 + (min_clip_x-x2)*(y1-y2)/(x1-x2);
-			} break;
-
-		case CLIP_CODE_E:
-			{
-				xc2 = max_clip_x;
-				yc2 = y2 + (max_clip_x-x2)*(y1-y2)/(x1-x2);
-			} break;
-
-			// these cases are more complex, must compute 2 intersections
-		case CLIP_CODE_NE:
-			{
-				// north hline intersection
-				yc2 = min_clip_y;
-				xc2 = x2 + 0.5+(min_clip_y-y2)*(x1-x2)/(y1-y2);
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc2 < min_clip_x || xc2 > max_clip_x)
-				{
-					// east vline intersection
-					xc2 = max_clip_x;
-					yc2 = y2 + 0.5+(max_clip_x-x2)*(y1-y2)/(x1-x2);
-				} // end if
-
-			} break;
-
-		case CLIP_CODE_SE:
-			{
-				// south hline intersection
-				yc2 = max_clip_y;
-				xc2 = x2 + 0.5+(max_clip_y-y2)*(x1-x2)/(y1-y2);	
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc2 < min_clip_x || xc2 > max_clip_x)
-				{
-					// east vline intersection
-					xc2 = max_clip_x;
-					yc2 = y2 + 0.5+(max_clip_x-x2)*(y1-y2)/(x1-x2);
-				} // end if
-
-			} break;
-
-		case CLIP_CODE_NW: 
-			{
-				// north hline intersection
-				yc2 = min_clip_y;
-				xc2 = x2 + 0.5+(min_clip_y-y2)*(x1-x2)/(y1-y2);
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc2 < min_clip_x || xc2 > max_clip_x)
-				{
-					xc2 = min_clip_x;
-					yc2 = y2 + 0.5+(min_clip_x-x2)*(y1-y2)/(x1-x2);	
-				} // end if
-
-			} break;
-
-		case CLIP_CODE_SW:
-			{
-				// south hline intersection
-				yc2 = max_clip_y;
-				xc2 = x2 + 0.5+(max_clip_y-y2)*(x1-x2)/(y1-y2);	
-
-				// test if intersection is valid, of so then done, else compute next
-				if (xc2 < min_clip_x || xc2 > max_clip_x)
-				{
-					xc2 = min_clip_x;
-					yc2 = y2 + 0.5+(min_clip_x-x2)*(y1-y2)/(x1-x2);	
-				} // end if
-
-			} break;
-
-		default:break;
-
-		} // end switch
-
-		// do bounds check
-		if ((xc1 < min_clip_x) || (xc1 > max_clip_x) ||
-			(yc1 < min_clip_y) || (yc1 > max_clip_y) ||
-			(xc2 < min_clip_x) || (xc2 > max_clip_x) ||
-			(yc2 < min_clip_y) || (yc2 > max_clip_y) )
+		}
+		else		// Need clip
 		{
-			return(0);
-		} // end if
-
-		// store vars back
-		x1 = xc1;
-		y1 = yc1;
-		x2 = xc2;
-		y2 = yc2;
-
-		return(1);
+			float t = (min_clip_x-x1)/(float)(x2-x1);
+			float intersectY = y1 + (y2-y1)*t;
+			if (x1 < x2)	//交点取代pt1
+			{
+				x1 = min_clip_x;
+				y1 = Ext::Ftoi32_Fast(intersectY);
+			} 
+			else			//交点取代pt2
+			{
+				x2 = min_clip_x;
+				y2 = Ext::Ftoi32_Fast(intersectY);
+			}
+		}
+		// Bottom edge
+		if (y1 >= max_clip_y && y2 >= max_clip_y)
+		{
+			return false;
+		} 
+		else if(y1 < max_clip_y && y2 < max_clip_y)
+		{
+		}
+		else		// Need clip
+		{
+			float t = (max_clip_y-y1)/(float)(y2-y1);
+			float intersectX = x1 + (x2-x1)*t;
+			if (y1 < y2)	//交点取代pt2
+			{
+				x2 = Ext::Ftoi32_Fast(intersectX);
+				y2 = max_clip_y;
+			} 
+			else			//交点取代pt1
+			{
+				x1 = Ext::Ftoi32_Fast(intersectX);
+				y1 = max_clip_y;
+			}
+		}
+		// Right edge
+		if (x1 >= max_clip_x && x2 >= max_clip_x)
+		{
+			return false;
+		} 
+		else if(x1 < max_clip_x && x2 < max_clip_x)
+		{
+		}
+		else		// Need clip
+		{
+			float t = (max_clip_x-x1)/(float)(x2-x1);
+			float intersectY = y1 + (y2-y1)*t;
+			if (x1 < x2)	//交点取代pt2
+			{
+				x2 = max_clip_x;
+				y2 = Ext::Ftoi32_Fast(intersectY);
+			} 
+			else			//交点取代pt1
+			{
+				x1 = max_clip_x;
+				y1 = Ext::Ftoi32_Fast(intersectY);
+			}
+		}
+		// Top edge
+		if (y1 < min_clip_y && y2 < min_clip_y)
+		{
+			return false;
+		} 
+		else if(y1 >= min_clip_y && y2 >= min_clip_y)
+		{
+		}
+		else		// Need clip
+		{
+			float t = (min_clip_y-y1)/(float)(y2-y1);
+			float intersectX = x1 + (x2-x1)*t;
+			if (y1 < y2)	//交点取代pt1
+			{
+				x1 = Ext::Ftoi32_Fast(intersectX);
+				y1 = min_clip_y;
+			} 
+			else			//交点取代pt2
+			{
+				x2 = Ext::Ftoi32_Fast(intersectX);
+				y2 = min_clip_y;
+			}
+		}
+		return true;
 	}
 
 	bool RenderUtil::PreDrawTriangle( const SVertex*& vert0, const SVertex*& vert1, const SVertex*& vert2, eTriangleShape& retType )
@@ -474,7 +320,7 @@ namespace SR
 
 			if(lineX1 - lineX0 >= 0)
 			{
-				RenderUtil::DrawLine_DDA(lineX0, curY, lineX1, curY, color, true);
+				RenderUtil::DrawLine_DDA(lineX0, curY, lineX1, curY, color);
 			}
 
 			++curY;
@@ -513,7 +359,7 @@ namespace SR
 
 			if(lineX1 - lineX0 >= 0)
 			{
-				RenderUtil::DrawLine_DDA(lineX0, curY, lineX1, curY, color, true);
+				RenderUtil::DrawLine_DDA(lineX0, curY, lineX1, curY, color);
 			}
 
 			++curY;
@@ -681,32 +527,16 @@ namespace SR
 					}
 					
 					// Advance to next pixel
-					Common::Add_Vec3_By_Vec3(scanLine.curClr, scanLine.curClr, scanLine.deltaClr);
-					Common::Add_Vec2_By_Vec2(scanLine.curUV, scanLine.curUV, scanLine.deltaUV);
-					Common::Add_Vec3_By_Vec3(scanLine.curPW, scanLine.curPW, scanLine.deltaPW);
-					Common::Add_Vec3_By_Vec3(scanLine.curN, scanLine.curN, scanLine.deltaN);
-					Common::Add_Vec3_By_Vec3(scanLine.curLightDir, scanLine.curLightDir, scanLine.deltaLightDir);
-					Common::Add_Vec3_By_Vec3(scanLine.curHVector, scanLine.curHVector, scanLine.deltaHVector);
+					curRaster->RaterizeAdvancePixel(scanLine);
 					Common::Add_Vec2_By_Vec2(scanLine.zw, scanLine.zw, scanLine.dzdw);
 				}
 			}
 
 			// Advance to next line
+			curRaster->RaterizeAdvanceLine(scanLineData);
 			++scanLineData.curY;
 			Common::Add_Vec3_By_Vec3(scanLineData.curP_L, scanLineData.curP_L, scanLineData.dp_L);
 			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
-			Common::Add_Vec3_By_Vec3(scanLineData.clr_L, scanLineData.clr_L, scanLineData.dclr_L);
-			Common::Add_Vec3_By_Vec3(scanLineData.clr_R, scanLineData.clr_R, scanLineData.dclr_R);
-			Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
-			Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, scanLineData.duv_R);
-			Common::Add_Vec3_By_Vec3(scanLineData.curPW_L, scanLineData.curPW_L, scanLineData.dpw_L);
-			Common::Add_Vec3_By_Vec3(scanLineData.curPW_R, scanLineData.curPW_R, scanLineData.dpw_R);
-			Common::Add_Vec3_By_Vec3(scanLineData.curN_L, scanLineData.curN_L, scanLineData.dn_L);
-			Common::Add_Vec3_By_Vec3(scanLineData.curN_R, scanLineData.curN_R, scanLineData.dn_R);
-			Common::Add_Vec3_By_Vec3(scanLineData.curLightDir_L, scanLineData.curLightDir_L, scanLineData.dLightDir_L);
-			Common::Add_Vec3_By_Vec3(scanLineData.curLightDir_R, scanLineData.curLightDir_R, scanLineData.dLightDir_R);
-			Common::Add_Vec3_By_Vec3(scanLineData.curHVector_L, scanLineData.curHVector_L, scanLineData.dHVector_L);
-			Common::Add_Vec3_By_Vec3(scanLineData.curHVector_R, scanLineData.curHVector_R, scanLineData.dHVector_R);
 
 			destBuffer += lpitch;
 			zBuffer += SCREEN_WIDTH;

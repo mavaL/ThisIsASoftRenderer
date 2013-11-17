@@ -17,8 +17,8 @@ namespace SR
 	class RenderUtil
 	{
 	public:
-		///////	根据屏幕区域对直线裁剪,取自<<3D编程大师技巧>>
-		static int	ClipLine(int& x1, int& y1, int& x2, int& y2);
+		///////	根据屏幕区域对直线裁剪. Sutherland-hogdman算法
+		static bool	ClipLine(int& x1, int& y1, int& x2, int& y2);
 
 		/////// GDI绘制字体
 		static void	DrawText(float x, float y, const STRING& text, const Gdiplus::Color& color);
@@ -26,8 +26,8 @@ namespace SR
 		/////// 遍历所有顶点计算物体包围盒
 		static void	ComputeAABB(RenderObject& obj);
 
-		///////	最简单的DDA画线算法
-		static void	DrawLine_DDA(int x0, int y0, int x1, int y1, SColor color, bool bClip);
+		///////	DDA画线算法
+		static void	DrawLine_DDA(int x0, int y0, int x1, int y1, const SColor& color);
 
 		///////	物体T&L阶段
 		static void	ObjectTnL(RenderObject& obj, SRenderContext& context);

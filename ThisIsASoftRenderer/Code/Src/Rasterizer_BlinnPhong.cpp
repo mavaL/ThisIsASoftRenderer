@@ -162,6 +162,23 @@ namespace SR
 		}
 	}
 
+	void RasBlinnPhong::RaterizeAdvancePixel( SScanLine& scanLine )
+	{
+		Common::Add_Vec2_By_Vec2(scanLine.curUV, scanLine.curUV, scanLine.deltaUV);
+		Common::Add_Vec3_By_Vec3(scanLine.curPW, scanLine.curPW, scanLine.deltaPW);
+		Common::Add_Vec3_By_Vec3(scanLine.curN, scanLine.curN, scanLine.deltaN);
+	}
+
+	void RasBlinnPhong::RaterizeAdvanceLine( SScanLinesData& scanLineData )
+	{
+		Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
+		Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, scanLineData.duv_R);
+		Common::Add_Vec3_By_Vec3(scanLineData.curPW_L, scanLineData.curPW_L, scanLineData.dpw_L);
+		Common::Add_Vec3_By_Vec3(scanLineData.curPW_R, scanLineData.curPW_R, scanLineData.dpw_R);
+		Common::Add_Vec3_By_Vec3(scanLineData.curN_L, scanLineData.curN_L, scanLineData.dn_L);
+		Common::Add_Vec3_By_Vec3(scanLineData.curN_R, scanLineData.curN_R, scanLineData.dn_R);
+	}
+
 	void RasBlinnPhong::RasterizePixel( SScanLine& scanLine, const SScanLinesData& rasData )
 	{
 #if USE_PERSPEC_CORRECT == 1

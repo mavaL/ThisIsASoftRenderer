@@ -194,8 +194,8 @@ namespace Ext
 		__m128 V1 =  _mm_mul_ps(_mm_set_ps(s.a, s.b, s.g, s.r), _mm_set_ps1(ws));
 		__m128 V2 =  _mm_mul_ps(_mm_set_ps(e.a, e.b, e.g, e.r), _mm_set_ps1(we));
 		__m128 Vt = _mm_set_ps1(t);
-		V2 = _mm_mul_ps(_mm_sub_ps(V1, V2), Vt);
-		m128_to_color(result, _mm_add_ps(V2, V1));
+		V2 = _mm_mul_ps(_mm_sub_ps(V2, V1), Vt);
+		m128_to_color(result, _mm_add_ps(V1, V2));
 #else
 		HyperLerp(result.r, s.r, e.r, t, ws, we);
 		HyperLerp(result.g, s.g, e.g, t, ws, we);

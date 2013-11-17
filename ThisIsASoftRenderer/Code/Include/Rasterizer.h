@@ -49,6 +49,8 @@ namespace SR
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type) = 0;
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
 		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RaterizeAdvancePixel(SScanLine& scanLine) {}
+		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData) {}
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData) = 0;
 
 	protected:
@@ -137,6 +139,8 @@ namespace SR
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
 		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RaterizeAdvancePixel(SScanLine& scanLine);
+		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData);
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 
 	protected:
@@ -152,6 +156,8 @@ namespace SR
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
 		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RaterizeAdvancePixel(SScanLine& scanLine);
+		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData);
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 
 	protected:
@@ -179,6 +185,8 @@ namespace SR
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
 		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RaterizeAdvancePixel(SScanLine& scanLine);
+		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData);
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 
 	protected:
@@ -207,6 +215,8 @@ namespace SR
 		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
 		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
 		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RaterizeAdvancePixel(SScanLine& scanLine);
+		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData);
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);

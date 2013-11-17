@@ -207,6 +207,23 @@ namespace SR
 		}
 	}
 
+	void RasNormalMap::RaterizeAdvancePixel( SScanLine& scanLine )
+	{
+		Common::Add_Vec2_By_Vec2(scanLine.curUV, scanLine.curUV, scanLine.deltaUV);
+		Common::Add_Vec3_By_Vec3(scanLine.curLightDir, scanLine.curLightDir, scanLine.deltaLightDir);
+		Common::Add_Vec3_By_Vec3(scanLine.curHVector, scanLine.curHVector, scanLine.deltaHVector);
+	}
+
+	void RasNormalMap::RaterizeAdvanceLine( SScanLinesData& scanLineData )
+	{
+		Common::Add_Vec2_By_Vec2(scanLineData.curUV_L, scanLineData.curUV_L, scanLineData.duv_L);
+		Common::Add_Vec2_By_Vec2(scanLineData.curUV_R, scanLineData.curUV_R, scanLineData.duv_R);
+		Common::Add_Vec3_By_Vec3(scanLineData.curLightDir_L, scanLineData.curLightDir_L, scanLineData.dLightDir_L);
+		Common::Add_Vec3_By_Vec3(scanLineData.curLightDir_R, scanLineData.curLightDir_R, scanLineData.dLightDir_R);
+		Common::Add_Vec3_By_Vec3(scanLineData.curHVector_L, scanLineData.curHVector_L, scanLineData.dHVector_L);
+		Common::Add_Vec3_By_Vec3(scanLineData.curHVector_R, scanLineData.curHVector_R, scanLineData.dHVector_R);
+	}
+
 	void RasNormalMap::RasterizePixel( SScanLine& scanLine, const SScanLinesData& rasData )
 	{
 #if USE_PERSPEC_CORRECT == 1

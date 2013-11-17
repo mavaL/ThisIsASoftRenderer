@@ -292,6 +292,109 @@ namespace Common
 		float dx = v1.x - v2.x, dy = v1.y - v2.y, dz = v1.z - v2.z;
 		return sqrt(dx * dx + dy * dy + dz * dz);
 	}
+
+	__forceinline Vector4	Transform_Vec3_By_Mat44(const Vector3& pt, const Matrix44& mat, bool bPosOrDir)
+	{
+		return Transform_Vec4_By_Mat44(Vector4(pt, bPosOrDir ? 1.0f : 0.0f), mat);
+	}
+
+	__forceinline Matrix44	Multiply_Mat44_By_Mat44( const Matrix44& mat1, const Matrix44& mat2 )
+	{
+		Matrix44 ret;
+#if USE_SIMD == 1
+		Vector4 tmp;
+		__m128 m1r0 = _mm_set_ps(mat1.m_arr[0][3], mat1.m_arr[0][2], mat1.m_arr[0][1], mat1.m_arr[0][0]);
+		__m128 m1r1 = _mm_set_ps(mat1.m_arr[1][3], mat1.m_arr[1][2], mat1.m_arr[1][1], mat1.m_arr[1][0]);
+		__m128 m1r2 = _mm_set_ps(mat1.m_arr[2][3], mat1.m_arr[2][2], mat1.m_arr[2][1], mat1.m_arr[2][0]);
+		__m128 m1r3 = _mm_set_ps(mat1.m_arr[3][3], mat1.m_arr[3][2], mat1.m_arr[3][1], mat1.m_arr[3][0]);
+		__m128 m2r0 = _mm_set_ps(mat2.m_arr[0][3], mat2.m_arr[0][2], mat2.m_arr[0][1], mat2.m_arr[0][0]);
+		__m128 m2r1 = _mm_set_ps(mat2.m_arr[1][3], mat2.m_arr[1][2], mat2.m_arr[1][1], mat2.m_arr[1][0]);
+		__m128 m2r2 = _mm_set_ps(mat2.m_arr[2][3], mat2.m_arr[2][2], mat2.m_arr[2][1], mat2.m_arr[2][0]);
+		__m128 m2r3 = _mm_set_ps(mat2.m_arr[3][3], mat2.m_arr[3][2], mat2.m_arr[3][1], mat2.m_arr[3][0]);
+		// Use vW to hold the original row
+		__m128 vW = m1r0;
+		// Splat the component X,Y,Z then W
+		__m128 vX = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(0,0,0,0));
+		__m128 vY = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(1,1,1,1));
+		__m128 vZ = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(2,2,2,2));
+		vW = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(3,3,3,3));
+		// Perform the opertion on the first row
+		vX = _mm_mul_ps(vX,m2r0);
+		vY = _mm_mul_ps(vY,m2r1);
+		vZ = _mm_mul_ps(vZ,m2r2);
+		vW = _mm_mul_ps(vW,m2r3);
+		// Perform a binary add to reduce cumulative errors
+		vX = _mm_add_ps(vX,vZ);
+		vY = _mm_add_ps(vY,vW);
+		vX = _mm_add_ps(vX,vY);
+		m128_to_vec4(tmp, vX);
+		ret.SetRow(0, tmp);
+		// Repeat for the other 3 rows
+		vW = m1r1;
+		vX = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(0,0,0,0));
+		vY = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(1,1,1,1));
+		vZ = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(2,2,2,2));
+		vW = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(3,3,3,3));
+		vX = _mm_mul_ps(vX,m2r0);
+		vY = _mm_mul_ps(vY,m2r1);
+		vZ = _mm_mul_ps(vZ,m2r2);
+		vW = _mm_mul_ps(vW,m2r3);
+		vX = _mm_add_ps(vX,vZ);
+		vY = _mm_add_ps(vY,vW);
+		vX = _mm_add_ps(vX,vY);
+		m128_to_vec4(tmp, vX);
+		ret.SetRow(1, tmp);
+		vW = m1r2;
+		vX = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(0,0,0,0));
+		vY = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(1,1,1,1));
+		vZ = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(2,2,2,2));
+		vW = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(3,3,3,3));
+		vX = _mm_mul_ps(vX,m2r0);
+		vY = _mm_mul_ps(vY,m2r1);
+		vZ = _mm_mul_ps(vZ,m2r2);
+		vW = _mm_mul_ps(vW,m2r3);
+		vX = _mm_add_ps(vX,vZ);
+		vY = _mm_add_ps(vY,vW);
+		vX = _mm_add_ps(vX,vY);
+		m128_to_vec4(tmp, vX);
+		ret.SetRow(2, tmp);
+		vW = m1r3;
+		vX = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(0,0,0,0));
+		vY = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(1,1,1,1));
+		vZ = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(2,2,2,2));
+		vW = _mm_shuffle_ps(vW,vW,_MM_SHUFFLE(3,3,3,3));
+		vX = _mm_mul_ps(vX,m2r0);
+		vY = _mm_mul_ps(vY,m2r1);
+		vZ = _mm_mul_ps(vZ,m2r2);
+		vW = _mm_mul_ps(vW,m2r3);
+		vX = _mm_add_ps(vX,vZ);
+		vY = _mm_add_ps(vY,vW);
+		vX = _mm_add_ps(vX,vY);
+		m128_to_vec4(tmp, vX);
+		ret.SetRow(3, tmp);
+#else
+		ret.m00 = mat1.m00 * mat2.m00 + mat1.m01 * mat2.m10 + mat1.m02 * mat2.m20 + mat1.m03 * mat2.m30;
+		ret.m01 = mat1.m00 * mat2.m01 + mat1.m01 * mat2.m11 + mat1.m02 * mat2.m21 + mat1.m03 * mat2.m31;
+		ret.m02 = mat1.m00 * mat2.m02 + mat1.m01 * mat2.m12 + mat1.m02 * mat2.m22 + mat1.m03 * mat2.m32;
+		ret.m03 = mat1.m00 * mat2.m03 + mat1.m01 * mat2.m13 + mat1.m02 * mat2.m23 + mat1.m03 * mat2.m33;
+
+		ret.m10 = mat1.m10 * mat2.m00 + mat1.m11 * mat2.m10 + mat1.m12 * mat2.m20 + mat1.m13 * mat2.m30;
+		ret.m11 = mat1.m10 * mat2.m01 + mat1.m11 * mat2.m11 + mat1.m12 * mat2.m21 + mat1.m13 * mat2.m31;
+		ret.m12 = mat1.m10 * mat2.m02 + mat1.m11 * mat2.m12 + mat1.m12 * mat2.m22 + mat1.m13 * mat2.m32;
+		ret.m13 = mat1.m10 * mat2.m03 + mat1.m11 * mat2.m13 + mat1.m12 * mat2.m23 + mat1.m13 * mat2.m33;
+
+		ret.m20 = mat1.m20 * mat2.m00 + mat1.m21 * mat2.m10 + mat1.m22 * mat2.m20 + mat1.m23 * mat2.m30;
+		ret.m21 = mat1.m20 * mat2.m01 + mat1.m21 * mat2.m11 + mat1.m22 * mat2.m21 + mat1.m23 * mat2.m31;
+		ret.m22 = mat1.m20 * mat2.m02 + mat1.m21 * mat2.m12 + mat1.m22 * mat2.m22 + mat1.m23 * mat2.m32;
+		ret.m23 = mat1.m20 * mat2.m03 + mat1.m21 * mat2.m13 + mat1.m22 * mat2.m23 + mat1.m23 * mat2.m33;
+
+		ret.m30 = mat1.m30 * mat2.m00 + mat1.m31 * mat2.m10 + mat1.m32 * mat2.m20 + mat1.m33 * mat2.m30;
+		ret.m31 = mat1.m30 * mat2.m01 + mat1.m31 * mat2.m11 + mat1.m32 * mat2.m21 + mat1.m33 * mat2.m31;
+		ret.m32 = mat1.m30 * mat2.m02 + mat1.m31 * mat2.m12 + mat1.m32 * mat2.m22 + mat1.m33 * mat2.m32;
+		ret.m33 = mat1.m30 * mat2.m03 + mat1.m31 * mat2.m13 + mat1.m32 * mat2.m23 + mat1.m33 * mat2.m33;
+#endif
+		return std::move(ret);
+	}
 }
 
 namespace Ext
@@ -349,8 +452,8 @@ namespace Ext
 		__m128 V1 =  _mm_mul_ps(_mm_set_ps(0, 0, s.y, s.x), _mm_set_ps1(ws));
 		__m128 V2 =  _mm_mul_ps(_mm_set_ps(0, 0, e.y, e.x), _mm_set_ps1(we));
 		__m128 Vt = _mm_set_ps1(t);
-		V2 = _mm_mul_ps(_mm_sub_ps(V1, V2), Vt);
-		m128_to_vec2(result, _mm_add_ps(V2, V1));
+		V2 = _mm_mul_ps(_mm_sub_ps(V2, V1), Vt);
+		m128_to_vec2(result, _mm_add_ps(V1, V2));
 #else
 		HyperLerp(result.x, s.x, e.x, t, ws, we);
 		HyperLerp(result.y, s.y, e.y, t, ws, we);
@@ -363,8 +466,8 @@ namespace Ext
 		__m128 V1 =  _mm_mul_ps(_mm_set_ps(0, s.z, s.y, s.x), _mm_set_ps1(ws));
 		__m128 V2 =  _mm_mul_ps(_mm_set_ps(0, e.z, e.y, e.x), _mm_set_ps1(we));
 		__m128 Vt = _mm_set_ps1(t);
-		V2 = _mm_mul_ps(_mm_sub_ps(V1, V2), Vt);
-		m128_to_vec3(result, _mm_add_ps(V2, V1));
+		V2 = _mm_mul_ps(_mm_sub_ps(V2, V1), Vt);
+		m128_to_vec3(result, _mm_add_ps(V1, V2));
 #else
 		HyperLerp(result.x, s.x, e.x, t, ws, we);
 		HyperLerp(result.y, s.y, e.y, t, ws, we);
@@ -378,8 +481,8 @@ namespace Ext
 		__m128 V1 =  _mm_mul_ps(_mm_set_ps(s.w, s.z, s.y, s.x), _mm_set_ps1(ws));
 		__m128 V2 =  _mm_mul_ps(_mm_set_ps(e.w, e.z, e.y, e.x), _mm_set_ps1(we));
 		__m128 Vt = _mm_set_ps1(t);
-		V2 = _mm_mul_ps(_mm_sub_ps(V1, V2), Vt);
-		m128_to_vec4(result, _mm_add_ps(V2, V1));
+		V2 = _mm_mul_ps(_mm_sub_ps(V2, V1), Vt);
+		m128_to_vec4(result, _mm_add_ps(V1, V2));
 #else
 		HyperLerp(result.x, s.x, e.x, t, ws, we);
 		HyperLerp(result.y, s.y, e.y, t, ws, we);

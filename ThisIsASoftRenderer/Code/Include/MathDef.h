@@ -139,16 +139,9 @@ namespace Common
 	//////// 以4x4矩阵变换4d坐标
 	void	Transform_Vec4_By_Mat44(Vector4& result, const Vector4& pt, const Matrix44& mat);
 	Vector4	Transform_Vec4_By_Mat44(const Vector4& pt, const Matrix44& mat);
-	
-	//////// 以4x4矩阵变换3d坐标,bPosOrDir为true表示变换的是点,否则是方向
-	inline Vector4	Transform_Vec3_By_Mat44(const Vector3& pt, const Matrix44& mat, bool bPosOrDir)
-	{
-		return Transform_Vec4_By_Mat44(Vector4(pt, bPosOrDir ? 1.0f : 0.0f), mat);
-	}
 
-	//////// 4x4矩阵相乘
+	Vector4		Transform_Vec3_By_Mat44(const Vector3& pt, const Matrix44& mat, bool bPosOrDir);
 	Matrix44	Multiply_Mat44_By_Mat44(const Matrix44& mat1, const Matrix44& mat2);
-
 	Vector4		Multiply_Vec4_By_K(const Vector4& v, float k);
 	void		Multiply_Vec4_By_K(Vector4& result, const Vector4& v, float k);
 	Vector2		Sub_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2);

@@ -109,6 +109,17 @@ namespace SR
 		}
 	}
 
+	void RasGouraud::RaterizeAdvancePixel( SScanLine& scanLine )
+	{
+		Common::Add_Vec3_By_Vec3(scanLine.curClr, scanLine.curClr, scanLine.deltaClr);
+	}
+
+	void RasGouraud::RaterizeAdvanceLine( SScanLinesData& scanLineData )
+	{
+		Common::Add_Vec3_By_Vec3(scanLineData.clr_L, scanLineData.clr_L, scanLineData.dclr_L);
+		Common::Add_Vec3_By_Vec3(scanLineData.clr_R, scanLineData.clr_R, scanLineData.dclr_R);
+	}
+
 	void RasGouraud::RasterizePixel( SScanLine& scanLine, const SScanLinesData& rasData )
 	{
 #if USE_PERSPEC_CORRECT == 1
