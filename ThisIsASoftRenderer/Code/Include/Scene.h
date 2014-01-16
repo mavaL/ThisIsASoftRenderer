@@ -24,7 +24,8 @@ namespace SR
 
 		~Scene();
 
-		RenderList	m_renderList;	//场景中所有渲染物体
+		RenderList	m_renderList_solid;		//非透明物体列表
+		RenderList	m_renderList_trans;		//透明物体列表
 
 	public:
 		void	Enter();

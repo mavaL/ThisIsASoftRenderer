@@ -49,11 +49,14 @@ namespace SR
 
 	__forceinline void m128_to_color(SColor& out, __m128 V)
 	{
+		// FIXME: Should use _mm_storeu_ps, but we have memory align problem. [1/16/2014 mavaL]
 		__m128 T1 = _mm_shuffle_ps(V,V,_MM_SHUFFLE(1,1,1,1));
 		__m128 T2 = _mm_shuffle_ps(V,V,_MM_SHUFFLE(2,2,2,2));
-		_mm_store_ss( &out.r, V );
-		_mm_store_ss( &out.g, T1 );
-		_mm_store_ss( &out.b, T2 );
+		__m128 T3 = _mm_shuffle_ps(V,V,_MM_SHUFFLE(3,3,3,3));
+		_mm_store_ss( &out.a, V );
+		_mm_store_ss( &out.r, T1 );
+		_mm_store_ss( &out.g, T2 );
+		_mm_store_ss( &out.b, T3 );
 	}
 
 	__forceinline SColor SColor::operator*( float k ) const
@@ -73,7 +76,7 @@ namespace SR
 	__forceinline SColor& SColor::operator*=( float k )
 	{
 #if USE_SIMD == 1
-		__m128 V1 =  _mm_set_ps(a, b, g, r);
+		__m128 V1 =  _mm_set_ps(b, g, r, a);
 		__m128 V2 =  _mm_set_ps1(k);
 		m128_to_color(*this, _mm_mul_ps( V1, V2 ));
 #else
@@ -88,8 +91,8 @@ namespace SR
 	__forceinline SColor& SColor::operator*=( const VEC3& v )
 	{
 #if USE_SIMD == 1
-		__m128 V1 =  _mm_set_ps(a, b, g, r);
-		__m128 V2 =  _mm_set_ps(1.0f, v.z, v.y, v.x);
+		__m128 V1 =  _mm_set_ps(b, g, r, a);
+		__m128 V2 =  _mm_set_ps(v.z, v.y, v.x, 1.0f);
 		m128_to_color(*this, _mm_mul_ps( V1, V2 ));
 #else
 		r *= v.x;
@@ -102,8 +105,8 @@ namespace SR
 	__forceinline SColor& SColor::operator*=( const SColor& c )
 	{
 #if USE_SIMD == 1
-		__m128 V1 =  _mm_set_ps(a, b, g, r);
-		__m128 V2 =  _mm_set_ps(c.a, c.b, c.g, c.r);
+		__m128 V1 =  _mm_set_ps(b, g, r, a);
+		__m128 V2 =  _mm_set_ps(c.b, c.g, c.r, c.a);
 		m128_to_color(*this, _mm_mul_ps( V1, V2 ));
 #else
 		a *= c.a;
@@ -117,8 +120,8 @@ namespace SR
 	__forceinline SColor& SColor::operator+=( const SColor& c )
 	{
 #if USE_SIMD == 1
-		__m128 V1 =  _mm_set_ps(a, b, g, r);
-		__m128 V2 =  _mm_set_ps(c.a, c.b, c.g, c.r);
+		__m128 V1 =  _mm_set_ps(b, g, r, a);
+		__m128 V2 =  _mm_set_ps(c.b, c.g, c.r, c.a);
 		m128_to_color(*this, _mm_add_ps( V1, V2 ));
 #else
 		a += c.a;
@@ -149,14 +152,14 @@ namespace SR
 	{
 #if USE_SIMD == 1
 		VEC4 c;
-		__m128 V1 =  _mm_set_ps(a, b, g, r);
+		__m128 V1 =  _mm_set_ps(b, g, r, a);
 		__m128 V2 =  _mm_set_ps1(255.0f);
 		Common::m128_to_vec4(c, _mm_mul_ps( V1, V2 ));
 
-		BYTE tmp_a = Ext::Ftoi32_Fast(c.w);
-		BYTE tmp_r = Ext::Ftoi32_Fast(c.x);
-		BYTE tmp_g = Ext::Ftoi32_Fast(c.y);
-		BYTE tmp_b = Ext::Ftoi32_Fast(c.z);
+		BYTE tmp_a = Ext::Ftoi32_Fast(c.x);
+		BYTE tmp_r = Ext::Ftoi32_Fast(c.y);
+		BYTE tmp_g = Ext::Ftoi32_Fast(c.z);
+		BYTE tmp_b = Ext::Ftoi32_Fast(c.w);
 #else
 		BYTE tmp_a = Ext::Ftoi32_Fast(a * 255);
 		BYTE tmp_r = Ext::Ftoi32_Fast(r * 255);
@@ -175,8 +178,8 @@ namespace Ext
 	template<> inline void LinearLerp(SR::SColor& result, const SR::SColor& s, const SR::SColor& e, float t)
 	{
 #if USE_SIMD == 1
-		__m128 V1 =  _mm_set_ps(s.a, s.b, s.g, s.r);
-		__m128 V2 =  _mm_set_ps(e.a, e.b, e.g, e.r);
+		__m128 V1 =  _mm_set_ps(s.b, s.g, s.r, s.a);
+		__m128 V2 =  _mm_set_ps(e.b, e.g, e.r, e.a);
 		__m128 Vt = _mm_set_ps1(t);
 		V2 = _mm_mul_ps(_mm_sub_ps(V2, V1), Vt);
 		m128_to_color(result, _mm_add_ps(V2, V1));
@@ -191,8 +194,8 @@ namespace Ext
 	template<> inline void HyperLerp(SR::SColor& result, const SR::SColor& s, const SR::SColor& e, float t, float ws, float we)
 	{
 #if USE_SIMD == 1
-		__m128 V1 =  _mm_mul_ps(_mm_set_ps(s.a, s.b, s.g, s.r), _mm_set_ps1(ws));
-		__m128 V2 =  _mm_mul_ps(_mm_set_ps(e.a, e.b, e.g, e.r), _mm_set_ps1(we));
+		__m128 V1 =  _mm_mul_ps(_mm_set_ps(s.b, s.g, s.r, s.a), _mm_set_ps1(ws));
+		__m128 V2 =  _mm_mul_ps(_mm_set_ps(e.b, e.g, e.r, e.a), _mm_set_ps1(we));
 		__m128 Vt = _mm_set_ps1(t);
 		V2 = _mm_mul_ps(_mm_sub_ps(V2, V1), Vt);
 		m128_to_color(result, _mm_add_ps(V1, V2));

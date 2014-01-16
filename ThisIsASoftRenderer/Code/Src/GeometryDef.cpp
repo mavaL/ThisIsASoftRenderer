@@ -5,7 +5,7 @@
 namespace SR
 {
 	SColor SColor::WHITE	=	SColor(1.0f, 1.0f, 1.0f);
-	SColor SColor::BLACK	=	SColor(0.0f, 0.0f, 0.0f);
+	SColor SColor::BLACK	=	SColor(0.0f, 0.0f, 0.0f, 0.0f);
 	SColor SColor::BLUE		=	SColor(0.0f, 0.0f, 1.0f);
 	SColor SColor::RED		=	SColor(1.0f, 0.0f, 0.0f);
 	SColor SColor::NICE_BLUE =	SColor(0.0f, 0.125f, 0.3f);
@@ -31,12 +31,35 @@ namespace SR
 		return *this;
 	}
 
-	void STexture::LoadTexture( const STRING& filename, bool bmipmap )
+	void STexture::LoadTexture( const STRING& filename, bool bmipmap, bool bHasAlpha )
 	{
 		assert(texName.empty() && texData.empty());
 		Gdiplus::Bitmap bm(Ext::AnsiToUnicode(filename.c_str()).c_str(), TRUE);
+
 		HBITMAP hbm;
-		bm.GetHBITMAP(Gdiplus::Color::Black, &hbm);
+
+		if (bHasAlpha)
+		{
+			assert(bm.GetPixelFormat() == PixelFormat32bppRGB);
+
+			// GDI+ won't load texture with alpha format.
+			// So we manually create one.
+			Gdiplus::Bitmap bmWithAlpha(bm.GetWidth(), bm.GetHeight(), PixelFormat32bppARGB);
+			Gdiplus::BitmapData bmSrcData, bmDestData;
+			bm.LockBits(nullptr, Gdiplus::ImageLockModeRead, bm.GetPixelFormat(), &bmSrcData);
+			bmWithAlpha.LockBits(nullptr, Gdiplus::ImageLockModeWrite, bmWithAlpha.GetPixelFormat(), &bmDestData);
+
+			memcpy(bmDestData.Scan0, bmSrcData.Scan0, bmSrcData.Stride * bmSrcData.Height);
+
+			bmWithAlpha.UnlockBits(&bmDestData);
+			bm.UnlockBits(&bmSrcData);
+
+			bmWithAlpha.GetHBITMAP(Gdiplus::Color::Black, &hbm);
+		}
+		else
+		{
+			bm.GetHBITMAP(Gdiplus::Color::Black, &hbm);
+		}
 
 		CBitmap* cbm;
 		BITMAP bitmap;
@@ -186,6 +209,4 @@ namespace SR
 		assert(i>=0 && i<texData.size());
 		return texData[i];
 	}
-
-
 }

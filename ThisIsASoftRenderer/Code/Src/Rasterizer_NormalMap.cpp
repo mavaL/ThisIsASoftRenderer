@@ -276,10 +276,17 @@ namespace SR
 		lc.lightDirTS = &frag.lightDirTS;
 		lc.hVectorTS = &frag.hVectorTS;
 
-		g_env.renderer->GetCurRas()->DoPerPixelLighting(lightColor, &lc, pMaterial);
+		DoPerPixelLighting(lightColor, &lc, pMaterial);
+
 		texColor *= lightColor;
 		texColor.Saturate();
-		*frag.finalColor = texColor.GetAsInt();
+
+		SColor destPixelColor;
+		destPixelColor.SetAsInt(*frag.finalColor);
+
+		DoAlphaBlending(destPixelColor, texColor, destPixelColor, pMaterial);
+
+		*frag.finalColor = destPixelColor.GetAsInt();
 
 #if USE_PROFILER == 1
 		g_env.profiler->AddRenderedPixel();

@@ -85,7 +85,7 @@ namespace SR
 		STexture(const STexture& rhs);
 		STexture& operator= (const STexture& rhs);
 
-		void		LoadTexture(const STRING& filename, bool bmipmap);
+		void		LoadTexture(const STRING& filename, bool bmipmap, bool bHasAlpha = false);
 		PixelBox*	GetSurface(int i);
 		//临近点采样
 		void		Tex2D_Point(const VEC2& uv, SColor& ret, int mip = 0) const;
@@ -108,7 +108,8 @@ namespace SR
 		SMaterial()
 			:ambient(SColor::WHITE),diffuse(SColor::WHITE),specular(SColor::WHITE)
 			,pDiffuseMap(nullptr),pNormalMap(nullptr)
-			,shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false) {}
+			,shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false)
+			,bTransparent(false) {}
 
 		~SMaterial() { SAFE_DELETE(pDiffuseMap); }
 
@@ -118,6 +119,7 @@ namespace SR
 		STexture*	pNormalMap;
 		bool		bUseHalfLambert;		//See: https://developer.valvesoftware.com/wiki/Half_Lambert
 		bool		bUseBilinearSampler;	//使用纹理双线性插值
+		bool		bTransparent;			//是否半透物体
 	};
 
 	///////////////////////////////////////////////////

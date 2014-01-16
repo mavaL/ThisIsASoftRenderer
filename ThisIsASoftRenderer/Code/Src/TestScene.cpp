@@ -293,6 +293,51 @@ void EnterTestScene6(SR::Scene* scene)
 
 void SetupTestScene7(SR::Scene* scene)
 {
+	SR::RenderObject* obj=  new SR::RenderObject;
+
+	SR::SVertex v1, v2, v3;
+	v1.pos = VEC4(-20, -15, 0, 1);
+	v2.pos = VEC4(20, -15, 0, 1);
+	v3.pos = VEC4(0, 15, 0, 1);
+
+	v1.normal = VEC3::UNIT_Z;
+	v2.normal = VEC3::UNIT_Z;
+	v3.normal = VEC3::UNIT_Z;
+
+	v1.uv = VEC2(0.0f, 1.0f);
+	v2.uv = VEC2(1.0f, 1.0f);
+	v3.uv = VEC2(0.5f, 0.0f);
+
+	obj->m_verts.push_back(v1);
+	obj->m_verts.push_back(v2);
+	obj->m_verts.push_back(v3);
+
+	SR::SFace face(0,1,2);
+	face.faceNormal = VEC3::UNIT_Z; 
+	obj->m_faces.push_back(face);
+
+	SR::SMaterial* mat = new SR::SMaterial;
+	mat->pDiffuseMap = new SR::STexture;
+	mat->pDiffuseMap->LoadTexture(GetResPath("Sponza\\textures\\vase_plant.bmp"), false, true);
+	mat->bTransparent = true;
+
+	g_env.renderer->AddMaterial("TransparentMateiral", mat);
+	obj->m_pMaterial = mat;
+	obj->m_bStatic = true;
+	obj->SetShader(SR::eRasterizeType_TexturedGouraud);
+
+	scene->AddRenderObject(obj);
+}
+
+void EnterTestScene7(SR::Scene* scene)
+{
+	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
+	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
+	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
+}
+
+void SetupTestScene8(SR::Scene* scene)
+{
 	try
 	{
 		if(!g_env.objLoader->LoadMeshFile(GetResPath("Sponza\\sponza.obj"), true))
@@ -311,7 +356,7 @@ void SetupTestScene7(SR::Scene* scene)
 	});
 }
 
-void EnterTestScene7(SR::Scene* scene)
+void EnterTestScene8(SR::Scene* scene)
 {
 	g_env.renderer->m_camera.SetPosition(VEC3(-1.8f, 6.6f, -4.7f));
 	g_env.renderer->m_camera.SetMoveSpeed(2.0f);
@@ -322,7 +367,7 @@ namespace SR
 {
 	void Renderer::_InitAllScene()
 	{
-		//// Test SR::Scene 1: Triangle with gouraud
+		//// Test SR::Scene 1: Triangle with gouraud shading mode
 		ADD_TEST_SCENE(SetupTestScene1, EnterTestScene1);
 
 		//// Test SR::Scene 2: 透视校正纹理映射
@@ -340,8 +385,11 @@ namespace SR
 		//// Test SR::Scene 6: Normal Map
 		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
 
-		//// Test SR::Scene 7: sponza.obj
+		//// Test SR::Scene 7: Transparency
 		ADD_TEST_SCENE(SetupTestScene7, EnterTestScene7);
+
+		//// Test SR::Scene 8: sponza.obj
+		ADD_TEST_SCENE(SetupTestScene8, EnterTestScene8);
 	}
 }
 

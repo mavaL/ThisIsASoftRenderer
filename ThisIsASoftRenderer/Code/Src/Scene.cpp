@@ -22,14 +22,18 @@ namespace SR
 			obj->CalcAllFaceTexArea();
 		}
 		
-
-		m_renderList.push_back(obj);
+		if(obj->m_pMaterial->bTransparent)
+			m_renderList_trans.push_back(obj);
+		else
+			m_renderList_solid.push_back(obj);
 	}
 
 	Scene::~Scene()
 	{
-		std::for_each(m_renderList.begin(), m_renderList.end(), std::default_delete<RenderObject>());
-		m_renderList.clear();
+		std::for_each(m_renderList_solid.begin(), m_renderList_solid.end(), std::default_delete<RenderObject>());
+		std::for_each(m_renderList_trans.begin(), m_renderList_trans.end(), std::default_delete<RenderObject>());
+		m_renderList_solid.clear();
+		m_renderList_trans.clear();
 	}
 
 	void Scene::Enter()

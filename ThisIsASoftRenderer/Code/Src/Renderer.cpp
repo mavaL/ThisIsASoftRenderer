@@ -99,9 +99,15 @@ namespace SR
 		}
 #endif
 
-		for (size_t iObj=0; iObj<m_scenes[m_curScene]->m_renderList.size(); ++iObj)
+		for (size_t iObj=0; iObj<m_scenes[m_curScene]->m_renderList_solid.size(); ++iObj)
 		{
-			RenderObject* obj = m_scenes[m_curScene]->m_renderList[iObj];
+			RenderObject* obj = m_scenes[m_curScene]->m_renderList_solid[iObj];
+			obj->OnFrameMove();
+		}
+
+		for (size_t iObj=0; iObj<m_scenes[m_curScene]->m_renderList_trans.size(); ++iObj)
+		{
+			RenderObject* obj = m_scenes[m_curScene]->m_renderList_trans[iObj];
 			obj->OnFrameMove();
 		}
 
@@ -114,54 +120,11 @@ namespace SR
 		//刷新后备缓冲
 		_Clear(SColor::NICE_BLUE, 1.0f);
 
-		int nObj = (int)m_scenes[m_curScene]->m_renderList.size();
+		// Render solids
+		_FlushRenderList(m_scenes[m_curScene]->m_renderList_solid);
 
-		//for each object
-		for (int iObj=0; iObj<nObj; ++iObj)
-		{
-			RenderObject& obj = *m_scenes[m_curScene]->m_renderList[iObj];
-			m_curRas = obj.m_pShader;
-
-			//T&L
-#if USE_MULTI_THREAD == 1
-			JobParamVS* param = new JobParamVS;
-			param->object = &obj;
-
-			JobVS* job = new JobVS(param);
-			g_env.jobMgr->SubmitJob(job, nullptr);
-#else			
-			SRenderContext context;
-			context.pMaterial = obj.m_pMaterial;
-
-			RenderUtil::ObjectTnL(obj, context);
-
-			//光栅化物体
-			m_curRas->RasterizeTriangleList(context);
-#endif
-		}
-#if USE_MULTI_THREAD == 1
-		g_env.jobMgr->Flush();
-
-		//到这个阶段VS,RS已执行完,且fragment buffer保存了ps需要执行的像素
-		int nPixel = SCREEN_WIDTH * SCREEN_HEIGHT;
-		SFragment* curFrag = &m_fragmentBuffer[0];
-
-		for (int i=0; i<nPixel; ++i)
-		{
-			if(curFrag->bActive)
-			{
-				JobParamPS* param = new JobParamPS;
-				param->frag = curFrag;
-
-				JobPS* job = new JobPS(param);
-				g_env.jobMgr->SubmitJob(job, nullptr);
-			}
-
-			++curFrag;
-		}
-
-		g_env.jobMgr->Flush();
-#endif
+		// Render transparency
+		_FlushRenderList(m_scenes[m_curScene]->m_renderList_trans);
 	}
 
 	void Renderer::Present()
@@ -279,5 +242,57 @@ namespace SR
 			m_curScene = 0;
 
 		m_scenes[m_curScene]->Enter();
+	}
+
+	void Renderer::_FlushRenderList( RenderList& renderList )
+	{
+		int nObj = (int)renderList.size();
+
+		//for each object
+		for (int iObj=0; iObj<nObj; ++iObj)
+		{
+			RenderObject& obj = *renderList[iObj];
+			m_curRas = obj.m_pShader;
+
+			//T&L
+#if USE_MULTI_THREAD == 1
+			JobParamVS* param = new JobParamVS;
+			param->object = &obj;
+
+			JobVS* job = new JobVS(param);
+			g_env.jobMgr->SubmitJob(job, nullptr);
+#else			
+			SRenderContext context;
+			context.pMaterial = obj.m_pMaterial;
+
+			RenderUtil::ObjectTnL(obj, context);
+
+			//光栅化物体
+			m_curRas->RasterizeTriangleList(context);
+#endif
+		}
+#if USE_MULTI_THREAD == 1
+		g_env.jobMgr->Flush();
+
+		//到这个阶段VS,RS已执行完,且fragment buffer保存了ps需要执行的像素
+		int nPixel = SCREEN_WIDTH * SCREEN_HEIGHT;
+		SFragment* curFrag = &m_fragmentBuffer[0];
+
+		for (int i=0; i<nPixel; ++i)
+		{
+			if(curFrag->bActive)
+			{
+				JobParamPS* param = new JobParamPS;
+				param->frag = curFrag;
+
+				JobPS* job = new JobPS(param);
+				g_env.jobMgr->SubmitJob(job, nullptr);
+			}
+
+			++curFrag;
+		}
+
+		g_env.jobMgr->Flush();
+#endif
 	}
 }

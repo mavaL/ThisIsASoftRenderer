@@ -292,6 +292,19 @@ namespace Ext
 			{
 				file >> pNewMaterial->shiness;
 			}
+			else if (strcmp(command.c_str(), "alpha_test") == 0)
+			{
+				pNewMaterial->bTransparent = true;
+				
+				// Recreate texture with alpha
+				if (pNewMaterial->pDiffuseMap)
+				{
+					const STRING texName = pNewMaterial->pDiffuseMap->texName;
+					delete pNewMaterial->pDiffuseMap;
+					pNewMaterial->pDiffuseMap = new SR::STexture;
+					pNewMaterial->pDiffuseMap->LoadTexture(texName, false, true);
+				}
+			}
 
 			//¶ÁÏÂÒ»ÐÐ
 			file.ignore(1000, '\n');

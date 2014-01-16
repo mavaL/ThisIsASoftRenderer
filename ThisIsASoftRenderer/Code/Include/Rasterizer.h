@@ -53,6 +53,22 @@ namespace SR
 		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData) {}
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData) = 0;
 
+		__forceinline void			DoAlphaBlending(SColor& out, const SColor& src, const SColor& dest, const SMaterial* pMaterial)
+		{
+			if (pMaterial->bTransparent)
+			{
+				// Alpha blending
+				out = dest;
+				out *= 1 - src.a;
+				out += src * src.a;
+				out.Saturate();
+			}
+			else
+			{
+				out = src;
+			}
+		}
+
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context) = 0;
 	};

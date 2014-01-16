@@ -13,6 +13,7 @@
 #include "MathDef.h"
 #include "Rasterizer.h"
 #include "GeometryDef.h"
+#include "RenderObject.h"
 
 namespace SR
 {
@@ -58,6 +59,7 @@ namespace SR
 
 	private:
 		void	_InitAllScene();
+		void	_FlushRenderList(RenderList& renderList);
 		//Çå³ýÖ¡»º´æ,z-buffer
 		void	_Clear(const SColor& color, float depth);
 
