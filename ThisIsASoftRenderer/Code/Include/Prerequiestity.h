@@ -12,6 +12,7 @@
 const int		SCREEN_WIDTH	=	640;
 const int		SCREEN_HEIGHT	=	480;
 const int		PIXEL_MODE		=	4;		//像素模式(字节数). NB:只支持32位模式,不要更改
+const int		OIT_LAYER		=	4;		//Depth-peeling的层数
 // clipping rectangle 
 const int		min_clip_x		=	0;                          
 const int		max_clip_x		=	(SCREEN_WIDTH-1);
@@ -23,6 +24,15 @@ const int		max_clip_y		=	(SCREEN_HEIGHT-1);
 #define USE_PROFILER			1			//是否使用Profiler
 #define USE_MULTI_THREAD		0			//是否使用多线程
 #define USE_SIMD				1			//是否使用SIMD
+#define USE_OIT					1			//是否使用OIT,不能与多线程同时开启
+
+
+enum eZFunc
+{
+	eZFunc_Less,
+	eZFunc_Greater,	
+	eZFunc_Always
+};
 
 
 typedef std::string STRING;

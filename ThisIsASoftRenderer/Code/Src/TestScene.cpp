@@ -293,40 +293,64 @@ void EnterTestScene6(SR::Scene* scene)
 
 void SetupTestScene7(SR::Scene* scene)
 {
-	SR::RenderObject* obj=  new SR::RenderObject;
+	try
+	{
+		// Teapot 1
+		{
+			if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+				throw std::logic_error("Error, Load .mesh file failed!");
 
-	SR::SVertex v1, v2, v3;
-	v1.pos = VEC4(-20, -15, 0, 1);
-	v2.pos = VEC4(20, -15, 0, 1);
-	v3.pos = VEC4(0, 15, 0, 1);
+			SR::SMaterial* mat = new SR::SMaterial;
+			mat->bTwoSide = true;
+			mat->bTransparent = true;
+			mat->transparency = 0.7f;
 
-	v1.normal = VEC3::UNIT_Z;
-	v2.normal = VEC3::UNIT_Z;
-	v3.normal = VEC3::UNIT_Z;
+			mat->pDiffuseMap = new SR::STexture;
+			mat->pDiffuseMap->LoadTexture(GetResPath("Hex.bmp"), false, true);
 
-	v1.uv = VEC2(0.0f, 1.0f);
-	v2.uv = VEC2(1.0f, 1.0f);
-	v3.uv = VEC2(0.5f, 0.0f);
+			mat->ambient.Set(0.4f, 0.0f, 0.0f);
+			mat->diffuse.Set(0.7f, 0.0f, 0.0f);
+			mat->specular.Set(0.3f, 0.0f, 0.0f);
+			mat->shiness = 50;
 
-	obj->m_verts.push_back(v1);
-	obj->m_verts.push_back(v2);
-	obj->m_verts.push_back(v3);
+			SR::RenderObject* pTeapot = g_env.meshLoader->m_objs[0];
+			pTeapot->m_matWorld.FromAxisAngle(VEC3::UNIT_Y, -30.0f);
+			pTeapot->m_matWorld.SetTranslation(VEC4(10.0f, 10.0f, -15.0f, 1.0f));
+			pTeapot->m_pMaterial = mat;
+			pTeapot->SetShader(SR::eRasterizeType_BlinnPhong);
 
-	SR::SFace face(0,1,2);
-	face.faceNormal = VEC3::UNIT_Z; 
-	obj->m_faces.push_back(face);
+			scene->AddRenderObject(pTeapot);
+		}
+		// Teapot 2
+		{
+			if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+				throw std::logic_error("Error, Load .mesh file failed!");
 
-	SR::SMaterial* mat = new SR::SMaterial;
-	mat->pDiffuseMap = new SR::STexture;
-	mat->pDiffuseMap->LoadTexture(GetResPath("Sponza\\textures\\vase_plant.bmp"), false, true);
-	mat->bTransparent = true;
+			SR::SMaterial* mat = new SR::SMaterial;
+			mat->bTwoSide = true;
+			mat->bTransparent = true;
+			mat->transparency = 0.7f;
 
-	g_env.renderer->AddMaterial("TransparentMateiral", mat);
-	obj->m_pMaterial = mat;
-	obj->m_bStatic = true;
-	obj->SetShader(SR::eRasterizeType_TexturedGouraud);
+			mat->pDiffuseMap = new SR::STexture;
+			mat->pDiffuseMap->LoadTexture(GetResPath("Hex.bmp"), false, true);
 
-	scene->AddRenderObject(obj);
+			mat->ambient.Set(0.0f, 0.4f, 0.0f);
+			mat->diffuse.Set(0.0f, 0.7f, 0.0f);
+			mat->specular.Set(0.0f, 0.3f, 0.0f);
+			mat->shiness = 50;
+
+			SR::RenderObject* pTeapot = g_env.meshLoader->m_objs[0];
+			pTeapot->m_pMaterial = mat;
+			pTeapot->SetShader(SR::eRasterizeType_BlinnPhong);
+
+			scene->AddRenderObject(pTeapot);
+		}
+	}
+	catch (std::exception& e)
+	{
+		MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+		return;
+	}
 }
 
 void EnterTestScene7(SR::Scene* scene)

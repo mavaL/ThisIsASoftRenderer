@@ -19,7 +19,7 @@ namespace SR
 		int dx = x1 - x0;
 		int dy = y1 - y0;
 
-		PixelBox* pBackBuffer = g_env.renderer->m_backBuffer.get();
+		PixelBox* pBackBuffer = g_env.renderer->m_frameBuffer;
 		DWORD* destBuffer = (DWORD*)pBackBuffer->GetDataPointer() + y0 * pBackBuffer->GetWidth() + x0;
 		const DWORD iColor = color.GetAsInt();
 
@@ -480,13 +480,15 @@ namespace SR
 	void RenderUtil::RasterizeScanLines( SScanLinesData& scanLineData )
 	{
 		//定位输出位置
-		int lpitch = g_env.renderer->m_backBuffer->GetWidth();
+		Renderer* pRenderer = g_env.renderer;
+		int lpitch = pRenderer->m_frameBuffer->GetWidth();
 
-		DWORD* destBuffer = (DWORD*)g_env.renderer->m_backBuffer->GetDataPointer() + scanLineData.curY * lpitch;
-		float* zBuffer = (float*)g_env.renderer->m_zBuffer->GetDataPointer() + scanLineData.curY * SCREEN_WIDTH;
-		SFragment* fragBuf = g_env.renderer->m_fragmentBuffer + scanLineData.curY * SCREEN_WIDTH;
+		DWORD* destBuffer = (DWORD*)pRenderer->m_frameBuffer->GetDataPointer() + scanLineData.curY * lpitch;
+		float* zBuffer_write = (float*)pRenderer->GetCurZBuffer()->GetDataPointer() + scanLineData.curY * SCREEN_WIDTH;
+		float* zBuffer_read = (float*)pRenderer->GetAnotherZBuffer()->GetDataPointer() + scanLineData.curY * SCREEN_WIDTH;
+		SFragment* fragBuf = pRenderer->m_fragmentBuffer + scanLineData.curY * SCREEN_WIDTH;
 
-		Rasterizer* curRaster = g_env.renderer->GetCurRas();
+		Rasterizer* curRaster = pRenderer->GetCurRas();
 		SScanLine scanLine;
 
 		while (scanLineData.curY <= scanLineData.endY)
@@ -507,13 +509,20 @@ namespace SR
 				// Rasterize a line
 				for (int curX=scanLine.lineX0; curX<=scanLine.lineX1; ++curX)
 				{
+#if USE_MULTI_THREAD == 1
 					g_lock.Lock();
+#endif
 					// Z-test
-					if(scanLine.zw.x < zBuffer[curX])
+					if(!pRenderer->GetEnableZTest() || 
+						curRaster->DoZTest(scanLine.zw.x, zBuffer_write[curX], zBuffer_read[curX], scanLineData.pMaterial))
 					{
-						zBuffer[curX] = scanLine.zw.x;
+						// Z-write
+						if(pRenderer->GetEnableZWrite())
+							zBuffer_write[curX] = scanLine.zw.x;
 
+#if USE_MULTI_THREAD == 1
 						g_lock.UnLock();
+#endif
 
 						scanLine.pFragmeng = &fragBuf[curX];
 						scanLine.pFragmeng->pMaterial = scanLineData.pMaterial;
@@ -523,7 +532,9 @@ namespace SR
 					}
 					else
 					{
+#if USE_MULTI_THREAD == 1
 						g_lock.UnLock();
+#endif
 					}
 					
 					// Advance to next pixel
@@ -539,7 +550,8 @@ namespace SR
 			Common::Add_Vec3_By_Vec3(scanLineData.curP_R, scanLineData.curP_R, scanLineData.dp_R);
 
 			destBuffer += lpitch;
-			zBuffer += SCREEN_WIDTH;
+			zBuffer_write += SCREEN_WIDTH;
+			zBuffer_read += SCREEN_WIDTH;
 			fragBuf += SCREEN_WIDTH;
 		}
 #if USE_PROFILER == 1

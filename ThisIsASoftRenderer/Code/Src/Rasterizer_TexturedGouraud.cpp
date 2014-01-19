@@ -126,15 +126,26 @@ namespace SR
 		}
 		
 		// Vertex color stores lighting diffuse
+		// Don't modify alpha [1/19/2014 mavaL]
+		float alpha = scanLine.pixelColor.a;
+
 		scanLine.pixelColor *= scanLine.curPixelClr;
+		scanLine.pixelColor.a = alpha;
 		scanLine.pixelColor.Saturate();
 
+		DWORD& dwDestColor = *(scanLine.pFragmeng->finalColor);
+
+#if USE_OIT == 0
 		SColor destPixelColor;
-		destPixelColor.SetAsInt(*(scanLine.pFragmeng->finalColor));
+		destPixelColor.SetAsInt(dwDestColor);
 
 		DoAlphaBlending(destPixelColor, scanLine.pixelColor, destPixelColor, rasData.pMaterial);
 
-		*(scanLine.pFragmeng->finalColor) = destPixelColor.GetAsInt();
+		dwDestColor = destPixelColor.GetAsInt();
+#else
+		scanLine.pixelColor.a *= rasData.pMaterial->transparency;
+		dwDestColor = scanLine.pixelColor.GetAsInt();
+#endif
 
 #if USE_PROFILER == 1
 		g_env.profiler->AddRenderedPixel();

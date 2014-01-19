@@ -204,5 +204,16 @@ namespace SR
 		m_moveSpeed = Ext::Clamp(m_moveSpeed, 0.1f, 10.0f);
 	}
 
+	void Camera::SetNearClip( float n )
+	{
+		m_nearClip = n;
+		_BuildProjMatrix();
+	}
+
+	void Camera::SetFarClip( float f )
+	{
+		m_farClip = f;
+		_BuildProjMatrix();
+	}
 }
 

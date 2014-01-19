@@ -108,8 +108,8 @@ namespace SR
 		SMaterial()
 			:ambient(SColor::WHITE),diffuse(SColor::WHITE),specular(SColor::WHITE)
 			,pDiffuseMap(nullptr),pNormalMap(nullptr)
-			,shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false)
-			,bTransparent(false) {}
+			,shiness(20),bUseHalfLambert(false),bUseBilinearSampler(false),bTwoSide(false)
+			,bTransparent(false),transparency(1.0f) {}
 
 		~SMaterial() { SAFE_DELETE(pDiffuseMap); }
 
@@ -119,7 +119,9 @@ namespace SR
 		STexture*	pNormalMap;
 		bool		bUseHalfLambert;		//See: https://developer.valvesoftware.com/wiki/Half_Lambert
 		bool		bUseBilinearSampler;	//使用纹理双线性插值
+		bool		bTwoSide;				//是否双面(是则关闭背面拣选)
 		bool		bTransparent;			//是否半透物体
+		float		transparency;			// Transparency factor
 	};
 
 	///////////////////////////////////////////////////

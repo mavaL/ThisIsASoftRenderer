@@ -131,7 +131,20 @@ namespace SR
 #endif
 
 		scanLine.pixelColor.Saturate();
-		*scanLine.pFragmeng->finalColor = scanLine.pixelColor.GetAsInt();
+
+		DWORD& dwDestColor = *scanLine.pFragmeng->finalColor;
+
+#if USE_OIT == 0
+		SColor destPixelColor;
+		destPixelColor.SetAsInt(dwDestColor);
+
+		DoAlphaBlending(destPixelColor, scanLine.pixelColor, destPixelColor, rasData.pMaterial);
+
+		dwDestColor = destPixelColor.GetAsInt();
+#else
+		scanLine.pixelColor.a *= rasData.pMaterial->transparency;
+		dwDestColor = scanLine.pixelColor.GetAsInt();
+#endif
 
 #if USE_PROFILER == 1
 		g_env.profiler->AddRenderedPixel();

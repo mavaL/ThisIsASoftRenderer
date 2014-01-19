@@ -53,14 +53,17 @@ namespace SR
 		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData) {}
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData) = 0;
 
-		__forceinline void			DoAlphaBlending(SColor& out, const SColor& src, const SColor& dest, const SMaterial* pMaterial)
+		bool			DoZTest(float z, float zbuffer1, float zbuffer2, SMaterial* pMaterial);
+
+		void			DoAlphaBlending(SColor& out, const SColor& src, const SColor& dest, const SMaterial* pMaterial)
 		{
 			if (pMaterial->bTransparent)
 			{
 				// Alpha blending
+				float alpha = src.a * pMaterial->transparency;
 				out = dest;
-				out *= 1 - src.a;
-				out += src * src.a;
+				out *= 1 - alpha;
+				out += src * alpha;
 				out.Saturate();
 			}
 			else

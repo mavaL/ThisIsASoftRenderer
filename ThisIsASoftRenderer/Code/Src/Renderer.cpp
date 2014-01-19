@@ -12,6 +12,10 @@ namespace SR
 	:m_curRas(nullptr)
 	,m_ambientColor(SColor::WHITE)
 	,m_curScene(-1)
+	,m_bZTestEnable(true)
+	,m_bZWriteEnable(true)
+	,m_frameBuffer(nullptr)
+	,m_iCurOutputZBuffer(0)
 	{
 		
 	}
@@ -29,6 +33,11 @@ namespace SR
 		//创建后备缓冲
 		m_backBuffer.reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
 
+		SetRenderTarget(m_backBuffer.get());
+
+		for(int i=0; i<OIT_LAYER; ++i)
+			m_backBuffer_OIT[i].reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
+
 		int bmWidth = m_backBuffer->GetWidth();
 		int bmHeight = m_backBuffer->GetHeight();
 		int bmPitch = m_backBuffer->GetPitch();
@@ -37,7 +46,11 @@ namespace SR
 		m_bmBackBuffer.reset(new Gdiplus::Bitmap(bmWidth, bmHeight, bmPitch, PixelFormat32bppARGB, data));
 
 		//创建z-buffer
-		m_zBuffer.reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
+		m_zBuffer[0].reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
+		m_zBuffer[1].reset(new SR::PixelBox(SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_MODE));
+
+		m_zFunc[0] = eZFunc_Less;
+		m_zFunc[1] = eZFunc_Less;
 
 		//创建fragment buffer
 		m_fragmentBuffer = new SFragment[SCREEN_WIDTH * SCREEN_HEIGHT];
@@ -123,8 +136,75 @@ namespace SR
 		// Render solids
 		_FlushRenderList(m_scenes[m_curScene]->m_renderList_solid);
 
-		// Render transparency
+		// Render transparency, using OIT, turn off z-write
+		const bool bHasTrans = !m_scenes[m_curScene]->m_renderList_trans.empty();
+		if(bHasTrans)
+		{
+#if USE_OIT == 1
+			_RenderTransparency_OIT();
+
+			// Recover render states
+			SetRenderTarget(nullptr);
+			SetZfunc(0, eZFunc_Less);
+			SetZfunc(1, eZFunc_Always);
+#else
+			SetEnableZWrite(false);
+			_FlushRenderList(m_scenes[m_curScene]->m_renderList_trans);
+			SetEnableZWrite(true);
+#endif
+		}
+	}
+
+	void Renderer::_RenderTransparency_OIT()
+	{
+		// First pass
+		SetZfunc(1, eZFunc_Always);
+		SetRenderTarget(m_backBuffer_OIT[0].get());
 		_FlushRenderList(m_scenes[m_curScene]->m_renderList_trans);
+
+		// Remain passes
+		for (int i=1; i<OIT_LAYER; ++i)
+		{
+			int iOutputZBuffer = i % 2;
+			int iReadOnlyZBuffer = (i+1) % 2;
+
+			const float fMaxDepth = 1.0f;
+			const DWORD dwMaxDepth = *(int*)&fMaxDepth;
+			_ClearBufferImpl(m_zBuffer[iOutputZBuffer].get(), dwMaxDepth);
+
+			SetRenderTarget(m_backBuffer_OIT[i].get(), iOutputZBuffer);
+			SetZfunc(iOutputZBuffer, eZFunc_Less);
+			SetZfunc(iReadOnlyZBuffer, eZFunc_Greater);
+			_FlushRenderList(m_scenes[m_curScene]->m_renderList_trans);
+		}
+
+		// Final blending, far layer to near layer
+		for (int i=OIT_LAYER-1; i>=0; --i)
+		{
+			PixelBox* pSrcLayer = m_backBuffer_OIT[i].get();
+			PixelBox* pDestLayer = m_backBuffer.get();
+
+			//TODO: How to optimize?
+			const DWORD* pSrcData = (DWORD*)pSrcLayer->GetDataPointer();
+			DWORD* pDestData = (DWORD*)pDestLayer->GetDataPointer();
+
+			for (int x=0; x<pDestLayer->GetHeight(); ++x)
+			{
+				for (int y=0; y<pDestLayer->GetWidth(); ++y)
+				{
+					SColor c1, c2;
+					c1.SetAsInt(*pSrcData++);
+					c2.SetAsInt(*pDestData);
+
+					float fAlpha = c1.a;
+					c1 *= fAlpha;
+					c1 += c2 * (1 - fAlpha);
+
+					c1.Saturate();
+					*pDestData++ = c1.GetAsInt();
+				}
+			}
+		}
 	}
 
 	void Renderer::Present()
@@ -155,48 +235,49 @@ namespace SR
 
 	void Renderer::_Clear(const SColor& color, float depth)
 	{
-		//clear backbuffer
-		{
-			DWORD nBuffer = m_backBuffer->GetWidth() * m_backBuffer->GetHeight();
-			void* dst = m_backBuffer->GetDataPointer();
-			DWORD clr = color.GetAsInt();
+		const DWORD dwColor = color.GetAsInt();
+		const DWORD dwDepth = *(int*)&depth;
 
-			_asm
-			{
-				mov edi, dst
-				mov ecx, nBuffer
-				mov eax, clr
-				rep stosd 
-			}
-		}
+		//clear backbuffer
+		_ClearBufferImpl(m_backBuffer.get(), dwColor);
 
 		//clear z-buffer
-		{
-			DWORD nBuffer = m_zBuffer->GetWidth() * m_zBuffer->GetHeight();
-			void* dst = m_zBuffer->GetDataPointer();
-			int d = *(int*)&depth;
+		_ClearBufferImpl(m_zBuffer[0].get(), dwDepth);
 
-			_asm
-			{
-				mov edi, dst
-				mov ecx, nBuffer
-				mov eax, d
-				rep stosd 
-			}
+		//clear OIT buffers
+#if USE_OIT == 1
+		const bool bHasTrans = !m_scenes[m_curScene]->m_renderList_trans.empty();
+		if(bHasTrans)
+		{
+			for (int i=0; i<OIT_LAYER; ++i)
+				_ClearBufferImpl(m_backBuffer_OIT[i].get(), dwColor);
 		}
+#endif
 
 		//clear fragment buffer
-		{
-			static DWORD nBuffer = SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(SFragment) / sizeof(int);
-			void* dst = &m_fragmentBuffer[0];
+		DWORD nBuffer = SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(SFragment) / sizeof(int);
+		void* dst = &m_fragmentBuffer[0];
 
-			_asm
-			{
+		_asm
+		{
 				mov edi, dst
 				mov ecx, nBuffer
 				mov eax, 0
 				rep stosd 
-			}
+		}
+	}
+
+	void Renderer::_ClearBufferImpl( PixelBox* pBuffer, DWORD val )
+	{
+		DWORD nBuffer = pBuffer->GetWidth() * pBuffer->GetHeight();
+		void* dst = pBuffer->GetDataPointer();
+
+		_asm
+		{
+				mov edi, dst
+				mov ecx, nBuffer
+				mov eax, val
+				rep stosd 
 		}
 	}
 
@@ -294,5 +375,17 @@ namespace SR
 
 		g_env.jobMgr->Flush();
 #endif
+	}
+
+	void Renderer::SetRenderTarget( PixelBox* pRT, int iZBuffer )
+	{
+		m_frameBuffer = pRT ? pRT : m_backBuffer.get();
+		m_iCurOutputZBuffer = iZBuffer;
+	}
+
+	void Renderer::SetZfunc( int i, eZFunc func )
+	{
+		assert(i == 0 || i == 1);
+		m_zFunc[i] = func;
 	}
 }

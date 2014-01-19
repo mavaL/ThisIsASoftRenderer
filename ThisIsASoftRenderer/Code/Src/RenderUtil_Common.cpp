@@ -34,7 +34,8 @@ namespace SR
 
 			VEC4 faceWorldNormal = Common::Transform_Vec3_By_Mat44(face.faceNormal, obj.m_matWorldIT, false);
 
-			if(Common::DotProduct_Vec3_By_Vec3(faceToCam.GetVec3(), faceWorldNormal.GetVec3()) <= 0.0f)
+			if(!obj.m_pMaterial->bTwoSide &&	// Two side geometry not do back face culling. [1/18/2014 mavaL]
+				Common::DotProduct_Vec3_By_Vec3(faceToCam.GetVec3(), faceWorldNormal.GetVec3()) <= 0.0f)
 			{
 				face.IsBackface = true;
 #if USE_PROFILER == 1

@@ -278,15 +278,26 @@ namespace SR
 
 		DoPerPixelLighting(lightColor, &lc, pMaterial);
 
+		// Don't modify alpha [1/19/2014 mavaL]
+		float alpha = texColor.a;
+
 		texColor *= lightColor;
+		texColor.a = alpha;
 		texColor.Saturate();
 
+		DWORD& dwDestColor = *frag.finalColor;
+
+#if USE_OIT == 0
 		SColor destPixelColor;
-		destPixelColor.SetAsInt(*frag.finalColor);
+		destPixelColor.SetAsInt(dwDestColor);
 
 		DoAlphaBlending(destPixelColor, texColor, destPixelColor, pMaterial);
 
-		*frag.finalColor = destPixelColor.GetAsInt();
+		dwDestColor = destPixelColor.GetAsInt();
+#else
+		texColor.a *= pMaterial->transparency;
+		dwDestColor = texColor.GetAsInt();
+#endif
 
 #if USE_PROFILER == 1
 		g_env.profiler->AddRenderedPixel();

@@ -46,6 +46,12 @@ namespace SR
 		void	OnFrameMove();
 		Rasterizer* GetRasterizer(eRasterizeType type);
 		Rasterizer*	GetCurRas() { return m_curRas; }
+		void	SetEnableZTest(bool bEnable) { m_bZTestEnable = bEnable; }
+		void	SetEnableZWrite(bool bEnable) { m_bZWriteEnable = bEnable; }
+		bool	GetEnableZTest() const { return m_bZTestEnable; }
+		bool	GetEnableZWrite() const { return m_bZWriteEnable; }
+		PixelBox*	GetCurZBuffer()	{ return m_zBuffer[m_iCurOutputZBuffer].get(); }
+		PixelBox*	GetAnotherZBuffer() { return m_zBuffer[(m_iCurOutputZBuffer+1)%2].get(); }
 		//切换测试场景
 		void	ToggleScene();
 		//渲染管线
@@ -56,17 +62,33 @@ namespace SR
 		void	AddMaterial(const STRING& name, SMaterial* mat);
 		//获取材质
 		SMaterial*	GetMaterial(const STRING& name);
+		// RTT
+		void	SetRenderTarget(PixelBox* pRT, int iZBuffer = 0);
+		// Set z-test func, NB: we have two depth buffer
+		void	SetZfunc(int i, eZFunc func);
+		eZFunc	GetCurZFunc() const { return m_zFunc[m_iCurOutputZBuffer]; }
+		eZFunc	GetAnotherZFunc() const { return m_zFunc[(m_iCurOutputZBuffer+1)%2]; }
 
 	private:
 		void	_InitAllScene();
 		void	_FlushRenderList(RenderList& renderList);
+		void	_RenderTransparency_OIT();
 		//清除帧缓存,z-buffer
 		void	_Clear(const SColor& color, float depth);
+		void	_ClearBufferImpl(PixelBox* pBuffer, DWORD val);
 
 	private:
 		std::unique_ptr<Gdiplus::Bitmap>	m_bmBackBuffer;
-		std::unique_ptr<SR::PixelBox>	m_backBuffer;
-		std::unique_ptr<SR::PixelBox>	m_zBuffer;
+		std::unique_ptr<PixelBox>			m_backBuffer;	
+		std::unique_ptr<PixelBox>			m_zBuffer[2];	// Second one for OIT
+		eZFunc								m_zFunc[2];
+		bool								m_bZTestEnable;
+		bool								m_bZWriteEnable;		
+
+		// Use for depth-peeling OIT
+		PixelBox*							m_frameBuffer;
+		int									m_iCurOutputZBuffer;
+		std::unique_ptr<PixelBox>			m_backBuffer_OIT[OIT_LAYER];
 
 		std::unordered_map<eRasterizeType, Rasterizer*>	m_rasLib;		//所有可用shader
 		Rasterizer*							m_curRas;					//当前使用shader

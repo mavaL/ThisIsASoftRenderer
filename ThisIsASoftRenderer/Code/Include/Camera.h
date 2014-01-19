@@ -24,8 +24,8 @@ namespace SR
 	public:
 		void	Update();
 
-		void	SetNearClip(float n)	{ m_nearClip = n; }
-		void	SetFarClip(float f)		{ m_farClip = f; }
+		void	SetNearClip(float n);
+		void	SetFarClip(float f);
 		void	SetPosition(const VEC3& pos);
 		void	SetDirection(const VEC3& dir);
 		void	Yaw(float angle);

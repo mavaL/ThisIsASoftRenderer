@@ -130,4 +130,36 @@ namespace SR
 			scanLine.clip_dx = false;
 		}
 	}
+
+	bool Rasterizer::DoZTest( float z, float zbuffer1, float zbuffer2, SMaterial* pMaterial )
+	{
+		bool bZPassed = false;
+		eZFunc zfunc = g_env.renderer->GetCurZFunc();
+
+		switch (zfunc)
+		{
+		case eZFunc_Less:		bZPassed = z < zbuffer1; break;
+		case eZFunc_Greater:	bZPassed = z > zbuffer1; break;
+		case eZFunc_Always:		bZPassed = true; break;
+		default: assert(0); return false;
+		}
+
+#if USE_OIT == 0
+		return bZPassed;
+#endif
+
+		if(!bZPassed || !pMaterial->bTransparent)
+			return bZPassed;
+
+		// Transparent material
+		zfunc = g_env.renderer->GetAnotherZFunc();
+
+		switch (zfunc)
+		{
+		case eZFunc_Less:		return z < zbuffer2; break;
+		case eZFunc_Greater:	return z > zbuffer2; break;
+		case eZFunc_Always:		return true;
+		default: assert(0); return false;
+		}
+	}
 }
