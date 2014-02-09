@@ -80,7 +80,7 @@ namespace Common
 
 		union
 		{
-			struct { Vector3 vec3; float w; };
+			struct { Vector3 vec3; float w; };	// C++0x : Unrestricted unions
 			struct { float x, y, z, w; };
 		};
 

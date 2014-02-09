@@ -196,11 +196,9 @@ namespace SR
 					c1.SetAsInt(*pSrcData++);
 					c2.SetAsInt(*pDestData);
 
-					float fAlpha = c1.a;
-					c1 *= fAlpha;
-					c1 += c2 * (1 - fAlpha);
-
+					Ext::LinearLerp(c1, c2, c1, c1.a);
 					c1.Saturate();
+
 					*pDestData++ = c1.GetAsInt();
 				}
 			}
@@ -249,8 +247,10 @@ namespace SR
 		const bool bHasTrans = !m_scenes[m_curScene]->m_renderList_trans.empty();
 		if(bHasTrans)
 		{
+			const DWORD dwClrNoAlpha = dwColor & 0x00ffffff;
+
 			for (int i=0; i<OIT_LAYER; ++i)
-				_ClearBufferImpl(m_backBuffer_OIT[i].get(), dwColor);
+				_ClearBufferImpl(m_backBuffer_OIT[i].get(), dwClrNoAlpha);
 		}
 #endif
 

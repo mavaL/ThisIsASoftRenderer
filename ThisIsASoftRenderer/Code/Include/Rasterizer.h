@@ -61,9 +61,7 @@ namespace SR
 			{
 				// Alpha blending
 				float alpha = src.a * pMaterial->transparency;
-				out = dest;
-				out *= 1 - alpha;
-				out += src * alpha;
+				Ext::LinearLerp(out, dest, src, alpha);
 				out.Saturate();
 			}
 			else
