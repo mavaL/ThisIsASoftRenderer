@@ -135,6 +135,16 @@ namespace SR
 	};
 
 	///////////////////////////////////////////////////
+	struct SPointLight 
+	{
+		SPointLight():pos(VEC3::ZERO),color(SColor::BLACK) {}
+
+		VEC3	pos;
+		SColor	color;
+	};
+	
+
+	///////////////////////////////////////////////////
 	struct SFragment 
 	{
 		VEC3		worldPos;	//ÊÀ½ç×ø±ê

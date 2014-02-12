@@ -5,6 +5,7 @@
 #include "Profiler.h"
 #include "RenderUtil.h"
 #include "ThreadPool/MyJob.h"
+#include "RayTracer.h"
 
 namespace SR
 {
@@ -16,12 +17,16 @@ namespace SR
 	,m_bZWriteEnable(true)
 	,m_frameBuffer(nullptr)
 	,m_iCurOutputZBuffer(0)
+	,m_rayTracer(nullptr)
 	{
 		
 	}
 
 	void Renderer::Init()
 	{
+		m_rayTracer = new RayTracer;
+		m_rayTracer->RunIntersectUnitTest();
+
 		//初始化所有光栅器
 		m_rasLib.insert(std::make_pair(eRasterizeType_Wireframe, new RasWireFrame));
 		m_rasLib.insert(std::make_pair(eRasterizeType_Flat, new RasFlat));
@@ -71,6 +76,7 @@ namespace SR
 
 	Renderer::~Renderer()
 	{
+		SAFE_DELETE(m_rayTracer);
 		SAFE_DELETE_ARRAY(m_fragmentBuffer);
 
 		std::for_each(m_scenes.begin(), m_scenes.end(), std::default_delete<Scene>());
@@ -133,25 +139,35 @@ namespace SR
 		//刷新后备缓冲
 		_Clear(SColor::NICE_BLUE, 1.0f);
 
-		// Render solids
-		_FlushRenderList(m_scenes[m_curScene]->m_renderList_solid);
+		Scene* pCurScene = m_scenes[m_curScene];
 
-		// Render transparency, using OIT, turn off z-write
-		const bool bHasTrans = !m_scenes[m_curScene]->m_renderList_trans.empty();
-		if(bHasTrans)
+		// Using ray tracer or not
+		if (pCurScene->IsEnableRayTracing())
 		{
-#if USE_OIT == 1
-			_RenderTransparency_OIT();
+			m_rayTracer->ProcessScene(pCurScene);
+		}
+		else
+		{
+			// Render solids
+			_FlushRenderList(pCurScene->m_renderList_solid);
 
-			// Recover render states
-			SetRenderTarget(nullptr);
-			SetZfunc(0, eZFunc_Less);
-			SetZfunc(1, eZFunc_Always);
+			// Render transparency, using OIT, turn off z-write
+			const bool bHasTrans = !pCurScene->m_renderList_trans.empty();
+			if(bHasTrans)
+			{
+#if USE_OIT == 1
+				_RenderTransparency_OIT();
+
+				// Recover render states
+				SetRenderTarget(nullptr);
+				SetZfunc(0, eZFunc_Less);
+				SetZfunc(1, eZFunc_Always);
 #else
-			SetEnableZWrite(false);
-			_FlushRenderList(m_scenes[m_curScene]->m_renderList_trans);
-			SetEnableZWrite(true);
+				SetEnableZWrite(false);
+				_FlushRenderList(pCurScene->m_renderList_trans);
+				SetEnableZWrite(true);
 #endif
+			}
 		}
 	}
 

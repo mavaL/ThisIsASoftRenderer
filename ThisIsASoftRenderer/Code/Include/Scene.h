@@ -20,7 +20,8 @@ namespace SR
 
 	public:
 		Scene(StrategyFunc& setupFunc, StrategyFunc& enterFunc)
-		:m_bSetup(false),m_setupFunc(setupFunc),m_enterFunc(enterFunc) {}
+		:m_bSetup(false),m_bUseRayTrace(false)
+		,m_setupFunc(setupFunc),m_enterFunc(enterFunc) {}
 
 		~Scene();
 
@@ -30,11 +31,14 @@ namespace SR
 	public:
 		void	Enter();
 		void	AddRenderObject(RenderObject* obj);
+		void	EnableRayTracing(bool bEnable) { m_bUseRayTrace = bEnable; }
+		bool	IsEnableRayTracing() const	{ return m_bUseRayTrace; }
 
 	private:
 		StrategyFunc	m_setupFunc;
 		StrategyFunc	m_enterFunc;
-		bool		m_bSetup;
+		bool			m_bSetup;
+		bool			m_bUseRayTrace;
 	};
 }
 

@@ -46,6 +46,7 @@ namespace SR
 		void	OnFrameMove();
 		Rasterizer* GetRasterizer(eRasterizeType type);
 		Rasterizer*	GetCurRas() { return m_curRas; }
+		PixelBox*	GetFrameBuffer() { return m_frameBuffer; }
 		void	SetEnableZTest(bool bEnable) { m_bZTestEnable = bEnable; }
 		void	SetEnableZWrite(bool bEnable) { m_bZWriteEnable = bEnable; }
 		bool	GetEnableZTest() const { return m_bZTestEnable; }
@@ -78,6 +79,8 @@ namespace SR
 		void	_ClearBufferImpl(PixelBox* pBuffer, DWORD val);
 
 	private:
+		RayTracer*		m_rayTracer;
+
 		std::unique_ptr<Gdiplus::Bitmap>	m_bmBackBuffer;
 		std::unique_ptr<PixelBox>			m_backBuffer;	
 		std::unique_ptr<PixelBox>			m_zBuffer[2];	// Second one for OIT

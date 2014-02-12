@@ -23,7 +23,7 @@ const int		max_clip_y		=	(SCREEN_HEIGHT-1);
 #define USE_PERSPEC_CORRECT		1			//是否使用透视修正
 #define USE_PROFILER			1			//是否使用Profiler
 #define USE_MULTI_THREAD		0			//是否使用多线程
-#define USE_SIMD				1			//是否使用SIMD
+#define USE_SIMD				0			//是否使用SIMD
 #define USE_OIT					1			//是否使用OIT,不能与多线程同时开启
 
 
@@ -44,6 +44,7 @@ namespace Common
 	class Vector4;
 	class Matrix44;
 	class AxisAlignBBox;
+	class Ray;
 }
 
 typedef Common::Vector2		VEC2;
@@ -51,10 +52,12 @@ typedef Common::Vector3		VEC3;
 typedef Common::Vector4		VEC4;
 typedef Common::Matrix44	MAT44;
 typedef Common::AxisAlignBBox	AABB;
+typedef Common::Ray			RAY;
 
 namespace SR
 {
 	class Renderer;
+	class RayTracer;
 	class PixelBox;
 	class Scene;
 	class Camera;
@@ -64,6 +67,8 @@ namespace SR
 	class RasFlat;
 	class RasGouraud;
 	class RasTexturedGouraud;
+	struct SDirectionLight;
+	struct SPointLight;
 	struct SRenderContext;
 	struct SScanLinesData;
 	struct SScanLine;

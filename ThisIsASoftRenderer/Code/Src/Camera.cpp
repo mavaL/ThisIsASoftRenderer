@@ -98,6 +98,8 @@ namespace SR
 		VEC4 trans;
 		trans = Common::Transform_Vec4_By_Mat44(m_viewPt, m_matView);
  		m_matView.SetTranslation(VEC4(-trans.x, -trans.y, -trans.z, 1));
+
+		m_matInvView = m_matView.Inverse();
 	}
 
 	void Camera::_BuildProjMatrix()
@@ -144,6 +146,8 @@ namespace SR
 		m_matProj.m31 = 0;
 		m_matProj.m32 = -1;
 		m_matProj.m33 = 0;
+
+		m_matInvProj = m_matProj.Inverse();
 	}
 
 	VEC4 Camera::GetDirection() const

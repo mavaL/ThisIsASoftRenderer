@@ -387,33 +387,72 @@ void EnterTestScene8(SR::Scene* scene)
 	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
 }
 
+void SetupTestScene9(SR::Scene* scene)
+{
+	SR::RenderObject* obj=  new SR::RenderObject;
+
+	SR::SVertex v1, v2, v3;
+	v1.pos = VEC4(-20, -15, 0, 1);
+	v2.pos = VEC4(20, -15, 0, 1);
+	v3.pos = VEC4(0, 15, 0, 1);
+
+	v1.normal = VEC3::UNIT_Z;
+	v2.normal = VEC3::UNIT_Z;
+	v3.normal = VEC3::UNIT_Z;
+
+	obj->m_verts.push_back(v1);
+	obj->m_verts.push_back(v2);
+	obj->m_verts.push_back(v3);
+
+	SR::SFace face(0,1,2);
+	face.faceNormal = VEC3::UNIT_Z; 
+	obj->m_faces.push_back(face);
+
+	obj->m_pMaterial = new SR::SMaterial;
+	obj->m_bStatic = true;
+
+	scene->AddRenderObject(obj);
+	scene->EnableRayTracing(true);
+}
+
+void EnterTestScene9(SR::Scene* scene)
+{
+	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
+	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
+	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
+	g_env.renderer->m_camera.SetNearClip(1.0f);
+}
+
 namespace SR
 {
 	void Renderer::_InitAllScene()
 	{
-		//// Test SR::Scene 1: Triangle with gouraud shading mode
-		ADD_TEST_SCENE(SetupTestScene1, EnterTestScene1);
+		//// Test Scene 1: Triangle with gouraud shading mode
+// 		ADD_TEST_SCENE(SetupTestScene1, EnterTestScene1);
+// 
+// 		//// Test Scene 2: 透视校正纹理映射
+// 		ADD_TEST_SCENE(SetupTestScene2, EnterTestScene2);
+// 
+// 		//// Test Scene 3: 纹理mip-mapping
+// 		ADD_TEST_SCENE(SetupTestScene3, EnterTestScene3);
+// 
+// 		//// Test Scene 4: marine.mesh
+// 		ADD_TEST_SCENE(SetupTestScene4, EnterTestScene4);
+// 
+// 		//// Test Scene 5: teapot.mesh + Phong模型
+// 		ADD_TEST_SCENE(SetupTestScene5, EnterTestScene5);
+// 
+// 		//// Test Scene 6: Normal Map
+// 		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
+// 
+// 		//// Test Scene 7: Transparency
+// 		ADD_TEST_SCENE(SetupTestScene7, EnterTestScene7);
+// 
+// 		//// Test Scene 8: sponza.obj
+// 		ADD_TEST_SCENE(SetupTestScene8, EnterTestScene8);
 
-		//// Test SR::Scene 2: 透视校正纹理映射
-		ADD_TEST_SCENE(SetupTestScene2, EnterTestScene2);
-
-		//// Test SR::Scene 3: 纹理mip-mapping
-		ADD_TEST_SCENE(SetupTestScene3, EnterTestScene3);
-
-		//// Test SR::Scene 4: marine.mesh
-		ADD_TEST_SCENE(SetupTestScene4, EnterTestScene4);
-
-		//// Test SR::Scene 5: teapot.mesh + Phong模型
-		ADD_TEST_SCENE(SetupTestScene5, EnterTestScene5);
-
-		//// Test SR::Scene 6: Normal Map
-		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
-
-		//// Test SR::Scene 7: Transparency
-		ADD_TEST_SCENE(SetupTestScene7, EnterTestScene7);
-
-		//// Test SR::Scene 8: sponza.obj
-		ADD_TEST_SCENE(SetupTestScene8, EnterTestScene8);
+		//// Test Scene 9: Ray tracing
+		ADD_TEST_SCENE(SetupTestScene9, EnterTestScene9);
 	}
 }
 

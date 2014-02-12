@@ -107,7 +107,7 @@ namespace Common
 		m_arr[row][3] = vec.w;		
 	}
 
-	Matrix44 Matrix44::Inverse()
+	Matrix44 Matrix44::Inverse() const
 	{
 		//from ogre
 		float m00 = m_arr[0][0], m01 = m_arr[0][1], m02 = m_arr[0][2], m03 = m_arr[0][3];

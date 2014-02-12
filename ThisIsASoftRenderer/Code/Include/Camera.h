@@ -43,6 +43,8 @@ namespace SR
 
 		const MAT44&	GetViewMatrix() const	{ return m_matView; }
 		const MAT44&	GetProjMatrix() const	{ return m_matProj; }
+		const MAT44&	GetInvViewMatrix() const	{ return m_matInvView; }
+		const MAT44&	GetInvProjMatrix() const	{ return m_matInvProj; }
 
 		//对物体进行视锥裁减测试.被剪裁返回true.
 		bool	ObjectFrustumCulling(const RenderObject& obj);
@@ -64,6 +66,8 @@ namespace SR
 		MAT44	m_matView;
 		MAT44	m_matProj;
 		MAT44	m_matRot;		//摄像机的世界旋转
+		MAT44	m_matInvView;
+		MAT44	m_matInvProj;
 	};
 }
 

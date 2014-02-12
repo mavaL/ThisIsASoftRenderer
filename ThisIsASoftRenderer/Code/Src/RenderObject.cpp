@@ -32,7 +32,7 @@ namespace SR
 			return;
 
 		const PixelBox* pSurface = m_pMaterial->pDiffuseMap->GetSurface(0);
-		const VEC2 texDim(pSurface->GetWidth(), pSurface->GetHeight());
+		const VEC2 texDim((float)pSurface->GetWidth(), (float)pSurface->GetHeight());
 
 		for (size_t i=0; i<m_faces.size(); ++i)
 		{

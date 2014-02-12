@@ -46,6 +46,11 @@ namespace Ext
 			return val;
 	}
 
+	inline bool Equal(float a, float b)
+	{
+		return fabs(a - b) < 1e-03;
+	}
+
 	//ÏßÐÔ²åÖµ
 	template<class T>
 	inline void LinearLerp(T& result, const T& s, const T& e, float t)
