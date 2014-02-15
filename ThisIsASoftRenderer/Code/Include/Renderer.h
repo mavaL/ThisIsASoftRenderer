@@ -44,6 +44,7 @@ namespace SR
 	public:
 		void	Init();
 		void	OnFrameMove();
+		RayTracer*	GetRayTracer() { return m_rayTracer; }
 		Rasterizer* GetRasterizer(eRasterizeType type);
 		Rasterizer*	GetCurRas() { return m_curRas; }
 		PixelBox*	GetFrameBuffer() { return m_frameBuffer; }

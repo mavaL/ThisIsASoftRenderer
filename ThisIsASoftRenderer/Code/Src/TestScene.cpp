@@ -3,6 +3,7 @@
 #include "Scene.h"
 #include "OgreMeshLoader.h"
 #include "ObjMeshLoader.h"
+#include "RayTracer.h"
 
 
 #define ADD_TEST_SCENE($setupFunc, $enterFunc)					\
@@ -389,37 +390,31 @@ void EnterTestScene8(SR::Scene* scene)
 
 void SetupTestScene9(SR::Scene* scene)
 {
-	SR::RenderObject* obj=  new SR::RenderObject;
+	// Shadow caster
+	SR::RayTrace_Box* box1 = new SR::RayTrace_Box(VEC3(-40,5,-20), VEC3(40,30,20));
+	// Shadow receiver
+	SR::RayTrace_Box* box2 = new SR::RayTrace_Box(VEC3(-200,-1,-200), VEC3(200,1,200));
 
-	SR::SVertex v1, v2, v3;
-	v1.pos = VEC4(-20, -15, 0, 1);
-	v2.pos = VEC4(20, -15, 0, 1);
-	v3.pos = VEC4(0, 15, 0, 1);
+	box1->m_bCastShadow = true;
+	box2->m_bCastShadow = false;
 
-	v1.normal = VEC3::UNIT_Z;
-	v2.normal = VEC3::UNIT_Z;
-	v3.normal = VEC3::UNIT_Z;
+	box1->m_color = SR::SColor::RED;
+	box2->m_color = SR::SColor::YELLOW;
 
-	obj->m_verts.push_back(v1);
-	obj->m_verts.push_back(v2);
-	obj->m_verts.push_back(v3);
-
-	SR::SFace face(0,1,2);
-	face.faceNormal = VEC3::UNIT_Z; 
-	obj->m_faces.push_back(face);
-
-	obj->m_pMaterial = new SR::SMaterial;
-	obj->m_bStatic = true;
-
-	scene->AddRenderObject(obj);
+	scene->AddRayTraceObject(box1);
+	scene->AddRayTraceObject(box2);
 	scene->EnableRayTracing(true);
+
+	SR::SPointLight* pLight = g_env.renderer->GetRayTracer()->m_pLight;
+	pLight->pos = VEC3(-90, 121, -65);
+	pLight->color = SR::SColor::WHITE;
 }
 
 void EnterTestScene9(SR::Scene* scene)
 {
-	g_env.renderer->m_camera.SetPosition(VEC3(0,0,200));
+	g_env.renderer->m_camera.SetPosition(VEC3(-93,165,28));
 	g_env.renderer->m_camera.SetMoveSpeed(3.0f);
-	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
+	g_env.renderer->m_camera.SetDirection(VEC3(93,-165,-28));
 	g_env.renderer->m_camera.SetNearClip(1.0f);
 }
 

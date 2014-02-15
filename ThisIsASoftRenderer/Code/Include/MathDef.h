@@ -40,12 +40,9 @@ namespace Common
 		Vector3(float _x, float _y, float _z):x(_x),y(_y),z(_z) {}
 		Vector3(const Vector3& rhs):x(rhs.x),y(rhs.y),z(rhs.z) {}
 
-		bool operator ==(const Vector3& other) const
-		{
-			return x == other.x &&
-				y == other.y &&
-				z == other.z;
-		}
+		bool operator ==(const Vector3& other) const { return x == other.x && y == other.y && z == other.z; }
+		bool operator <(const Vector3& other) const { return x < other.x && y < other.y && z < other.z; }
+		bool operator >(const Vector3& other) const { return x > other.x && y > other.y && z > other.z; }
 
 		void Set(float _x, float _y, float _z) { x=_x; y=_y; z=_z; }
 
@@ -160,27 +157,8 @@ namespace Common
 	Vector2		Multiply_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2);
 	float		Angle_To_Radian(float angle);
 	float		Vec3_Distance(const Vector3& v1, const Vector3& v2);
-
-	/////////////////////////////////////////////////////////////
-	//////// Ray
-	class Ray
-	{
-	public:
-		Ray():m_origin(VEC3::ZERO),m_dir(VEC3::ZERO) {}
-
-		VEC3	m_origin;
-		VEC3	m_dir;
-
-		VEC3	GetPoint(float t) const
-		{
-			return Add_Vec3_By_Vec3(m_origin, Common::Multiply_Vec3_By_K(m_dir, t));
-		}
-		bool	Intersect_Box(VEC3& oIntersectPt, const VEC3& minPt, const VEC3& maxPt) const;
-		bool	Intersect_Triangle(VEC3& oIntersectPt, const VEC3& p1, const VEC3& p2, const VEC3& p3) const;
-	};
 }
 
 #include "MathDef.inl"
-#include "MathDef_Intersection.inl"
 
 #endif // MathDef_h__

@@ -125,6 +125,20 @@ namespace SR
 	};
 
 	///////////////////////////////////////////////////
+	struct SFragment 
+	{
+		VEC3		worldPos;	//世界坐标
+		VEC3		normal;		//世界法线
+		VEC2		uv;			//纹理坐标
+		VEC3		lightDirTS;	// Light direction in tangent space
+		VEC3		hVectorTS;	// H-vector in tangent space
+		SMaterial*	pMaterial;	//材质
+		DWORD*		finalColor;	//最终颜色输出
+		int			texLod;
+		bool		bActive;
+	};
+
+	///////////////////////////////////////////////////
 	struct SDirectionLight
 	{
 		SDirectionLight():dir(VEC3::ZERO),neg_dir(VEC3::ZERO),color(SColor::BLACK) {}
@@ -141,21 +155,6 @@ namespace SR
 
 		VEC3	pos;
 		SColor	color;
-	};
-	
-
-	///////////////////////////////////////////////////
-	struct SFragment 
-	{
-		VEC3		worldPos;	//世界坐标
-		VEC3		normal;		//世界法线
-		VEC2		uv;			//纹理坐标
-		VEC3		lightDirTS;	// Light direction in tangent space
-		VEC3		hVectorTS;	// H-vector in tangent space
-		SMaterial*	pMaterial;	//材质
-		DWORD*		finalColor;	//最终颜色输出
-		int			texLod;
-		bool		bActive;
 	};
 }
 

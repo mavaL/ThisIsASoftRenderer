@@ -39,6 +39,7 @@ namespace SR
 		static SColor BLACK;
 		static SColor BLUE;
 		static SColor RED;
+		static SColor YELLOW;
 		static SColor NICE_BLUE;
 	};
 

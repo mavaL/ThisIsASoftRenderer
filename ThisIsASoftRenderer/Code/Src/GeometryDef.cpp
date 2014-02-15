@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "GeometryDef.h"
 #include "Profiler.h"
+#include "Intersection.h"
 
 namespace SR
 {
@@ -8,6 +9,7 @@ namespace SR
 	SColor SColor::BLACK	=	SColor(0.0f, 0.0f, 0.0f, 0.0f);
 	SColor SColor::BLUE		=	SColor(0.0f, 0.0f, 1.0f);
 	SColor SColor::RED		=	SColor(1.0f, 0.0f, 0.0f);
+	SColor SColor::YELLOW	=	SColor(1.0f, 1.0f, 0.0f);
 	SColor SColor::NICE_BLUE =	SColor(0.0f, 0.125f, 0.3f);
 
 
@@ -206,7 +208,7 @@ namespace SR
 
 	PixelBox* STexture::GetSurface( int i )
 	{
-		assert(i>=0 && i<texData.size());
+		assert(i>=0 && i<(int)texData.size());
 		return texData[i];
 	}
 }

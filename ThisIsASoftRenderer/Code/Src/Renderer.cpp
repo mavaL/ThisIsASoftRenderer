@@ -22,6 +22,23 @@ namespace SR
 		
 	}
 
+	Renderer::~Renderer()
+	{
+		SAFE_DELETE(m_rayTracer);
+		SAFE_DELETE_ARRAY(m_fragmentBuffer);
+
+		std::for_each(m_scenes.begin(), m_scenes.end(), std::default_delete<Scene>());
+		m_scenes.clear();
+
+		for(auto iter=m_rasLib.begin(); iter!=m_rasLib.end(); ++iter)
+			delete iter->second;
+		m_rasLib.clear();
+
+		for(auto iter=m_matLib.begin(); iter!=m_matLib.end(); ++iter)
+			delete iter->second;
+		m_matLib.clear();
+	}
+
 	void Renderer::Init()
 	{
 		m_rayTracer = new RayTracer;
@@ -72,23 +89,6 @@ namespace SR
 		_InitAllScene();
 
 		ToggleScene();
-	}
-
-	Renderer::~Renderer()
-	{
-		SAFE_DELETE(m_rayTracer);
-		SAFE_DELETE_ARRAY(m_fragmentBuffer);
-
-		std::for_each(m_scenes.begin(), m_scenes.end(), std::default_delete<Scene>());
-		m_scenes.clear();
-
-		for(auto iter=m_rasLib.begin(); iter!=m_rasLib.end(); ++iter)
-			delete iter->second;
-		m_rasLib.clear();
-
-		for(auto iter=m_matLib.begin(); iter!=m_matLib.end(); ++iter)
-			delete iter->second;
-		m_matLib.clear();
 	}
 
 	Rasterizer* Renderer::GetRasterizer( eRasterizeType type )

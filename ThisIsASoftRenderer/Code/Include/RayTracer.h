@@ -20,11 +20,14 @@ namespace SR
 		{
 			VEC3	pt;
 			VEC3	normal;
+			SColor	color;
 		};
 
 	public:
 		RayTracer();
 		~RayTracer();
+
+		SPointLight*	m_pLight;
 
 	public:
 		// Intersection unit test
@@ -35,9 +38,9 @@ namespace SR
 	private:
 		void	_GetRayFromScreenPt(RAY& oWorldRay, RAY& oViewRay, int x, int y);
 		bool	_GetIntersection(SIntersection& oIntersection, Scene* pScene, const RAY& worldRay, const RAY& viewRay);
+		bool	_IsInShadow(Scene* pScene, const RAY& ray);
 		SColor	_Shade(const SIntersection& intersection);
 
-		SPointLight*	m_pLight;
 	};
 }
 

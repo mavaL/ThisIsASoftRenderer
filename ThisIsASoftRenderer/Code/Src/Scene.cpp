@@ -5,6 +5,23 @@
 
 namespace SR
 {
+	Scene::Scene( StrategyFunc& setupFunc, StrategyFunc& enterFunc )
+		:m_bSetup(false)
+		,m_bUseRayTrace(false)
+		,m_setupFunc(setupFunc)
+		,m_enterFunc(enterFunc)
+	{
+
+	}
+
+	Scene::~Scene()
+	{
+		std::for_each(m_renderList_solid.begin(), m_renderList_solid.end(), std::default_delete<RenderObject>());
+		std::for_each(m_renderList_trans.begin(), m_renderList_trans.end(), std::default_delete<RenderObject>());
+		m_renderList_solid.clear();
+		m_renderList_trans.clear();
+	}
+
 	void Scene::AddRenderObject( RenderObject* obj )
 	{
 		RenderUtil::ComputeAABB(*obj);
@@ -28,12 +45,9 @@ namespace SR
 			m_renderList_solid.push_back(obj);
 	}
 
-	Scene::~Scene()
+	void Scene::AddRayTraceObject( RayTraceRenderable* obj )
 	{
-		std::for_each(m_renderList_solid.begin(), m_renderList_solid.end(), std::default_delete<RenderObject>());
-		std::for_each(m_renderList_trans.begin(), m_renderList_trans.end(), std::default_delete<RenderObject>());
-		m_renderList_solid.clear();
-		m_renderList_trans.clear();
+		m_renderList_RayTrace.push_back(obj);
 	}
 
 	void Scene::Enter()

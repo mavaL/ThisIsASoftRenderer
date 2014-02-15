@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "Renderer.h"
 #include "Scene.h"
+#include "Intersection.h"
 
 
 namespace SR
@@ -11,8 +12,6 @@ namespace SR
 	RayTracer::RayTracer()
 	{
 		m_pLight = new SPointLight;
-		m_pLight->pos = VEC3(-300, 300, 300);
-		m_pLight->color = SColor::WHITE;
 	}
 	//------------------------------------------------------------------------------------
 	RayTracer::~RayTracer()
@@ -35,26 +34,27 @@ namespace SR
 			ray.m_dir = VEC3(0, 0, 100);
 			ray.m_dir.Normalize();
 
-			bool bIntersect = ray.Intersect_Triangle(intersectPt, v0, v1, v2);
-			assert(!bIntersect);
+			std::pair<bool, float> hitResult = ray.Intersect_Triangle(v0, v1, v2);
+			assert(!hitResult.first);
 
 			ray.m_dir = VEC3(0, 0, -100);
 			ray.m_dir.Normalize();
 
-			bIntersect = ray.Intersect_Triangle(intersectPt, v0, v1, v2);
-			assert(bIntersect);
+			hitResult = ray.Intersect_Triangle(v0, v1, v2);
+			assert(hitResult.first);
 
 			ray.m_dir = VEC3(2, 17, 100);
 			ray.m_dir.Normalize();
 
-			bIntersect = ray.Intersect_Triangle(intersectPt, v0, v1, v2);
-			assert(!bIntersect);
+			hitResult = ray.Intersect_Triangle(v0, v1, v2);
+			assert(!hitResult.first);
 
 			ray.m_dir = v1;
 			ray.m_dir.Normalize();
 
-			bIntersect = ray.Intersect_Triangle(intersectPt, v0, v1, v2);
-			assert(bIntersect && intersectPt==v1);
+			hitResult = ray.Intersect_Triangle(v0, v1, v2);
+			intersectPt = ray.GetPoint(hitResult.second);
+			assert(hitResult.first && intersectPt==v1);
 		}
 	}
 	//------------------------------------------------------------------------------------
@@ -76,7 +76,20 @@ namespace SR
 				// Get nearest intersect point
 				if(_GetIntersection(intersection, pScene, worldRay, viewRay))
 				{
-					*destBuffer = _Shade(intersection).GetAsInt();
+					// Emit shadow ray
+					RAY shadowRay;
+					shadowRay.m_origin = intersection.pt;
+					shadowRay.m_dir = Common::Sub_Vec3_By_Vec3(m_pLight->pos, intersection.pt);
+					shadowRay.m_dir.Normalize();
+
+					if (_IsInShadow(pScene, shadowRay))
+					{
+						*destBuffer = 0x0;
+					}
+					else
+					{
+						*destBuffer = _Shade(intersection).GetAsInt();
+					}
 				}
 			}
 		}
@@ -111,27 +124,21 @@ namespace SR
 	bool RayTracer::_GetIntersection( SIntersection& oIntersection, Scene* pScene, const RAY& worldRay, const RAY& viewRay )
 	{
 		std::vector<SIntersection> vecIntersect;
-		RenderList& objList = pScene->m_renderList_solid;
+		RayTraceRenderList& objList = pScene->m_renderList_RayTrace;
 
+		// TODO: Primary ray only need to test for objects in frustum
 		for (size_t i=0; i<objList.size(); ++i)
 		{
-			RenderObject* obj = objList[i];
+			RayTraceRenderable* obj = objList[i];
 
 			VEC3 intersectPt;
-			// First check AABB..
-			if (!worldRay.Intersect_Box(intersectPt, obj->m_localAABB.m_minCorner, obj->m_localAABB.m_maxCorner))
-				continue;
 
-			// Gather it
-			const VEC3& v0 = obj->m_verts[0].pos.GetVec3();
-			const VEC3& v1 = obj->m_verts[1].pos.GetVec3();
-			const VEC3& v2 = obj->m_verts[2].pos.GetVec3();
-
-			if (worldRay.Intersect_Triangle(intersectPt, v0, v1, v2))
+			if (obj->DoRayIntersect(intersectPt, worldRay))
 			{
 				SIntersection curIntersect;
 				curIntersect.pt = intersectPt;
-				curIntersect.normal = obj->m_verts[0].normal;
+				curIntersect.normal = obj->GetNormal(intersectPt);
+				curIntersect.color = obj->m_color;
 
 				vecIntersect.push_back(curIntersect);
 			}
@@ -159,6 +166,33 @@ namespace SR
 	//------------------------------------------------------------------------------------
 	SColor RayTracer::_Shade( const SIntersection& intersection )
 	{
-		return SColor::WHITE;
+		VEC3 lightDir = Common::Sub_Vec3_By_Vec3(m_pLight->pos, intersection.pt);
+		lightDir.Normalize();
+
+		float nl = Common::DotProduct_Vec3_By_Vec3(intersection.normal, lightDir);
+
+		SColor c = SColor::BLACK;
+		if (nl > 0)
+		{
+			c = intersection.color * nl;
+		}
+		
+		return c;
+	}
+	//------------------------------------------------------------------------------------
+	bool RayTracer::_IsInShadow( Scene* pScene, const RAY& ray )
+	{
+		RayTraceRenderList& objList = pScene->m_renderList_RayTrace;
+
+		for (size_t i=0; i<objList.size(); ++i)
+		{
+			RayTraceRenderable* obj = objList[i];
+			VEC3 intersectPt;
+
+			if (obj->m_bCastShadow && obj->DoRayIntersect(intersectPt, ray))
+				return true;
+		}
+
+		return false;
 	}
 }

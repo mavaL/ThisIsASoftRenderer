@@ -78,6 +78,10 @@ namespace SR
 	struct SMaterial;
 	struct MyJobParam;
 	template<class T> class CFThreadPool;
+
+	class RayTraceRenderable;
+	class RayTrace_Box;
+	class RayTrace_Plane;
 }
 
 namespace Ext
