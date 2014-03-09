@@ -15,12 +15,13 @@ namespace Common
 		// p * n = d
 		// t = (d - (o * n)) / (n * v)
 
- 		float tmp = Common::DotProduct_Vec3_By_Vec3(plane.normal, m_dir);
- 		if(!(tmp < 0))
+ 		float dot = Common::DotProduct_Vec3_By_Vec3(plane.normal, m_dir);
+ 		if(Ext::Equal(dot, 0.0f))
  			return std::pair<bool, float>(false, 0.0f);
 
-		float t = (plane.d - Common::DotProduct_Vec3_By_Vec3(m_origin, plane.normal)) / tmp; 
-		if (t < 0)
+		float t = (plane.d - Common::DotProduct_Vec3_By_Vec3(m_origin, plane.normal)) / dot; 
+		if (t < 0 ||
+			t < 1e-03)	// Avoid self-shadowing cause by imprecision problem!
 			return std::pair<bool, float>(false, 0.0f);
 
 		return std::pair<bool, float>(true, t);
@@ -96,7 +97,7 @@ namespace Common
 		if (rayorig.x <= min.x && raydir.x > 0)
 		{
 			t = (min.x - rayorig.x) / raydir.x;
-			if (t >= 0)
+			if (t > 1e-03)
 			{
 				// Substitute t back into ray and check bounds and dist
 				hitpoint = GetPoint(t);
@@ -113,7 +114,7 @@ namespace Common
 		if (rayorig.x >= max.x && raydir.x < 0)
 		{
 			t = (max.x - rayorig.x) / raydir.x;
-			if (t >= 0)
+			if (t > 1e-03)
 			{
 				// Substitute t back into ray and check bounds and dist
 				hitpoint = GetPoint(t);
@@ -130,7 +131,7 @@ namespace Common
 		if (rayorig.y <= min.y && raydir.y > 0)
 		{
 			t = (min.y - rayorig.y) / raydir.y;
-			if (t >= 0)
+			if (t > 1e-03)
 			{
 				// Substitute t back into ray and check bounds and dist
 				hitpoint = GetPoint(t);
@@ -147,7 +148,7 @@ namespace Common
 		if (rayorig.y >= max.y && raydir.y < 0)
 		{
 			t = (max.y - rayorig.y) / raydir.y;
-			if (t >= 0)
+			if (t > 1e-03)
 			{
 				// Substitute t back into ray and check bounds and dist
 				hitpoint = GetPoint(t);
@@ -164,7 +165,7 @@ namespace Common
 		if (rayorig.z <= min.z && raydir.z > 0)
 		{
 			t = (min.z - rayorig.z) / raydir.z;
-			if (t >= 0)
+			if (t > 1e-03)
 			{
 				// Substitute t back into ray and check bounds and dist
 				hitpoint = GetPoint(t);
@@ -181,7 +182,7 @@ namespace Common
 		if (rayorig.z >= max.z && raydir.z < 0)
 		{
 			t = (max.z - rayorig.z) / raydir.z;
-			if (t >= 0)
+			if (t > 1e-03)
 			{
 				// Substitute t back into ray and check bounds and dist
 				hitpoint = GetPoint(t);
@@ -208,10 +209,25 @@ namespace Common
 			return std::pair<bool, float>(false, 0.0f);
 
 		// Then check whether intersection point is inside triangle
+		if(!IsPointInTriangle(GetPoint(hitResult.second), p1, p2, p3))
+			return std::pair<bool, float>(false, 0.0f);
+
+		return hitResult;
+	}
+	//------------------------------------------------------------------------------------
+	__forceinline bool		IsPointInTriangle(const Vector3& pt, const Vector3& p1, const Vector3& p2, const Vector3& p3)
+	{
+		// First check whether point is on the plane
+		SR::RayTrace_Plane plane(p1, p2, p3);
+		float d1 = Common::DotProduct_Vec3_By_Vec3(plane.normal, pt);
+
+		if(!Ext::Equal(d1, plane.d))
+			return false;
+
 		// for triangle: p = w1p1 + w2p2 + w3p3, w1 + w2 + w3 = 1
 		const VEC3 v1 = Common::Sub_Vec3_By_Vec3(p2, p1);
 		const VEC3 v2 = Common::Sub_Vec3_By_Vec3(p3, p1);
-		const VEC3 R = Common::Sub_Vec3_By_Vec3(GetPoint(hitResult.second), p1);
+		const VEC3 R = Common::Sub_Vec3_By_Vec3(pt, p1);
 		float dot = Common::DotProduct_Vec3_By_Vec3(v1, v2);
 		float a = Common::DotProduct_Vec3_By_Vec3(v1, v1);
 		float b = Common::DotProduct_Vec3_By_Vec3(v2, v2);
@@ -223,9 +239,31 @@ namespace Common
 		float w2 = (-dot * e + a * f) * denom;
 
 		if(w1 < 0 || w2 < 0 || (w1+w2)>1)
-			return std::pair<bool, float>(false, 0.0f);
+			return false;
 
-		return hitResult;
+		return true;
+	}
+	//------------------------------------------------------------------------------------
+	__forceinline bool		IsPointInTriangle(const Vector2& pt, const Vector2& p1, const Vector2& p2, const Vector2& p3)
+	{
+		// for triangle: p = w1p1 + w2p2 + w3p3, w1 + w2 + w3 = 1
+		const VEC2 v1 = Common::Sub_Vec2_By_Vec2(p2, p1);
+		const VEC2 v2 = Common::Sub_Vec2_By_Vec2(p3, p1);
+		const VEC2 R = Common::Sub_Vec2_By_Vec2(pt, p1);
+		float dot = Common::DotProduct_Vec2_By_Vec2(v1, v2);
+		float a = Common::DotProduct_Vec2_By_Vec2(v1, v1);
+		float b = Common::DotProduct_Vec2_By_Vec2(v2, v2);
+		float e = Common::DotProduct_Vec2_By_Vec2(R, v1);
+		float f = Common::DotProduct_Vec2_By_Vec2(R, v2);
+		float denom = 1.0f / (a * b - dot * dot);
+
+		float w1 = (b * e + f * -dot) * denom;
+		float w2 = (-dot * e + a * f) * denom;
+
+		if(w1 < 0 || w2 < 0 || (w1+w2)>1)
+			return false;
+
+		return true;
 	}
 }
 

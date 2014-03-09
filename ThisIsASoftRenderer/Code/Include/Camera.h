@@ -40,6 +40,8 @@ namespace SR
 		float	GetFarClip() const	{ return m_farClip; }
 		float	GetFov() const		{ return m_fov; }
 		float	GetAspectRatio() const	{ return m_aspectRatio; }
+		float	GetImagePlaneHalfW() const { return m_imagePlane_r; }
+		float	GetImagePlaneHalfH() const { return m_imagePlane_t; }
 
 		const MAT44&	GetViewMatrix() const	{ return m_matView; }
 		const MAT44&	GetProjMatrix() const	{ return m_matProj; }
@@ -59,6 +61,7 @@ namespace SR
 		float	m_farClip;
 		float	m_fov;			//xz面视野角(弧度值)
 		float	m_aspectRatio;
+		float	m_imagePlane_r, m_imagePlane_t;	// Half-dimension of image plane
 
 		bool	m_fixYawAxis;	//固定yaw轴为y轴,一般漫游相机这样就够了.飞行模拟类型的不fix,因为需要roll.
 		float	m_moveSpeed;

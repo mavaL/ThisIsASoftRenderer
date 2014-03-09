@@ -19,14 +19,16 @@ namespace Ext
 	public:
 		virtual ~MeshLoader() {}
 
-		//第2个参数是说明要加载的模型是否在场景中是静态的(即世界矩阵始终为单位矩阵)
-		//这样就一次性计算出世界包围盒,不用以后每帧更新
-		bool	LoadMeshFile(const STRING& filename, bool bStatic);
+		/** param 
+			bStatic: 要加载的模型是否在场景中是静态的(即世界矩阵始终为单位矩阵),这样就一次性计算出世界包围盒,不用以后每帧更新
+			bFlipUV: 是否翻转纹理坐标V,用于.bmp纹理
+		**/
+		bool	LoadMeshFile(const STRING& filename, bool bStatic, bool bFlipUV = false);
 
 		SR::RenderList	m_objs;
 
 	protected:
-		virtual bool LoadImpl(const STRING& filename) = 0;
+		virtual bool LoadImpl(const STRING& filename, bool bFlipUV) = 0;
 	};
 }
 

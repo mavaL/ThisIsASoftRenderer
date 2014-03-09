@@ -11,6 +11,7 @@ namespace SR
 	,m_pitch(width * bytesPerPixel)
 	{
 		m_data = new char[width * height * bytesPerPixel];
+		ZeroMemory(m_data, width * height * bytesPerPixel);
 		m_ownData = true;
 	}
 

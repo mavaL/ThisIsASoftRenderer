@@ -15,7 +15,7 @@ namespace Ext
 	class OgreMeshLoader : public MeshLoader
 	{
 	protected:
-		virtual bool LoadImpl(const STRING& filename);
+		virtual bool LoadImpl(const STRING& filename, bool bFlipUV);
 	};
 }
 

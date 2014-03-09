@@ -7,7 +7,7 @@ using namespace std;
 
 namespace Ext
 {
-	bool ObjMeshLoader::LoadImpl( const STRING& filename )
+	bool ObjMeshLoader::LoadImpl( const STRING& filename, bool bFlipUV )
 	{
 		std::ifstream file(filename.c_str());
 		if(file.fail())
@@ -75,8 +75,9 @@ namespace Ext
 				{
 					VEC2& uv = vecUv[curUv++];
 					file >> uv.x >> uv.y;
-					//NB: 纹理目前只支持.bmp格式
-					//uv.y = 1 - uv.y;
+					
+					if(bFlipUV)
+						uv.y = 1 - uv.y;
 				}
 				else if (strcmp(command.c_str(), "vn") == 0)
 				{

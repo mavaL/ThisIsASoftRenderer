@@ -4,7 +4,7 @@
 
 namespace Ext
 {
-	bool OgreMeshLoader::LoadImpl( const STRING& filename )
+	bool OgreMeshLoader::LoadImpl( const STRING& filename, bool bFlipUV )
 	{
 		TiXmlDocument doc;
 		if(!doc.LoadFile(filename.c_str()))
@@ -90,8 +90,8 @@ namespace Ext
 					uvNode->Attribute("u", &texu);
 					uvNode->Attribute("v", &texv);
 
-					//NB: 纹理目前只支持.bmp格式
-					texv = 1 - texv;
+					if(bFlipUV)
+						texv = 1 - texv;
 				}
 
 				SR::SVertex vert;

@@ -106,13 +106,14 @@ namespace SR
 		fy = (fy + 0.5f) * 2;
 
 		// Transform to view space
-		VEC4 imagePlanePt;
-		imagePlanePt = Common::Transform_Vec4_By_Mat44(VEC4(fx,fy,0,1), cam->GetInvProjMatrix());
-		Common::Multiply_Vec4_By_K(imagePlanePt, imagePlanePt, 1 / imagePlanePt.w);
-		imagePlanePt.z = -cam->GetNearClip();
+		// This is different from transform by inv-proj matrix, WHY?
+ 		VEC3 imagePlanePt;
+ 		imagePlanePt.z = -cam->GetNearClip();
+		imagePlanePt.x = fx * cam->GetImagePlaneHalfW();
+		imagePlanePt.y = fy * cam->GetImagePlaneHalfH();
 
 		oViewRay.m_origin = VEC3::ZERO;
-		oViewRay.m_dir = imagePlanePt.GetVec3();
+		oViewRay.m_dir = imagePlanePt;
 		oViewRay.m_dir.Normalize();
 
 		// Transform to world space
@@ -190,7 +191,12 @@ namespace SR
 			VEC3 intersectPt;
 
 			if (obj->m_bCastShadow && obj->DoRayIntersect(intersectPt, ray))
-				return true;
+			{
+				VEC3 testDir = Common::Sub_Vec3_By_Vec3(intersectPt, m_pLight->pos);
+				// Is the intersection point near than the light?
+				if(Common::DotProduct_Vec3_By_Vec3(testDir, ray.m_dir) < 0)
+					return true;
+			}
 		}
 
 		return false;

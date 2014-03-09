@@ -116,10 +116,10 @@ namespace SR
 		float intU = (mipLevel->GetWidth() - 1) * tmpUV.x;
 		float intV = (mipLevel->GetHeight() - 1) * tmpUV.y;
 
-		int u_l = Ext::Floor32_Fast(intU);
-		int u_r = Ext::Ceil32_Fast(intU);
-		int v_t = Ext::Floor32_Fast(intV);
-		int v_b = Ext::Ceil32_Fast(intV);
+		int u_l = max(0						, Ext::Floor32_Fast(intU));
+		int u_r = min(mipLevel->GetWidth()-1, Ext::Ceil32_Fast(intU));
+		int v_t = max(0						, Ext::Floor32_Fast(intV));
+		int v_b = min(mipLevel->GetHeight()-1,Ext::Ceil32_Fast(intV));
 
 		SColor color[4];
 		color[0].SetAsInt(pTexData[v_t * mipLevel->GetWidth() + u_l]);
@@ -210,5 +210,11 @@ namespace SR
 	{
 		assert(i>=0 && i<(int)texData.size());
 		return texData[i];
+	}
+
+	void STexture::Create( int w, int h )
+	{
+		PixelBox* pb = new PixelBox(w, h, 4);
+		texData.push_back(pb);
 	}
 }

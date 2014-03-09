@@ -4,9 +4,9 @@
 
 namespace Ext
 {
-	bool MeshLoader::LoadMeshFile( const STRING& filename, bool bStatic )
+	bool MeshLoader::LoadMeshFile( const STRING& filename, bool bStatic, bool bFlipUV )
 	{
-		if(!LoadImpl(filename))
+		if(!LoadImpl(filename, bFlipUV))
 			return false;
 
 		//each object

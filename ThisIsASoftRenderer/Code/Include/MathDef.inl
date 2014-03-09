@@ -179,6 +179,11 @@ namespace Common
 #endif
 	}
 
+	__forceinline float		DotProduct_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2)
+	{
+		return v1.x * v2.x + v1.y * v2.y;
+	}
+
 	__forceinline Vector3	CrossProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2)
 	{
 		Vector3 ret;
@@ -291,6 +296,12 @@ namespace Common
 	{
 		float dx = v1.x - v2.x, dy = v1.y - v2.y, dz = v1.z - v2.z;
 		return sqrt(dx * dx + dy * dy + dz * dz);
+	}
+
+	__forceinline float		Vec3_DistanceSq(const Vector3& v1, const Vector3& v2)
+	{
+		float dx = v1.x - v2.x, dy = v1.y - v2.y, dz = v1.z - v2.z;
+		return dx * dx + dy * dy + dz * dz;
 	}
 
 	__forceinline Vector4	Transform_Vec3_By_Mat44(const Vector3& pt, const Matrix44& mat, bool bPosOrDir)

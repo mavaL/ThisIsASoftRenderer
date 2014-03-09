@@ -26,7 +26,7 @@ namespace Ext
 		};
 
 	protected:
-		virtual bool LoadImpl(const STRING& filename);
+		virtual bool LoadImpl(const STRING& filename, bool bFlipUV);
 
 	private:
 		void	_PreReadObject(std::ifstream& file, DWORD& nVert, DWORD& nUv, DWORD& nNormal, DWORD& nFace);

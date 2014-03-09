@@ -112,6 +112,8 @@ namespace Common
 		inline void	ClearTranslation() { m_arr[0][3] = m_arr[1][3] = m_arr[2][3] = 0; m_arr[3][3] = 1; }
 		//设置平移部分
 		void		SetTranslation(const Vector4& t);
+		//设置缩放
+		void		SetScale(float fScale);
 		//获取平移部分
 		inline Vector4	GetTranslation() const { return std::move(VEC4(m03, m13, m23, m33)); }
 		//通过轴角对构建旋转矩阵,平移部分设为0
@@ -148,6 +150,7 @@ namespace Common
 	Vector3		Add_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2);
 	Vector4		Add_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2);
 	Vector4		Sub_Vec4_By_Vec4(const Vector4& v1, const Vector4& v2);
+	float		DotProduct_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2);
 	float		DotProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2);
 	Vector3		CrossProduct_Vec3_By_Vec3(const Vector3& v1, const Vector3& v2);
 	Vector3		Multiply_Vec3_By_K(const Vector3& v, float k);
@@ -157,6 +160,7 @@ namespace Common
 	Vector2		Multiply_Vec2_By_Vec2(const Vector2& v1, const Vector2& v2);
 	float		Angle_To_Radian(float angle);
 	float		Vec3_Distance(const Vector3& v1, const Vector3& v2);
+	float		Vec3_DistanceSq(const Vector3& v1, const Vector3& v2);
 }
 
 #include "MathDef.inl"

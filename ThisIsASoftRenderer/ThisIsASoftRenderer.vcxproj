@@ -91,6 +91,7 @@
     <ClInclude Include="Code\Include\Color.h" />
     <ClInclude Include="Code\Include\GeometryDef.h" />
     <ClInclude Include="Code\Include\Intersection.h" />
+    <ClInclude Include="Code\Include\LightMapper.h" />
     <ClInclude Include="Code\Include\MathDef.h" />
     <ClInclude Include="Code\Include\MeshLoaderBase.h" />
     <ClInclude Include="Code\Include\ObjMeshLoader.h" />
@@ -121,6 +122,7 @@
     <ClCompile Include="Code\Src\Camera.cpp" />
     <ClCompile Include="Code\Src\GeometryDef.cpp" />
     <ClCompile Include="Code\Src\Intersection.cpp" />
+    <ClCompile Include="Code\Src\LightMapper.cpp" />
     <ClCompile Include="Code\Src\MathDef.cpp" />
     <ClCompile Include="Code\Src\MeshLoaderBase.cpp" />
     <ClCompile Include="Code\Src\ObjMeshLoader.cpp" />
@@ -131,6 +133,7 @@
     <ClCompile Include="Code\Src\Rasterizer_BlinnPhong.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_Flat.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_Gouraud.cpp" />
+    <ClCompile Include="Code\Src\Rasterizer_LightMap.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_NormalMap.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_TexturedGouraud.cpp" />
     <ClCompile Include="Code\Src\Rasterizer_Wireframe.cpp" />

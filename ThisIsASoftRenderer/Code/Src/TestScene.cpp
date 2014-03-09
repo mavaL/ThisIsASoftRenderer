@@ -4,6 +4,8 @@
 #include "OgreMeshLoader.h"
 #include "ObjMeshLoader.h"
 #include "RayTracer.h"
+#include "LightMapper.h"
+#include <io.h>
 
 
 #define ADD_TEST_SCENE($setupFunc, $enterFunc)					\
@@ -186,7 +188,7 @@ void SetupTestScene4(SR::Scene* scene)
 {
 	try
 	{
-		if(!g_env.meshLoader->LoadMeshFile(GetResPath("marine.mesh.xml"), true))
+		if(!g_env.meshLoader->LoadMeshFile(GetResPath("marine.mesh.xml"), true, true))
 			throw std::logic_error("Error, Load .mesh file failed!");
 
 		SR::SMaterial* mat = new SR::SMaterial;
@@ -222,7 +224,7 @@ void SetupTestScene5(SR::Scene* scene)
 {
 	try
 	{
-		if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+		if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true, true))
 			throw std::logic_error("Error, Load .mesh file failed!");
 
 		SR::SMaterial* mat = new SR::SMaterial;
@@ -255,7 +257,7 @@ void SetupTestScene6(SR::Scene* scene)
 {
 	try
 	{
-		if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+		if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true, true))
 			throw std::logic_error("Error, Load .mesh file failed!");
 
 		SR::SMaterial* mat = new SR::SMaterial;
@@ -298,7 +300,7 @@ void SetupTestScene7(SR::Scene* scene)
 	{
 		// Teapot 1
 		{
-			if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+			if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true, true))
 				throw std::logic_error("Error, Load .mesh file failed!");
 
 			SR::SMaterial* mat = new SR::SMaterial;
@@ -324,7 +326,7 @@ void SetupTestScene7(SR::Scene* scene)
 		}
 		// Teapot 2
 		{
-			if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true))
+			if(!g_env.meshLoader->LoadMeshFile(GetResPath("teapot.mesh.xml"), true, true))
 				throw std::logic_error("Error, Load .mesh file failed!");
 
 			SR::SMaterial* mat = new SR::SMaterial;
@@ -418,6 +420,80 @@ void EnterTestScene9(SR::Scene* scene)
 	g_env.renderer->m_camera.SetNearClip(1.0f);
 }
 
+
+void SetupTestScene10(SR::Scene* scene)
+{
+	try
+	{
+		// Load or auto gen light map
+		SR::LightMapper lightMapGen;
+		lightMapGen.m_pLight->pos = VEC3(-2.65f, 5.41f, 10.75f);
+		lightMapGen.m_pLight->color = SR::SColor::WHITE;
+
+		SR::STexture* pLightMap = nullptr;
+
+		const STRING lightmapName[2] = 
+		{ 
+			"../../../Res/LightMap/lightmap1.bmp",
+			"../../../Res/LightMap/lightmap2.bmp"
+		};
+
+		const STRING meshName[2] = 
+		{
+			"../../../Res/LightMap/Box01.mesh.xml",
+			"../../../Res/LightMap/Plane01.mesh.xml"
+		};
+
+		for (int i=0; i<2; ++i)
+		{
+			SR::RenderObject* obj = nullptr;
+			SR::SMaterial* mat = new SR::SMaterial;
+
+			if (_access(lightmapName[i].c_str(), 0) == -1)
+			{
+				if(!g_env.meshLoader->LoadMeshFile(meshName[i], true, false))
+					throw std::logic_error("Error, Load .mesh file failed!");
+
+				obj = g_env.meshLoader->m_objs[0];
+				obj->m_pMaterial = mat;
+				scene->AddRenderObject(obj);
+
+				pLightMap = lightMapGen.GenerateLightMap(128, 128, obj, scene->m_renderList_solid);
+				pLightMap->texData[0]->SaveToFile(lightmapName[i]);
+
+				mat->pDiffuseMap = pLightMap;
+			}
+			else
+			{
+				if(!g_env.meshLoader->LoadMeshFile(meshName[i], true, true))
+					throw std::logic_error("Error, Load .mesh file failed!");
+
+				obj = g_env.meshLoader->m_objs[0];
+				obj->m_pMaterial = mat;
+				scene->AddRenderObject(obj);
+
+				mat->pDiffuseMap = new SR::STexture;
+				mat->pDiffuseMap->LoadTexture(lightmapName[i], false);
+			}
+
+			obj->m_bStatic = true;
+			obj->SetShader(SR::eRasterizeType_LightMap);
+		}
+	}
+	catch (std::exception& e)
+	{
+		MessageBoxA(nullptr, e.what(), "Error", MB_ICONERROR);
+		return;
+	}
+}
+
+void EnterTestScene10(SR::Scene* scene)
+{
+	g_env.renderer->m_camera.SetPosition(VEC3(-2.65f, 4.41f, 10.75f));
+	g_env.renderer->m_camera.SetMoveSpeed(0.3f);
+	g_env.renderer->m_camera.SetDirection(VEC3::NEG_UNIT_Z);
+}
+
 namespace SR
 {
 	void Renderer::_InitAllScene()
@@ -440,14 +516,17 @@ namespace SR
 // 		//// Test Scene 6: Normal Map
 // 		ADD_TEST_SCENE(SetupTestScene6, EnterTestScene6);
 // 
-// 		//// Test Scene 7: Transparency
+// 		//// Test Scene 7: OIT
 // 		ADD_TEST_SCENE(SetupTestScene7, EnterTestScene7);
 // 
 // 		//// Test Scene 8: sponza.obj
 // 		ADD_TEST_SCENE(SetupTestScene8, EnterTestScene8);
+// 
+// 		//// Test Scene 9: Ray tracing
+// 		ADD_TEST_SCENE(SetupTestScene9, EnterTestScene9);
 
-		//// Test Scene 9: Ray tracing
-		ADD_TEST_SCENE(SetupTestScene9, EnterTestScene9);
+		//// Test Scene 10: Lighting mapping
+		ADD_TEST_SCENE(SetupTestScene10, EnterTestScene10);
 	}
 }
 

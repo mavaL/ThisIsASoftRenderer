@@ -72,6 +72,9 @@ namespace Common
 		std::pair<bool, float>	Intersect_Triangle(const VEC3& p1, const VEC3& p2, const VEC3& p3) const;
 		std::pair<bool, float>	Intersect_Plane(const SR::RayTrace_Plane& plane) const;
 	};
+
+	bool		IsPointInTriangle(const Vector3& pt, const Vector3& p1, const Vector3& p2, const Vector3& p3);
+	bool		IsPointInTriangle(const Vector2& pt, const Vector2& p1, const Vector2& p2, const Vector2& p3);
 }
 
 #include "Intersection.inl"

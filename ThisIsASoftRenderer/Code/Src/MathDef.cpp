@@ -169,6 +169,11 @@ namespace Common
 			d20, d21, d22, d23,
 			d30, d31, d32, d33);
 	}
+
+	void Matrix44::SetScale( float fScale )
+	{
+		m_arr[0][0] = m_arr[1][1] = m_arr[2][2] = fScale;
+	}
 }
 
 

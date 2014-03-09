@@ -12,6 +12,8 @@ namespace SR
 	,m_fixYawAxis(true)
 	,m_moveSpeed(1.0f)
 	,m_bActive(false)
+	,m_imagePlane_r(-1)
+	,m_imagePlane_t(-1)
 	{
 		m_fov = Common::Angle_To_Radian(45);
 		m_aspectRatio = SCREEN_WIDTH / (float)SCREEN_HEIGHT;
@@ -122,7 +124,7 @@ namespace SR
 
 		//普适版投影矩阵.推导见: http://blog.csdn.net/popy007/article/details/1797121
 		float r,l,t,b;
-		r = m_nearClip*std::tan(m_fov/2);
+		r = m_nearClip*tanf(m_fov/2);
 		l = -r;
 		t = r/m_aspectRatio;
 		b= -t;
@@ -148,6 +150,9 @@ namespace SR
 		m_matProj.m33 = 0;
 
 		m_matInvProj = m_matProj.Inverse();
+
+		m_imagePlane_r = GetNearClip() * tanf(GetFov() / 2);
+		m_imagePlane_t = m_imagePlane_r / GetAspectRatio();
 	}
 
 	VEC4 Camera::GetDirection() const

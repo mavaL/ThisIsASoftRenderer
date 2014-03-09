@@ -85,7 +85,10 @@ namespace SR
 		STexture(const STexture& rhs);
 		STexture& operator= (const STexture& rhs);
 
+		// Load from file
 		void		LoadTexture(const STRING& filename, bool bmipmap, bool bHasAlpha = false);
+		// Create manual
+		void		Create(int w, int h);
 		PixelBox*	GetSurface(int i);
 		//临近点采样
 		void		Tex2D_Point(const VEC2& uv, SColor& ret, int mip = 0) const;

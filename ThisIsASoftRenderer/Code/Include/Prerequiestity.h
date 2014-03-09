@@ -58,6 +58,7 @@ namespace SR
 {
 	class Renderer;
 	class RayTracer;
+	class LightMapper;
 	class PixelBox;
 	class Scene;
 	class Camera;
@@ -73,6 +74,7 @@ namespace SR
 	struct SScanLinesData;
 	struct SScanLine;
 	struct SVertex;
+	struct SFace;
 	struct SFragment;
 	struct STexture;
 	struct SMaterial;

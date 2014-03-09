@@ -40,7 +40,7 @@ namespace SR
 		else if (Ext::Equal(surfacePt.z, maxPt.z)) return VEC3::UNIT_Z;
 
 		assert(0);
-//		return n;
+		return VEC3::ZERO;
 	}
 	//------------------------------------------------------------------------------------
 	RayTrace_Plane::RayTrace_Plane( const VEC3& p1, const VEC3& p2, const VEC3& p3 )

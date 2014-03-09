@@ -106,6 +106,9 @@
     <ClInclude Include="Code\Include\Intersection.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Include\LightMapper.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\Src\Renderer.cpp">
@@ -205,6 +208,12 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Code\Src\Intersection.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\LightMapper.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Src\Rasterizer_LightMap.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>

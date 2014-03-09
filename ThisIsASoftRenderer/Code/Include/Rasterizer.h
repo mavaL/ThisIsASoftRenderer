@@ -20,7 +20,8 @@ namespace SR
 		eRasterizeType_Gouraud,
 		eRasterizeType_TexturedGouraud,
 		eRasterizeType_BlinnPhong,
-		eRasterizeType_NormalMap
+		eRasterizeType_NormalMap,
+		eRasterizeType_LightMap
 	};
 
 	enum eLerpType
@@ -235,6 +236,23 @@ namespace SR
 		virtual void	RaterizeAdvancePixel(SScanLine& scanLine);
 		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData);
 		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
+	protected:
+		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
+	};
+
+	/////////////////////////////////////////////////////////////
+	//////// Light mapping
+	class RasLightMap : public Rasterizer
+	{
+	public:
+		virtual eRasterizeType	GetType()	{ return eRasterizeType_LightMap; }
+		virtual void	LerpVertexAttributes(SVertex* dest, const SVertex* src1, const SVertex* src2, float t, eLerpType type);
+		virtual void	RasTriangleSetup(SScanLinesData& rasData, const SVertex* v0, const SVertex* v1, const SVertex* v2, eTriangleShape type);
+		virtual void	RasLineSetup(SScanLine& scanLine, const SScanLinesData& rasData);
+		virtual void	RaterizeAdvancePixel(SScanLine& scanLine);
+		virtual void	RaterizeAdvanceLine(SScanLinesData& rasData);
+		virtual void	RasterizePixel(SScanLine& scanLine, const SScanLinesData& rasData);
+
 	protected:
 		virtual void	_RasterizeTriangle(const SVertex& vert0, const SVertex& vert1, const SVertex& vert2, const SFace& face, const SRenderContext& context);
 	};
